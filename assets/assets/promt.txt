@@ -1,0 +1,378 @@
+Vas a convertir la ficha de un personaje de D&D en un JSON con un formato EXACTO.
+Te voy a pasar la ficha (PDF, texto, enlace a la plataforma Nivel20 o imagen) y tú debes generar el JSON siguiendo ESTRICTAMENTE la estructura del ejemplo de abajo.
+
+Aviso, seguramente muchos de los rasgos pilles la version recortada, a la minima que sospeches de uno, dimelo y te lo paso entero, lo mismo con las dudas, a la minima mandalo porfaplis
+
+
+REGLAS OBLIGATORIAS:
+
+NO añadas ningún campo, clave o sección que no exista en el JSON de ejemplo. La app que lo lee no soporta campos extra y se romperá.
+
+NO elimines ningún campo del ejemplo, aunque esté vacío (usa "", [] o 0 si no hay dato). Mantén los mismos tipos de dato (número vs string vs booleano vs array).
+
+"spell_slots" es un array con un objeto por cada nivel de conjuro que tenga espacios (level, max, current). NO incluyas niveles con 0 espacios. Ignora "conjuros preparados"; solo importan los espacios.
+
+Cada conjuro y truco del personaje = una habilidad dentro de "abilities_by_action", clasificada según su tiempo de lanzamiento:
+
+"action" → conjuros de 1 acción (incluye todos los trucos, base_level: 0)
+
+"bonus_action" → conjuros de 1 acción adicional
+
+"reaction" → conjuros de reacción
+
+Los rasgos de clase/raza (no conjuros) van en "passive", salvo que sean reacciones activas (ej. "Suerte del Oscuro"), que van en "reaction".
+
+Cada pasiva (cada objeto dentro de "passive") debe incluir además el campo "tactical_role", clasificándola en una de estas tres categorías EXACTAS (respeta mayúsculas, sin variaciones ni sinónimos): "Ofensivo" (aumenta daño propio, habilita ataques o efectos ofensivos), "Defensivo" (resistencias, PG extra, protección propia o de aliados), "Utilidad" (recursos, exploración, rasgos base/definición que no encajan en las dos anteriores). Si una pasiva combina varios usos, elige la función PRINCIPAL, no inventes una cuarta categoría. Este campo es EXCLUSIVO de "passive": no lo añadas a habilidades de "action", "bonus_action" ni "reaction".
+
+"damage_dice": el dado BASE de daño o curación directa, al nivel mínimo del conjuro (base_level). Formato ESTRICTO, sin excepciones: notación de dado con o sin bono plano ("1d8", "2d6+3", "8d6-2"), o si el efecto no tira dado pero sí suma un número fijo, un plano puro ("+3"). NUNCA una frase, nunca texto explicativo, nunca notas entre paréntesis. Si el conjuro/truco/ataque no hace daño ni cura, usa "" (string vacío) — pero si SÍ hace daño o cura, este campo tiene que llevar el dado, aunque parezca redundante con lore_description o tactical_summary.
+
+"is_scalable": true si el conjuro mejora al lanzarse con un espacio de nivel superior o al subir de nivel de personaje; false si no escala nunca.
+
+"scaling_formula": SOLO rellenar si is_scalable es true. Mismo formato estricto que damage_dice: un único término de dado con o sin bono plano ("1d8", "2d4+1"), o un plano puro ("+2"). Es lo que se SUMA por cada nivel por encima de base_level — el motor de la app lo parsea con una expresión regular exacta, así que una frase como "+1d8 por nivel de conjuro superior" o "sube con el nivel del lanzador" NO funciona: el motor lo descarta en silencio y el conjuro no escala nada en combate. Si is_scalable es false, deja "scaling_formula": "".
+   - Toda la explicación en prosa de CÓMO o CUÁNDO escala (radiante extra a muertos vivientes, condiciones especiales, etc.) va en "lore_description" y/o "tactical_summary", nunca en "scaling_formula".
+   - Ejemplo correcto para un conjuro de curación que sube 1d8 por nivel de espacio: "damage_dice": "1d8", "scaling_formula": "1d8". Ejemplo INCORRECTO (no uses esto): "damage_dice": "", "scaling_formula": "+1d8 por nivel de conjuro superior."
+
+"base_level": nivel de conjuro mínimo al que se lanza (0 para trucos). Es el punto de partida desde el que se cuentan los niveles extra al escalar.
+
+"lore_info": si Rasgos / Ideales / Vínculos / Defectos están en blanco, invéntalos de forma coherente con la historia. Si la historia es muy larga, resúmela en un párrafo de 4-6 frases para "backstory", sin perder los hitos clave.
+
+"purse": monedas del personaje (gold, silver, copper), como números enteros independientes. Si no hay dinero, usa 0.
+
+"ai_tips", una serie de consejos generados por ti sobre como se usa el personaje
+
+
+ "user_tactics" y "adventure_notes" son campos de texto libre del Códice. NO los rellenes con contenido inventado: déjalos siempre como "" salvo que yo te pida explícitamente redactar algo.
+
+SISTEMA DE RECURSOS ("resources"): Este array es para "pools" de puntos especiales (Ki, Puntos de Hechicería, Furia, Inspiración Bárdica, Superioridad, Canalizar Divinidad, etc.).
+
+Analiza la clase y nivel del personaje según las reglas oficiales de D&D 5e para deducir el máximo ("max") si la ficha no lo dice explícitamente (Ej: Monje Nivel 5 = 5 Puntos de Ki. Bardo con Carisma 16 = 3 Inspiraciones).
+
+Un objeto por recurso: { "name", "current", "max" }. "current" arranca igual que "max". Si la clase no tiene recursos gastables, usa un array vacío [].
+
+INVENTARIO ("inventory"): - Las armas van en "weapons". IMPORTANTE: Incluye el campo "is_unique": true si el arma es legendaria, artefacto u objeto mágico irrepetible. Si es común, "is_unique": false.
+
+El resto de equipo (pociones, cuerdas, herramientas, reliquias) va en el array "mundane_items". Cada objeto usa: { "name", "description", "quantity" }.
+
+Si algo es ambiguo, PREGÚNTAME antes de asumir nada. No inventes mecánicas. Si falta un dato que SÍ existe en el JSON (ej. ac, hp_max, un stat), pregúntamelo.
+
+Devuélveme el JSON completo, sin comentarios ni texto fuera del bloque de código.
+
+FORMATO EXACTO A SEGUIR (ejemplo mínimo con todos los campos):
+
+{
+  "basic_info": {
+    "name": "Kaelen el Luminoso",
+    "race": "Humano",
+    "characterClass": "Paladín 5",
+    "hp_max": 44,
+    "ac": 18
+  },
+  "purse": {
+    "gold": 120,
+    "silver": 50,
+    "copper": 0
+  },
+  "ai_tips": "",
+  "user_tactics": "",
+  "adventure_notes": "",
+  "resources": [
+    {
+      "name": "Imposición de Manos",
+      "current": 25,
+      "max": 25
+    },
+    {
+      "name": "Canalizar Divinidad",
+      "current": 1,
+      "max": 1
+    },
+    {
+      "name": "Sentido Divino",
+      "current": 4,
+      "max": 4
+    }
+  ],
+  "inventory": {
+    "weapons": [
+      {
+        "id": "weapon-justicia-radiante",
+        "name": "Justicia Radiante (Espada Larga +1)",
+        "attack_bonus": 7,
+        "damage": {
+          "base_dice": "1d8+4",
+          "base_type": "cortante"
+        },
+        "conditional_damage": [
+          {
+            "condition": "Ataque a dos manos",
+            "damage_dice": "1d10+4",
+            "damage_type": "cortante"
+          }
+        ],
+        "properties": [
+          "Versátil",
+          "Mágica"
+        ],
+        "homebrew_effect": "Emite luz tenue en un radio de 3 metros cuando se desenvaina.",
+        "magic_charges": {
+          "has_charges": false,
+          "max": 0,
+          "current": 0
+        },
+        "success_description": "La hoja bendita atraviesa la armadura del enemigo.",
+        "failure_description": "El tajo es bloqueado ruidosamente.",
+        "is_unique": true
+      },
+      {
+        "id": "weapon-jabalina",
+        "name": "Jabalina",
+        "attack_bonus": 6,
+        "damage": {
+          "base_dice": "1d6+3",
+          "base_type": "perforante"
+        },
+        "conditional_damage": [],
+        "properties": [
+          "Arrojadiza",
+          "Alcance (9/36m)"
+        ],
+        "homebrew_effect": "",
+        "magic_charges": {
+          "has_charges": false,
+          "max": 0,
+          "current": 0
+        },
+        "success_description": "La jabalina impacta con fuerza.",
+        "failure_description": "El proyectil pasa de largo.",
+        "is_unique": false
+      }
+    ],
+    "mundane_items": [
+      {
+        "name": "Símbolo Sagrado",
+        "description": "Un emblema de plata del dios Sol, usado como foco para conjuros.",
+        "quantity": 1
+      },
+      {
+        "name": "Armadura de Cota de Malla",
+        "description": "Una armadura pesada y ruidosa que requiere Fuerza 13 para llevarse.",
+        "quantity": 1
+      },
+      {
+        "name": "Poción de Curación",
+        "description": "Restaura 2d4+2 puntos de golpe al beberse.",
+        "quantity": 3
+      }
+    ]
+  },
+  "stats": {
+    "str": {
+      "name": "Fuerza",
+      "value": 16,
+      "mod": 3,
+      "description": "Mide la fuerza física y la capacidad atlética."
+    },
+    "dex": {
+      "name": "Destreza",
+      "value": 10,
+      "mod": 0,
+      "description": "Mide la agilidad, los reflejos y la coordinación."
+    },
+    "con": {
+      "name": "Constitución",
+      "value": 14,
+      "mod": 2,
+      "description": "Mide la resistencia física y la salud."
+    },
+    "int": {
+      "name": "Inteligencia",
+      "value": 8,
+      "mod": -1,
+      "description": "Mide el conocimiento y la lógica."
+    },
+    "wis": {
+      "name": "Sabiduría",
+      "value": 12,
+      "mod": 1,
+      "description": "Mide la intuición y la percepción."
+    },
+    "cha": {
+      "name": "Carisma",
+      "value": 16,
+      "mod": 3,
+      "description": "Mide la fuerza de personalidad."
+    }
+  },
+  "spell_slots": [
+    {
+      "level": 1,
+      "max": 4,
+      "current": 4
+    },
+    {
+      "level": 2,
+      "max": 2,
+      "current": 2
+    }
+  ],
+  "skills": [
+    {
+      "name": "Acrobacias",
+      "related_stat": "dex",
+      "modifier": 0
+    },
+    {
+      "name": "Arcanos",
+      "related_stat": "int",
+      "modifier": -1
+    },
+    {
+      "name": "Atletismo",
+      "related_stat": "str",
+      "modifier": 6
+    },
+    {
+      "name": "Engañar",
+      "related_stat": "cha",
+      "modifier": 3
+    },
+    {
+      "name": "Historia",
+      "related_stat": "int",
+      "modifier": -1
+    },
+    {
+      "name": "Interpretación",
+      "related_stat": "cha",
+      "modifier": 3
+    },
+    {
+      "name": "Intimidar",
+      "related_stat": "cha",
+      "modifier": 6
+    },
+    {
+      "name": "Investigación",
+      "related_stat": "int",
+      "modifier": -1
+    },
+    {
+      "name": "Juego de Manos",
+      "related_stat": "dex",
+      "modifier": 0
+    },
+    {
+      "name": "Medicina",
+      "related_stat": "wis",
+      "modifier": 4
+    },
+    {
+      "name": "Naturaleza",
+      "related_stat": "int",
+      "modifier": -1
+    },
+    {
+      "name": "Percepción",
+      "related_stat": "wis",
+      "modifier": 1
+    },
+    {
+      "name": "Perspicacia",
+      "related_stat": "wis",
+      "modifier": 4
+    },
+    {
+      "name": "Persuasión",
+      "related_stat": "cha",
+      "modifier": 6
+    },
+    {
+      "name": "Religión",
+      "related_stat": "int",
+      "modifier": 2
+    },
+    {
+      "name": "Sigilo",
+      "related_stat": "dex",
+      "modifier": 0
+    },
+    {
+      "name": "Supervivencia",
+      "related_stat": "wis",
+      "modifier": 1
+    },
+    {
+      "name": "Trato con Animales",
+      "related_stat": "wis",
+      "modifier": 1
+    }
+  ],
+  "abilities_by_action": {
+    "action": [
+      {
+        "id": "ability-curar-heridas",
+        "name": "Curar Heridas",
+        "type": "spell",
+        "related_stat": "cha",
+        "success_description": "Una luz cálida cierra las heridas del objetivo.",
+        "failure_description": "La magia se disipa sin efecto.",
+        "is_scalable": true,
+        "base_level": 1,
+        "damage_dice": "1d8",
+        "scaling_formula": "1d8",
+        "lore_description": "Una criatura que tocas recupera un número de puntos de golpe igual a 1d8 + tu modificador de aptitud mágica, y +1d8 adicional por cada nivel de espacio de conjuro por encima del primero.",
+        "tactical_summary": "Cura 1d8+3 PG por nivel de espacio usado. Rango: Toque."
+      }
+    ],
+    "bonus_action": [
+      {
+        "id": "ability-castigo-atronador",
+        "name": "Castigo Atronador",
+        "type": "spell",
+        "related_stat": "cha",
+        "success_description": "El arma resuena con un trueno, derribando al enemigo.",
+        "failure_description": "El impacto atronador es resistido.",
+        "is_scalable": false,
+        "base_level": 1,
+        "damage_dice": "2d6",
+        "scaling_formula": "",
+        "lore_description": "La próxima vez que impactes con un ataque de arma, el arma suena con un trueno. Inflige 2d6 daño de trueno extra, y el objetivo debe superar salvación de FUE o quedar tumbado.",
+        "tactical_summary": "Requiere Concentración. Añade 2d6 Trueno + posible derribo."
+      }
+    ],
+    "reaction": [],
+    "passive": [
+      {
+        "id": "ability-castigo-divino",
+        "name": "Castigo Divino",
+        "type": "class_feature",
+        "lore_description": "Cuando impactas a una criatura con un ataque de arma cuerpo a cuerpo, puedes gastar un espacio de conjuro para infligir daño radiante al objetivo.",
+        "tactical_summary": "Gasta espacio para sumar daño: 2d8 Radiante (nivel 1) + 1d8 por cada nivel adicional. +1d8 si es muerto viviente o infernal.",
+        "tactical_role": "Ofensivo"
+      },
+      {
+        "id": "ability-ataque-adicional",
+        "name": "Ataque Adicional",
+        "type": "trait",
+        "lore_description": "Puedes atacar dos veces en lugar de una cuando realizas la acción de Atacar en tu turno.",
+        "tactical_summary": "2 ataques por Acción.",
+        "tactical_role": "Ofensivo"
+      },
+      {
+        "id": "ability-salud-divina",
+        "name": "Salud Divina",
+        "type": "trait",
+        "lore_description": "La magia divina que fluye a través de ti te hace inmune a las enfermedades.",
+        "tactical_summary": "Inmunidad total a enfermedades.",
+        "tactical_role": "Defensivo"
+      }
+    ]
+  },
+  "lore_info": {
+    "backstory": "Nacido en una familia de herreros humildes, Kaelen juró proteger a los débiles tras presenciar el saqueo de su aldea. Fue acogido por la Orden de la Llama Sagrada, donde canalizó su ira en disciplina y fe. Empuña la reliquia 'Rompeamaneceres', forjada supuestamente con la luz de una estrella caída. Su fe es absoluta, lo que le hace en ocasiones demasiado rígido para entender la escala de grises del mundo.",
+    "personality_traits": "Juzgo a los demás por sus actos, no por sus palabras. Cuando me doy un propósito, nada puede apartarme de él.",
+    "ideals": "Responsabilidad. Es el deber de los fuertes proteger a los débiles.",
+    "bonds": "Mi orden y mi escudo son la única familia que me queda.",
+    "flaws": "Soy inflexible en mi visión de la ley, lo que a menudo me granjea enemigos innecesarios."
+  }
+}
