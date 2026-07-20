@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/character_provider.dart';
@@ -244,7 +245,49 @@ class CharacterSelectionScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 10),
-                // Tercera vía: generar/actualizar la ficha con ayuda de una
+                // Tercera vía: JSON crudo tal cual lo exporta Nivel20.
+                // Ya no se importa directamente sin pasar por una IA — se
+                // limpia con Nivel20Extractor.cleanRawJsonString() y se
+                // reusa el mismo diálogo de prompt-para-copiar que la
+                // cuarta vía, solo que alimentado con este texto en vez
+                // de un enlace (ver showAIPromptDialogFromRawJson).
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(14),
+                      onTap: () {
+                        Navigator.of(sheetContext).pop();
+                        _showPasteNivel20JsonDialog(context, provider, accent);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.03),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: accent.withOpacity(0.25)),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.integration_instructions, color: accent, size: 20),
+                            const SizedBox(width: 14),
+                            Text(
+                              'Importar JSON crudo de Nivel20',
+                              style: GoogleFonts.inter(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                // Cuarta vía: generar/actualizar la ficha con ayuda de una
                 // IA a partir de un enlace de Nivel20 (mismo diálogo que
                 // usaba antes el HUD, ahora vive aquí junto al resto de
                 // formas de traer un personaje al roster).
@@ -437,6 +480,106 @@ class CharacterSelectionScreen extends StatelessWidget {
                   },
                   child: Text(
                     'Importar',
+                    style: GoogleFonts.inter(color: accent, fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  /// Diálogo gemelo de _showPasteJsonDialog pero para JSON *crudo* de
+  /// Nivel20 (el bloque completo que exporta la propia plataforma, no el
+  /// resumen que devuelve una IA). Ya no construye el personaje
+  /// directamente: Nivel20Extractor ya no sabe hacer eso. En su lugar,
+  /// solo comprueba que se haya pegado algo y delega en
+  /// showAIPromptDialogFromRawJson(), que limpia el texto con
+  /// Nivel20Extractor.cleanRawJsonString() y monta el prompt de
+  /// "cópialo y pégalo en tu IA" — el mismo flujo que usa la vía del
+  /// enlace, solo que alimentado con este texto en vez de una URL.
+  void _showPasteNivel20JsonDialog(
+    BuildContext context,
+    CharacterProvider provider,
+    Color accent,
+  ) {
+    final controller = TextEditingController();
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        String? errorText;
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: AppColors.surface,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: accent.withOpacity(0.35)),
+              ),
+              title: Text(
+                'Pegar JSON crudo de Nivel20',
+                style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w700),
+              ),
+              content: SizedBox(
+                width: 420,
+                child: TextField(
+                  controller: controller,
+                  autofocus: true,
+                  maxLines: 10,
+                  minLines: 6,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontFamily: 'monospace',
+                  ),
+                  decoration: InputDecoration(
+                    hintText: '{ "info": { ... }, "professions": [ ... ], ... }',
+                    hintStyle: GoogleFonts.inter(color: AppColors.textSecondary),
+                    errorText: errorText,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: Colors.white.withOpacity(0.12)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: accent),
+                    ),
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: Text('Cancelar', style: GoogleFonts.inter(color: AppColors.textSecondary)),
+                ),
+                TextButton(
+                  onPressed: () {
+                    final raw = controller.text.trim();
+
+                    // Blindaje mínimo: solo comprobamos que no esté vacío.
+                    // Ya no validamos claves ("info", "professions"...)
+                    // aquí, porque ya no construimos un CharacterModel a
+                    // mano — cleanRawJsonString() se limita a limpiar HTML
+                    // sobrante y es la IA, con el prompt generado, quien
+                    // se encarga de interpretar la estructura.
+                    if (raw.isEmpty) {
+                      setState(() => errorText =
+                          'Pega primero el JSON exportado desde Nivel20.');
+                      return;
+                    }
+
+                    Navigator.of(dialogContext).pop();
+                    showAIPromptDialogFromRawJson(
+                      context,
+                      accent: accent,
+                      rawJson: raw,
+                    );
+                  },
+                  child: Text(
+                    'Continuar',
                     style: GoogleFonts.inter(color: accent, fontWeight: FontWeight.w700),
                   ),
                 ),

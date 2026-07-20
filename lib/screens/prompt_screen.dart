@@ -9,10 +9,17 @@ import 'package:provider/provider.dart';
 import '../providers/character_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/theme_notifier.dart';
+import '../utils/nivel20_extractor.dart';
 import 'main_hud_screen.dart';
 
 class PromptScreen extends StatefulWidget {
-  const PromptScreen({super.key});
+  const PromptScreen({super.key, this.initialNivel20Link});
+
+  /// Si se pasa un enlace (típicamente desde el atajo de WelcomeScreen),
+  /// se pre-rellena el campo de link y se lanza la extracción
+  /// automáticamente en cuanto la pantalla se monta, para que el jugador
+  /// no tenga que pegarlo dos veces.
+  final String? initialNivel20Link;
 
   @override
   State<PromptScreen> createState() => _PromptScreenState();
@@ -36,17 +43,53 @@ class _PromptScreenState extends State<PromptScreen>
   bool _isLoadingTemplate = true;
   String? _loadError;
 
+  // Datos de la ficha de Nivel20 ya descargados y limpios de HTML (ver
+  // _fetchNivel20Info). Se incrustan en el prompt en vez de solo el link,
+  // para no depender de que la IA pueda navegar por su cuenta.
+  bool _isFetchingInfo = false;
+  String? _fetchedInfoText;
+  String? _linkError;
 
-  /// Prompt final a copiar. Si el jugador ha rellenado el enlace de su
-  /// ficha (Nivel20 u otra plataforma), se incrusta como un párrafo extra
-  /// justo al principio, para que la IA lo visite y lo use como fuente
-  /// además de (o en vez de) la ficha pegada/adjunta.
+  /// Prompt final a copiar. Si el jugador ya extrajo los datos de su ficha
+  /// de Nivel20 (botón "Extraer datos"), se incrustan como un bloque de
+  /// texto justo al principio, para que la IA los use como fuente directa
+  /// en vez de tener que ir a buscarlos ella misma.
   String get _fullPrompt {
-    final link = _linkController.text.trim();
-    if (link.isEmpty) return _promptTemplate.trim();
+    final info = _fetchedInfoText;
+    if (info == null || info.isEmpty) return _promptTemplate.trim();
 
-    return 'Aquí tienes el enlace a mi ficha, ábrelo para extraer los datos: '
-        '$link\n\n${_promptTemplate.trim()}';
+    return 'Aquí tienes los datos de mi ficha, extraídos automáticamente '
+        'de Nivel20 (JSON, ya limpio de HTML):\n\n$info\n\n'
+        '${_promptTemplate.trim()}';
+  }
+
+  Future<void> _fetchNivel20Info() async {
+    final link = _linkController.text.trim();
+    if (link.isEmpty) {
+      setState(() => _linkError = 'Pega primero el enlace de tu ficha de Nivel20.');
+      return;
+    }
+
+    setState(() {
+      _isFetchingInfo = true;
+      _linkError = null;
+    });
+
+    try {
+      final infoText = await Nivel20Extractor.extractInfoText(link);
+      if (!mounted) return;
+      setState(() {
+        _fetchedInfoText = infoText;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _fetchedInfoText = null;
+        _linkError = e.toString().replaceFirst('Exception: ', '');
+      });
+    } finally {
+      if (mounted) setState(() => _isFetchingInfo = false);
+    }
   }
 
   @override
@@ -63,6 +106,17 @@ class _PromptScreenState extends State<PromptScreen>
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
     _controller.forward();
     _loadPromptTemplate();
+
+    // Atajo desde WelcomeScreen: si ya venimos con un enlace de Nivel20
+    // (el jugador lo pegó en la pantalla anterior), lo pre-rellenamos y
+    // lanzamos la extracción solos — así no tiene que pegarlo dos veces,
+    // pero el flujo de "copiar prompt / pegar JSON / importar archivo"
+    // sigue siendo exactamente el mismo, sin saltarse ningún paso.
+    final initialLink = widget.initialNivel20Link?.trim();
+    if (initialLink != null && initialLink.isNotEmpty) {
+      _linkController.text = initialLink;
+      _fetchNivel20Info();
+    }
   }
 
   /// Lee el texto del prompt desde el archivo `assets/promt.txt`.
@@ -103,7 +157,7 @@ class _PromptScreenState extends State<PromptScreen>
   Future<void> _importJson() async {
     final text = _jsonController.text.trim();
     if (text.isEmpty) {
-      setState(() => _errorText = 'Pega primero el JSON que te devolvió la IA.');
+      setState(() => _errorText = 'Pega primero el JSON que te devolvió la IA. (En verdad lo que te ha pasao Pedro)');
       return;
     }
 
@@ -263,7 +317,7 @@ class _PromptScreenState extends State<PromptScreen>
                     // principio del prompt de abajo para que la IA lo
                     // visite y extraiga los datos de ahí.
                     Text(
-                      "¿Tienes tu ficha en Nivel20 o similar? Pega el enlace (opcional):",
+                      "¿Tienes tu ficha en Nivel20? Pega el enlace y extrae los datos (opcional):",
                       style: GoogleFonts.inter(
                         fontSize: 13,
                         height: 1.4,
@@ -275,10 +329,15 @@ class _PromptScreenState extends State<PromptScreen>
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.04),
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.white.withOpacity(0.08)),
+                        border: Border.all(
+                          color: _linkError != null
+                              ? AppColors.danger.withOpacity(0.6)
+                              : Colors.white.withOpacity(0.08),
+                        ),
                       ),
                       child: TextField(
                         controller: _linkController,
+                        enabled: !_isFetchingInfo,
                         autocorrect: false,
                         keyboardType: TextInputType.url,
                         style: const TextStyle(color: Colors.white, fontSize: 13.5),
@@ -290,9 +349,72 @@ class _PromptScreenState extends State<PromptScreen>
                           hintStyle: GoogleFonts.inter(color: Colors.white.withOpacity(0.25)),
                           prefixIcon: Icon(Icons.link_rounded, color: accent, size: 20),
                         ),
-                        onChanged: (_) => setState(() {}),
+                        // Cualquier edición del link invalida los datos ya
+                        // extraídos, para no incrustar en el prompt una
+                        // ficha desactualizada respecto al link visible.
+                        onChanged: (_) => setState(() {
+                          _fetchedInfoText = null;
+                          _linkError = null;
+                        }),
                       ),
                     ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _isFetchingInfo ? null : _fetchNivel20Info,
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          side: BorderSide(
+                            color: _fetchedInfoText != null
+                                ? Colors.greenAccent.withOpacity(0.5)
+                                : Colors.white.withOpacity(0.15),
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        icon: _isFetchingInfo
+                            ? SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white70,
+                                ),
+                              )
+                            : Icon(
+                                _fetchedInfoText != null
+                                    ? Icons.check_rounded
+                                    : Icons.download_rounded,
+                                color: _fetchedInfoText != null
+                                    ? Colors.greenAccent
+                                    : Colors.white70,
+                                size: 18,
+                              ),
+                        label: Text(
+                          _isFetchingInfo
+                              ? 'Extrayendo...'
+                              : (_fetchedInfoText != null
+                                  ? 'Datos extraídos — incluidos en el prompt'
+                                  : 'Extraer datos de Nivel20'),
+                          style: GoogleFonts.inter(
+                            color: _fetchedInfoText != null
+                                ? Colors.greenAccent
+                                : Colors.white70,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (_linkError != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        _linkError!,
+                        style: GoogleFonts.inter(color: AppColors.danger, fontSize: 12.5),
+                      ),
+                    ],
                     const SizedBox(height: 20),
 
                     // Caja del prompt

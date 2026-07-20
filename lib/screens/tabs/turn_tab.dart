@@ -53,6 +53,19 @@ class _TacticalEntry {
   // quedan en false por defecto — las armas no tienen attackType propio y
   // las pasivas nunca abren el modal.
   final bool isSavingThrow;
+  // Borrado de habilidades: id estable de la Ability de origen (Ability.id).
+  // Las entradas que vienen de un arma (_weaponToEntry) lo dejan en null a
+  // propósito — borrar armas no entra en el alcance de esta función, y un
+  // id null es justo la señal que usa _TacticalCard para no pintar el
+  // icono de papelera en esas tarjetas.
+  final String? id;
+  // Edición: la Ability original completa y la categoría a la que
+  // pertenece ('action'/'bonusAction'/'reaction'/'passive'). Solo se
+  // rellenan en entradas que vienen de una Ability (no de un arma) — es
+  // lo que necesita el formulario de edición para precargar todos sus
+  // campos sin tener que reconstruirlos a mano desde _TacticalEntry.
+  final Ability? sourceAbility;
+  final String? categoryKey;
 
   const _TacticalEntry({
     required this.name,
@@ -74,6 +87,9 @@ class _TacticalEntry {
     this.maxCharges = 0,
     this.isSpell = false,
     this.isSavingThrow = false,
+    this.id,
+    this.sourceAbility,
+    this.categoryKey,
   });
 
   /// Fase 3 (Pasivas): si hay lore o resumen táctico que mostrar, la
@@ -86,6 +102,24 @@ class _TacticalEntry {
 /// Traduce la clave de una stat ('str', 'dex'...) al modificador real del
 /// personaje. Si una Ability trae una clave vacía o desconocida, el
 /// modificador aplicado es 0 en vez de reventar.
+/// Réplica local de la validación de scaling_formula que ya hace
+/// Ability.fromJson() (_looksLikeValidDiceOrFlat en ability_model.dart).
+/// No se puede importar de allí porque es privada a ese archivo (el guion
+/// bajo la limita a su propia librería), así que se duplica aquí a
+/// propósito — igual que el propio ability_model.dart ya avisa que hace
+/// con resolution_modal.dart. Debe mantenerse en sincronía con las tres
+/// copias si el formato de escalado cambia algún día.
+///
+/// Acepta dado con o sin bono plano ("1d6", "2d4+3", "8d6-2") o un plano
+/// puro sin dado ("+3", "-1", "4").
+bool _looksLikeValidScalingFormula(String raw) {
+  final trimmed = raw.trim();
+  if (trimmed.isEmpty) return false;
+  final diceMatch = RegExp(r'^\d+d\d+\s*([+-]\s*\d+)?$').hasMatch(trimmed);
+  final flatMatch = RegExp(r'^[+-]?\s*\d+$').hasMatch(trimmed);
+  return diceMatch || flatMatch;
+}
+
 int _modForStatKey(StatsBlock stats, String key) {
   switch (key) {
     case 'str':
@@ -121,10 +155,10 @@ class TurnTab extends StatelessWidget {
     // (antes iban todas mezcladas en actionEntries) para poder pintar las
     // subcategorías "ARMAS" / "CONJUROS Y RASGOS" dentro de cada sección.
     final actionWeaponEntries = weapons.map((w) => _weaponToEntry(w)).toList();
-    final actionAbilityEntries = abilities.action.map((a) => _abilityToEntry(a, stats)).toList();
+    final actionAbilityEntries = abilities.action.map((a) => _abilityToEntry(a, stats, 'action')).toList();
 
-    final bonusEntries = abilities.bonusAction.map((a) => _abilityToEntry(a, stats)).toList();
-    final reactionEntries = abilities.reaction.map((a) => _abilityToEntry(a, stats)).toList();
+    final bonusEntries = abilities.bonusAction.map((a) => _abilityToEntry(a, stats, 'bonusAction')).toList();
+    final reactionEntries = abilities.reaction.map((a) => _abilityToEntry(a, stats, 'reaction')).toList();
     // Las pasivas nunca se tiran: no llevan modificador ni descripciones de
     // resultado, y sus tarjetas no son tappable. Al ser homogéneas (todo
     // Rasgos, nunca armas), no necesitan la subcategorización.
@@ -133,14 +167,30 @@ class TurnTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Text(
-          'DESPLIEGUE TÁCTICO',
-          style: TextStyle(color: accent, fontWeight: FontWeight.bold, letterSpacing: 1.2, fontFamily: 'serif'),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Todo lo que puedes hacer con tu turno, de un vistazo.',
-          style: TextStyle(color: context.appColors.textSecondary, fontSize: 12, fontFamily: 'serif'),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'DESPLIEGUE TÁCTICO',
+                    style: TextStyle(color: accent, fontWeight: FontWeight.bold, letterSpacing: 1.2, fontFamily: 'serif'),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Todo lo que puedes hacer con tu turno, de un vistazo.',
+                    style: TextStyle(color: context.appColors.textSecondary, fontSize: 12, fontFamily: 'serif'),
+                  ),
+                ],
+              ),
+            ),
+            // Alta de habilidades: abre un formulario simple (nombre +
+            // descripción + categoría) en un modal. El alta en sí vive en
+            // CharacterProvider.addAbility(), aquí solo se recogen los datos.
+            _AddAbilityButton(accent: accent),
+          ],
         ),
         const SizedBox(height: 16),
         // Action Economy Tracker: los tres recursos de acción del turno
@@ -188,7 +238,7 @@ class TurnTab extends StatelessWidget {
     );
   }
 
-  _TacticalEntry _abilityToEntry(Ability a, StatsBlock stats) {
+  _TacticalEntry _abilityToEntry(Ability a, StatsBlock stats, String categoryKey) {
     final origin = a.type == 'spell' ? 'Conjuro' : 'Rasgo';
     final icon = a.type == 'spell' ? Icons.auto_fix_high : Icons.shield_moon;
     final mod = _modForStatKey(stats, a.relatedStat);
@@ -212,6 +262,9 @@ class TurnTab extends StatelessWidget {
       maxCharges: a.magicCharges.max,
       isSpell: a.type == 'spell',
       isSavingThrow: a.isSavingThrowType,
+      id: a.id,
+      sourceAbility: a,
+      categoryKey: categoryKey,
     );
   }
 
@@ -226,6 +279,9 @@ class TurnTab extends StatelessWidget {
       loreDescription: a.loreDescription,
       tacticalSummary: a.tacticalSummary,
       tacticalRole: a.tacticalRole,
+      id: a.id,
+      sourceAbility: a,
+      categoryKey: 'passive',
     );
   }
 }
@@ -865,6 +921,10 @@ class _TacticalCard extends StatelessWidget {
           _ChargeBadge(current: entry.currentCharges, max: entry.maxCharges, accent: accent),
           const SizedBox(width: 8),
         ],
+        if (entry.sourceAbility != null && entry.categoryKey != null) ...[
+          _AbilityOptionsMenu(ability: entry.sourceAbility!, categoryKey: entry.categoryKey!),
+          const SizedBox(width: 8),
+        ],
         if (entry.tappable)
           Icon(Icons.casino_outlined, color: accent.withOpacity(0.6), size: 18),
       ],
@@ -922,6 +982,8 @@ class _TacticalCard extends StatelessWidget {
                     ],
                   ),
                 ),
+                if (entry.sourceAbility != null && entry.categoryKey != null)
+                  _AbilityOptionsMenu(ability: entry.sourceAbility!, categoryKey: entry.categoryKey!),
               ],
             ),
             children: [
@@ -1024,6 +1086,575 @@ class _TacticalCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Botón compacto de la cabecera que abre el formulario de alta de
+/// habilidades en un modal inferior. Vive junto al título "DESPLIEGUE
+/// TÁCTICO" para que el alta esté a mano sin añadir una pantalla nueva.
+class _AddAbilityButton extends StatelessWidget {
+  final Color accent;
+
+  const _AddAbilityButton({required this.accent});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: () => showModalBottomSheet<void>(
+          context: context,
+          isScrollControlled: true,
+          builder: (_) => const _AddAbilitySheet(),
+        ),
+        child: Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: accent.withOpacity(0.15),
+            border: Border.all(color: accent.withOpacity(0.5), width: 1),
+          ),
+          child: Icon(Icons.add, color: accent, size: 18),
+        ),
+      ),
+    );
+  }
+}
+
+/// Formulario de alta de habilidades: nombre, descripción y categoría
+/// siempre visibles; el resto de campos de Ability (stat asociada, tipo
+/// de tirada, dado de daño, escalado, cargas, rol táctico) viven dentro
+/// de un ExpansionTile "Avanzado" colapsado por defecto, para que el
+/// alta rápida siga siendo rápida y el detalle mecánico esté ahí solo
+/// para quien lo necesite. Al confirmar llama a
+/// CharacterProvider.addAbility() — la lista reactiva
+/// (abilitiesByAction) se repinta sola gracias a notifyListeners().
+class _AddAbilitySheet extends StatefulWidget {
+  final Ability? existingAbility;
+  final String? existingCategory;
+
+  const _AddAbilitySheet({this.existingAbility, this.existingCategory});
+
+  @override
+  State<_AddAbilitySheet> createState() => _AddAbilitySheetState();
+}
+
+class _AddAbilitySheetState extends State<_AddAbilitySheet> {
+  static const List<(String key, String label)> _categories = [
+    ('action', 'Acción'),
+    ('bonusAction', 'Acción Adicional'),
+    ('reaction', 'Reacción'),
+    ('passive', 'Pasiva'),
+  ];
+
+  static const List<(String key, String label)> _types = [
+    ('trait', 'Rasgo'),
+    ('spell', 'Conjuro'),
+  ];
+
+  static const List<(String key, String label)> _relatedStats = [
+    ('', 'Ninguna'),
+    ('str', 'Fuerza'),
+    ('dex', 'Destreza'),
+    ('con', 'Constitución'),
+    ('int', 'Inteligencia'),
+    ('wis', 'Sabiduría'),
+    ('cha', 'Carisma'),
+  ];
+
+  static const List<(String key, String label)> _attackTypes = [
+    ('attack', 'Ataque (tira para impactar)'),
+    ('save', 'Salvación (el objetivo tira CD)'),
+    ('none', 'Ninguna (sin tirada enfrentada)'),
+  ];
+
+  static const List<(String key, String label)> _tacticalRoles = [
+    ('', 'Sin clasificar'),
+    ('Ofensivo', 'Ofensivo'),
+    ('Defensivo', 'Defensivo'),
+    ('Utilidad', 'Utilidad'),
+  ];
+
+  // -- Básico --
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  String _selectedCategory = _categories.first.$1;
+
+  // -- Avanzado --
+  String _selectedType = _types.first.$1; // 'trait' | 'spell'
+  String _selectedRelatedStat = ''; // '' | 'str' | 'dex' | ...
+  String _selectedAttackType = _attackTypes.first.$1; // 'attack' | 'save' | 'none'
+  final _damageDiceController = TextEditingController();
+  final _tacticalSummaryController = TextEditingController();
+  String _selectedTacticalRole = '';
+  bool _isScalable = false;
+  final _baseLevelController = TextEditingController(text: '0');
+  final _scalingFormulaController = TextEditingController();
+  bool _hasCharges = false;
+  final _maxChargesController = TextEditingController(text: '1');
+  // Controlado a mano (en vez de ExpansionTile.initiallyExpanded, que solo
+  // se lee una vez) para poder forzar la apertura del bloque si el envío
+  // falla por un error de validación ahí dentro (ej. fórmula de escalado
+  // mal escrita) mientras el usuario lo tenía colapsado.
+  bool _advancedExpanded = false;
+
+  bool get _isPassive => _selectedCategory == 'passive';
+  bool get _isEditing => widget.existingAbility != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final ability = widget.existingAbility;
+    if (ability == null) return;
+
+    // Modo edición: precargamos todo desde la Ability existente. Los
+    // campos que el formulario no expone en modo alta (successDescription/
+    // failureDescription) no se tocan aquí — updateAbility() los conserva
+    // tal cual estaban.
+    _nameController.text = ability.name;
+    _descriptionController.text = ability.loreDescription ?? '';
+    _selectedCategory = widget.existingCategory ?? 'action';
+    _selectedType = ability.type == 'spell' ? 'spell' : 'trait';
+    _selectedRelatedStat = ability.relatedStat;
+    _selectedAttackType = ability.attackType;
+    _damageDiceController.text = ability.damageDice ?? '';
+    _tacticalSummaryController.text = ability.tacticalSummary ?? '';
+    _selectedTacticalRole = ability.tacticalRole ?? '';
+    _isScalable = ability.isScalable;
+    _baseLevelController.text = ability.baseLevel.toString();
+    _scalingFormulaController.text = ability.scalingFormula ?? '';
+    _hasCharges = ability.magicCharges.hasCharges;
+    _maxChargesController.text =
+        ability.magicCharges.hasCharges ? ability.magicCharges.max.toString() : '1';
+    // Si hay algún dato avanzado relevante ya cargado, abrimos el bloque
+    // directamente para que se vea de un vistazo qué se está editando, en
+    // vez de que parezca que se ha perdido información.
+    _advancedExpanded = _selectedType == 'spell' ||
+        _selectedRelatedStat.isNotEmpty ||
+        _selectedAttackType != 'attack' ||
+        (ability.damageDice != null && ability.damageDice!.trim().isNotEmpty) ||
+        _isScalable ||
+        _hasCharges ||
+        (ability.tacticalSummary != null && ability.tacticalSummary!.trim().isNotEmpty) ||
+        _selectedTacticalRole.isNotEmpty;
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    _damageDiceController.dispose();
+    _tacticalSummaryController.dispose();
+    _baseLevelController.dispose();
+    _scalingFormulaController.dispose();
+    _maxChargesController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (!_formKey.currentState!.validate()) {
+      // Si el error viene de dentro del bloque avanzado (ej. fórmula de
+      // escalado inválida) y el usuario lo tenía colapsado, lo abrimos
+      // para que vea qué falló en vez de que el botón simplemente no
+      // reaccione sin explicación.
+      if (!_advancedExpanded) setState(() => _advancedExpanded = true);
+      return;
+    }
+
+    final provider = context.read<CharacterProvider>();
+
+    if (_isEditing) {
+      provider.updateAbility(
+        abilityId: widget.existingAbility!.id,
+        actionType: _selectedCategory,
+        name: _nameController.text,
+        description: _descriptionController.text,
+        type: _isPassive ? null : _selectedType,
+        relatedStat: _isPassive ? '' : _selectedRelatedStat,
+        attackType: _isPassive ? 'none' : _selectedAttackType,
+        damageDice: _isPassive ? null : _damageDiceController.text,
+        tacticalSummary: _tacticalSummaryController.text,
+        tacticalRole: _isPassive ? _selectedTacticalRole : null,
+        isScalable: !_isPassive && _isScalable,
+        baseLevel: (!_isPassive && _isScalable) ? (int.tryParse(_baseLevelController.text) ?? 0) : 0,
+        scalingFormula: (!_isPassive && _isScalable) ? _scalingFormulaController.text : null,
+        hasCharges: _hasCharges,
+        maxCharges: _hasCharges ? (int.tryParse(_maxChargesController.text) ?? 1) : 0,
+      );
+    } else {
+      provider.addAbility(
+        actionType: _selectedCategory,
+        name: _nameController.text,
+        description: _descriptionController.text,
+        type: _isPassive ? null : _selectedType,
+        relatedStat: _isPassive ? '' : _selectedRelatedStat,
+        attackType: _isPassive ? 'none' : _selectedAttackType,
+        damageDice: _isPassive ? null : _damageDiceController.text,
+        tacticalSummary: _tacticalSummaryController.text,
+        tacticalRole: _isPassive ? _selectedTacticalRole : null,
+        isScalable: !_isPassive && _isScalable,
+        baseLevel: (!_isPassive && _isScalable) ? (int.tryParse(_baseLevelController.text) ?? 0) : 0,
+        scalingFormula: (!_isPassive && _isScalable) ? _scalingFormulaController.text : null,
+        hasCharges: _hasCharges,
+        maxCharges: _hasCharges ? (int.tryParse(_maxChargesController.text) ?? 1) : 0,
+      );
+    }
+
+    Navigator.of(context).pop();
+  }
+
+  Widget _buildDropdown({
+    required String label,
+    required String value,
+    required List<(String key, String label)> options,
+    required ValueChanged<String> onChanged,
+  }) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
+      items: [
+        for (final option in options) DropdownMenuItem(value: option.$1, child: Text(option.$2)),
+      ],
+      onChanged: (newValue) {
+        if (newValue == null) return;
+        onChanged(newValue);
+      },
+    );
+  }
+
+  /// Campos que solo tienen sentido para acción/adicional/reacción — una
+  /// pasiva nunca se tira, así que stat/ataque/daño/escalado no aplican.
+  List<Widget> _buildTappableAdvancedFields() {
+    return [
+      _buildDropdown(
+        label: 'Tipo',
+        value: _selectedType,
+        options: _types,
+        onChanged: (v) => setState(() => _selectedType = v),
+      ),
+      const SizedBox(height: 12),
+      _buildDropdown(
+        label: 'Stat asociada',
+        value: _selectedRelatedStat,
+        options: _relatedStats,
+        onChanged: (v) => setState(() => _selectedRelatedStat = v),
+      ),
+      const SizedBox(height: 12),
+      _buildDropdown(
+        label: 'Tipo de tirada',
+        value: _selectedAttackType,
+        options: _attackTypes,
+        onChanged: (v) => setState(() => _selectedAttackType = v),
+      ),
+      const SizedBox(height: 12),
+      TextFormField(
+        controller: _damageDiceController,
+        decoration: const InputDecoration(
+          labelText: 'Dado de daño (opcional)',
+          hintText: 'Ej: 2d6+3',
+          border: OutlineInputBorder(),
+        ),
+      ),
+      const SizedBox(height: 12),
+      SwitchListTile.adaptive(
+        contentPadding: EdgeInsets.zero,
+        title: const Text('Escalable con nivel de conjuro'),
+        value: _isScalable,
+        onChanged: (v) => setState(() => _isScalable = v),
+      ),
+      if (_isScalable) ...[
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _baseLevelController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Nivel base',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              flex: 2,
+              child: TextFormField(
+                controller: _scalingFormulaController,
+                decoration: const InputDecoration(
+                  labelText: 'Fórmula de escalado',
+                  hintText: 'Ej: 1d6',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (!_isScalable) return null;
+                  final text = (value ?? '').trim();
+                  if (text.isEmpty) return null; // opcional: escalable sin fórmula es válido, solo no se resuelve en combate
+                  if (!_looksLikeValidScalingFormula(text)) {
+                    return 'Formato inválido. Usa "1d6", "2d4+3" u "8" (plano)';
+                  }
+                  return null;
+                },
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+      ],
+    ];
+  }
+
+  /// Solo relevante en pasivas: el HUD las agrupa en el tab de Turno bajo
+  /// esta etiqueta (ver _PassivesSection).
+  List<Widget> _buildPassiveAdvancedFields() {
+    return [
+      _buildDropdown(
+        label: 'Rol táctico',
+        value: _selectedTacticalRole,
+        options: _tacticalRoles,
+        onChanged: (v) => setState(() => _selectedTacticalRole = v),
+      ),
+      const SizedBox(height: 12),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomInset),
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  _isEditing ? 'Editar Habilidad' : 'Nueva Habilidad',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _nameController,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Nombre',
+                    hintText: 'Ej: Golpe Aturdidor',
+                    border: OutlineInputBorder(),
+                  ),
+                  textInputAction: TextInputAction.next,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'El nombre es obligatorio';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _descriptionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Descripción',
+                    hintText: 'Qué hace esta habilidad...',
+                    border: OutlineInputBorder(),
+                    alignLabelWithHint: true,
+                  ),
+                  minLines: 3,
+                  maxLines: 5,
+                  textInputAction: TextInputAction.done,
+                ),
+                const SizedBox(height: 12),
+                _buildDropdown(
+                  label: 'Tipo de acción',
+                  value: _selectedCategory,
+                  options: _categories,
+                  onChanged: (v) => setState(() => _selectedCategory = v),
+                ),
+                const SizedBox(height: 8),
+                // Bloque avanzado: colapsado por defecto. Usamos Offstage en
+                // vez de ExpansionTile.children para que los TextFormField
+                // de dentro sigan montados (y por tanto se validen) aunque
+                // el usuario los tenga visualmente ocultos — así un error
+                // como una fórmula de escalado mal escrita no se "pierde"
+                // solo por estar el panel cerrado.
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: () => setState(() => _advancedExpanded = !_advancedExpanded),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Row(
+                        children: [
+                          Icon(
+                            _advancedExpanded ? Icons.expand_less : Icons.expand_more,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 6),
+                          const Text('Avanzado (opcional)'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Offstage(
+                  offstage: !_advancedExpanded,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        ..._isPassive ? _buildPassiveAdvancedFields() : _buildTappableAdvancedFields(),
+                        SwitchListTile.adaptive(
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text('Tiene cargas propias'),
+                          subtitle: const Text('Ej: una vara mágica con 3 usos al día'),
+                          value: _hasCharges,
+                          onChanged: (v) => setState(() => _hasCharges = v),
+                        ),
+                        if (_hasCharges) ...[
+                          TextFormField(
+                            controller: _maxChargesController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              labelText: 'Cargas máximas',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                        TextFormField(
+                          controller: _tacticalSummaryController,
+                          decoration: const InputDecoration(
+                            labelText: 'Resumen táctico (opcional)',
+                            hintText: 'Chuleta mecánica rápida...',
+                            border: OutlineInputBorder(),
+                            alignLabelWithHint: true,
+                          ),
+                          minLines: 2,
+                          maxLines: 3,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                FilledButton.icon(
+                  onPressed: _submit,
+                  icon: const Icon(Icons.check),
+                  label: Text(_isEditing ? 'Guardar Cambios' : 'Guardar Habilidad'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Menú de opciones (⋮) que agrupa Editar y Eliminar en un único botón, en
+/// vez de dos iconos sueltos pegados al icono de dados. Dos motivos:
+///   1. Un solo objetivo de toque cerca de la zona "tocar para tirar" en
+///      vez de dos, con el tamaño de toque estándar de Material (48dp,
+///      sin forzar visualDensity compacto ni constraints a cero como
+///      tenían los botones sueltos) — mucho más difícil rozarlo sin
+///      querer al intentar tocar el resto de la tarjeta.
+///   2. Borrar/editar pasan a requerir dos toques deliberados (abrir menú
+///      → elegir opción) en vez de uno solo, lo que por sí mismo reduce
+///      las pulsaciones accidentales incluso antes de llegar al diálogo
+///      de confirmación de borrado.
+class _AbilityOptionsMenu extends StatelessWidget {
+  final Ability ability;
+  final String categoryKey;
+
+  const _AbilityOptionsMenu({required this.ability, required this.categoryKey});
+
+  void _openEditSheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _AddAbilitySheet(existingAbility: ability, existingCategory: categoryKey),
+    );
+  }
+
+  Future<void> _confirmAndDelete(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('¿Eliminar habilidad?'),
+          content: Text(
+            'Vas a eliminar "${ability.name}" de la ficha. Esta acción no se puede deshacer.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton.tonal(
+              style: FilledButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Eliminar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true && context.mounted) {
+      context.read<CharacterProvider>().removeAbility(ability.id);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('"${ability.name}" eliminada')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // PopupMenuButton (como IconButton) resuelve el gesto sobre sí mismo
+    // antes de que llegue al InkWell/ExpansionTile padre, así que no hace
+    // falta ningún truco extra para que abrir el menú no dispare también
+    // el Protocolo de Dados o el plegado de la tarjeta.
+    return PopupMenuButton<String>(
+      tooltip: 'Opciones de la habilidad',
+      icon: Icon(Icons.more_vert, size: 20, color: context.appColors.textSecondary),
+      onSelected: (value) {
+        if (value == 'edit') {
+          _openEditSheet(context);
+        } else if (value == 'delete') {
+          _confirmAndDelete(context);
+        }
+      },
+      itemBuilder: (menuContext) => [
+        const PopupMenuItem(
+          value: 'edit',
+          child: ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(Icons.edit_outlined),
+            title: Text('Editar'),
+          ),
+        ),
+        PopupMenuItem(
+          value: 'delete',
+          child: ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+            title: Text('Eliminar', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          ),
+        ),
+      ],
     );
   }
 }

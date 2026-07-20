@@ -37,6 +37,8 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   late final Animation<double> _buttonFade;
   late final Animation<Offset> _buttonSlide;
 
+  final TextEditingController _urlController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -80,6 +82,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   @override
   void dispose() {
     _controller.dispose();
+    _urlController.dispose();
     super.dispose();
   }
 
@@ -102,6 +105,53 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     } catch (_) {
       return _fallbackAccent;
     }
+  }
+
+  /// Único punto de navegación hacia `PromptScreen`, tanto para el atajo
+  /// "Iniciar Extracción" (con el enlace de Nivel20 ya pegado) como para
+  /// "Ensamblaje Manual" (sin enlace). Toda la lógica de verdad — resolver
+  /// el enlace, descargar y limpiar la ficha, generar el prompt, copiarlo,
+  /// y luego pegar/importar el JSON que devuelva la IA — vive en
+  /// `PromptScreen`/`Nivel20Extractor`/`CharacterProvider`; aquí no se
+  /// duplica nada de eso, así que no hay ningún punto en el que el
+  /// personaje se importe "directo" sin pasar por copiar o continuar.
+  void _goToPromptScreen({String? nivel20Link}) {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 500),
+        pageBuilder: (_, animation, __) => PromptScreen(
+          initialNivel20Link: nivel20Link,
+        ),
+        transitionsBuilder: (_, animation, __, child) {
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0.05, 0),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOutCubic,
+              )),
+              child: child,
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _handleExtractionShortcut() {
+    final link = _urlController.text.trim();
+    if (link.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pega primero el enlace de tu ficha de Nivel20.'),
+        ),
+      );
+      return;
+    }
+    _goToPromptScreen(nivel20Link: link);
   }
 
   @override
@@ -178,124 +228,182 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 
                 const SizedBox(height: 44),
 
-                // Tarjeta con los pain points — panel plano, borde fino,
-                // sin sombras pesadas: estética "industrial stark".
+                // Tarjeta destacada: importación desde Nivel20 — panel
+                // plano, borde fino, sin sombras pesadas, en línea con la
+                // estética "industrial stark" del resto de la pantalla.
                 _animated(
                   fade: _cardFade,
                   slide: _cardSlide,
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 20),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.03),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.white.withOpacity(0.08)),
-                        ),
-                        child: Column(
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.03),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: accent.withOpacity(0.28), width: 1),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            _PainPoint(
-                              accent: accent,
-                              icon: Icons.flash_on_rounded,
-                              text: '¿Cansado de perderte en mitad del combate?',
+                            Container(
+                              padding: const EdgeInsets.all(9),
+                              decoration: BoxDecoration(
+                                color: accent.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: accent.withOpacity(0.25), width: 1),
+                              ),
+                              child: Icon(Icons.bolt_rounded, color: accent, size: 18),
                             ),
-                            const _Divider(),
-                            _PainPoint(
-                              accent: accent,
-                              icon: Icons.security_rounded,
-                              text: '¿Harto de buscar dónde está tu clase de armadura?',
-                            ),
-                            const _Divider(),
-                            _PainPoint(
-                              accent: accent,
-                              icon: Icons.auto_fix_high_rounded,
-                              text: '¿Se te hace bola tu lista infinita de conjuros?',
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Importar desde Nivel20 (Recomendado)',
+                                style: GoogleFonts.inter(
+                                  fontSize: 15.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                  letterSpacing: 0.1,
+                                ),
+                              ),
                             ),
                           ],
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'EasyD&D lo resuelve.',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
-                          fontSize: 14.5,
-                          color: Colors.white.withOpacity(0.5),
-                          fontStyle: FontStyle.italic,
+                        const SizedBox(height: 20),
+                        TextField(
+                          controller: _urlController,
+                          keyboardType: TextInputType.url,
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: Colors.white.withOpacity(0.92),
+                          ),
+                          cursorColor: accent,
+                          decoration: InputDecoration(
+                            hintText: 'Pega aquí la URL de tu ficha de Nivel20',
+                            hintStyle: GoogleFonts.inter(
+                              fontSize: 13.5,
+                              color: Colors.white.withOpacity(0.32),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white.withOpacity(0.03),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 14,
+                              horizontal: 16,
+                            ),
+                            prefixIcon: Icon(
+                              Icons.link_rounded,
+                              size: 19,
+                              color: Colors.white.withOpacity(0.35),
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: accent.withOpacity(0.7), width: 1.3),
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 12),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              Icons.info_outline_rounded,
+                              size: 15,
+                              color: Colors.white.withOpacity(0.38),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Nota: Vale tanto el enlace de tu ficha como el enlace corto '
+                                'de "Compartir" — la app detecta cuál es y resuelve el resto. '
+                                'Te llevará al prompt ya con tu ficha incrustada: cópialo, '
+                                'pégalo en tu IA de confianza, y luego pega aquí el JSON (o '
+                                'importa el archivo) que te devuelva.',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  height: 1.35,
+                                  fontStyle: FontStyle.italic,
+                                  color: Colors.white.withOpacity(0.4),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(16),
+                              onTap: _handleExtractionShortcut,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 17),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(16),
+                                  color: accent.withOpacity(0.06),
+                                  border: Border.all(color: accent, width: 1.4),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: accent.withOpacity(0.22),
+                                      blurRadius: 20,
+                                      spreadRadius: -6,
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.download_rounded, color: accent, size: 20),
+                                    const SizedBox(width: 10),
+                                    Text(
+                                      'Iniciar Extracción',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 15.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: accent,
+                                        letterSpacing: 0.3,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
 
-                const SizedBox(height: 44),
+                const SizedBox(height: 22),
 
-                // Botón principal — minimalista, borde fino que reacciona
-                // al color dinámico. Sin relleno degradado: el acento vive
-                // en el borde, el icono y el texto, no en un bloque sólido.
+                // Opción secundaria: el método manual de siempre, discreto
+                // y sin competir visualmente con la tarjeta principal.
                 _animated(
                   fade: _buttonFade,
                   slide: _buttonSlide,
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(16),
-                        onTap: () {
-                          Navigator.of(context).push(
-                            PageRouteBuilder(
-                              transitionDuration: const Duration(milliseconds: 500),
-                              pageBuilder: (_, animation, __) => const PromptScreen(),
-                              transitionsBuilder: (_, animation, __, child) {
-                                return FadeTransition(
-                                  opacity: animation,
-                                  child: SlideTransition(
-                                    position: Tween<Offset>(
-                                      begin: const Offset(0.05, 0),
-                                      end: Offset.zero,
-                                    ).animate(CurvedAnimation(
-                                      parent: animation,
-                                      curve: Curves.easeOutCubic,
-                                    )),
-                                    child: child,
-                                  ),
-                                );
-                              },
-                            ),
-                          );
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 17),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            color: accent.withOpacity(0.06),
-                            border: Border.all(color: accent, width: 1.4),
-                            boxShadow: [
-                              BoxShadow(
-                                color: accent.withOpacity(0.22),
-                                blurRadius: 20,
-                                spreadRadius: -6,
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.arrow_forward_rounded, color: accent, size: 20),
-                              const SizedBox(width: 10),
-                              Text(
-                                'Continuar',
-                                style: GoogleFonts.inter(
-                                  fontSize: 15.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: accent,
-                                  letterSpacing: 0.3,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                  child: TextButton(
+                    onPressed: _goToPromptScreen,
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white.withOpacity(0.45),
+                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                    ),
+                    child: Text(
+                      'Ensamblaje Manual (Método antiguo)',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.2,
+                        color: Colors.white.withOpacity(0.45),
                       ),
                     ),
                   ),
@@ -306,54 +414,5 @@ class _WelcomeScreenState extends State<WelcomeScreen>
         ),
       ),
     );
-  }
-}
-
-class _PainPoint extends StatelessWidget {
-  final Color accent;
-  final IconData icon;
-  final String text;
-
-  const _PainPoint({required this.accent, required this.icon, required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(9),
-            decoration: BoxDecoration(
-              color: accent.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: accent.withOpacity(0.25), width: 1),
-            ),
-            child: Icon(icon, color: accent, size: 18),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Text(
-              text,
-              style: GoogleFonts.inter(
-                fontSize: 14.5,
-                height: 1.3,
-                color: Colors.white.withOpacity(0.85),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Divider extends StatelessWidget {
-  const _Divider();
-
-  @override
-  Widget build(BuildContext context) {
-    return Divider(color: Colors.white.withOpacity(0.06), height: 1);
   }
 }

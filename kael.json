@@ -1,0 +1,734 @@
+{
+  "basic_info": {
+    "name": "Kael`nar Ardinys",
+    "race": "Kitsune",
+    "characterClass": "Mago 14 (Escuela de Evocación)",
+    "hp_max": 117,
+    "ac": 13,
+    "speed": 9
+  },
+  "purse": {
+    "gold": 0,
+    "silver": 0,
+    "copper": 0
+  },
+  "ai_tips": "Kael es un mago evocador de nivel 14 centrado en el daño elemental (sobre todo fuego, potenciado por su Bastón de fuego). Su CD de conjuro es 18 y su bonificador de ataque +10, muy altos para su nivel gracias a su Inteligencia 21. Prioriza abrir combates con Bola de fuego o Golpe de rayo (8d6, salvación de Destreza) contra grupos, y usa Rayo abrasador o Rayo de fuego contra objetivos individuales. Canalización forzada le permite hacer daño máximo con un conjuro de nivel 1-5 una vez sin coste, ideal para rematar; un segundo uso en el mismo descanso cuesta daño necrótico creciente, así que resérvalo para emergencias. Paso brumoso es su principal herramienta de escape/reposicionamiento como acción adicional. Fuera de combate, Invisibilidad mayor y Disfrazarse le dan mucho juego sigiloso, y su forma de zorro (rasgo racial) es útil para explorar o huir sin llamar la atención. Al ser un lanzador puro con poca CA (13) y sin PG de sobra para su nivel, evita el cuerpo a cuerpo y mantén Muro de fuerza o Volar en reserva para escapar de situaciones límite.",
+  "user_tactics": "",
+  "adventure_notes": "",
+  "resources": [
+    {
+      "name": "Recuperación arcana",
+      "current": 1,
+      "max": 1
+    }
+  ],
+  "inventory": {
+    "weapons": [
+      {
+        "id": "weapon-baston",
+        "name": "Bastón",
+        "attack_bonus": 4,
+        "damage": {
+          "base_dice": "1d6-1",
+          "base_type": "Contundente"
+        },
+        "conditional_damage": [
+          {
+            "condition": "Empuñado a dos manos (versátil)",
+            "damage_dice": "1d8-1",
+            "damage_type": "Contundente"
+          }
+        ],
+        "properties": [
+          "Versátil"
+        ],
+        "homebrew_effect": "",
+        "magic_charges": {
+          "has_charges": false,
+          "max": 0,
+          "current": 0
+        },
+        "success_description": "El bastón golpea con fuerza sorda al enemigo.",
+        "failure_description": "El golpe no logra atravesar la guardia enemiga.",
+        "is_unique": false
+      },
+      {
+        "id": "weapon-baston-de-fuego",
+        "name": "Bastón de fuego",
+        "attack_bonus": 4,
+        "damage": {
+          "base_dice": "1d6-1",
+          "base_type": "Contundente"
+        },
+        "conditional_damage": [
+          {
+            "condition": "Empuñado a dos manos (versátil)",
+            "damage_dice": "1d8-1",
+            "damage_type": "Contundente"
+          }
+        ],
+        "properties": [
+          "Versátil",
+          "Mágico"
+        ],
+        "homebrew_effect": "Otorga +10 a las tiradas de ataque y daño de los conjuros de fuego lanzados por su portador.",
+        "magic_charges": {
+          "has_charges": false,
+          "max": 0,
+          "current": 0
+        },
+        "success_description": "El bastón arde brevemente al conectar el golpe.",
+        "failure_description": "El bastón falla su objetivo entre chispas apagadas.",
+        "is_unique": true
+      }
+    ],
+    "mundane_items": [
+      {
+        "name": "Una aguja que nunca se dobla",
+        "description": "Pequeño objeto personal de Kael, mencionado como parte de su equipo. Su origen y posible naturaleza mágica no están detallados en la ficha.",
+        "quantity": 1
+      }
+    ]
+  },
+  "stats": {
+    "str": {
+      "name": "Fuerza",
+      "value": 9,
+      "mod": -1,
+      "description": "Mide la potencia física y capacidades deportivas"
+    },
+    "dex": {
+      "name": "Destreza",
+      "value": 15,
+      "mod": 2,
+      "description": "Mide la agilidad y los reflejos"
+    },
+    "con": {
+      "name": "Constitución",
+      "value": 18,
+      "mod": 4,
+      "description": "Mide la resistencia y la salud"
+    },
+    "int": {
+      "name": "Inteligencia",
+      "value": 21,
+      "mod": 5,
+      "description": "Mide el razonamiento y la memoria"
+    },
+    "wis": {
+      "name": "Sabiduría",
+      "value": 14,
+      "mod": 2,
+      "description": "Mide la perspicacia e intuición"
+    },
+    "cha": {
+      "name": "Carisma",
+      "value": 11,
+      "mod": 0,
+      "description": "Mide la fuerza de personalidad y la presencia"
+    }
+  },
+  "spell_slots": [
+    {
+      "level": 1,
+      "max": 4,
+      "current": 4
+    },
+    {
+      "level": 2,
+      "max": 3,
+      "current": 3
+    },
+    {
+      "level": 3,
+      "max": 3,
+      "current": 3
+    },
+    {
+      "level": 4,
+      "max": 3,
+      "current": 3
+    },
+    {
+      "level": 5,
+      "max": 2,
+      "current": 2
+    },
+    {
+      "level": 6,
+      "max": 1,
+      "current": 1
+    },
+    {
+      "level": 7,
+      "max": 1,
+      "current": 1
+    }
+  ],
+  "skills": [
+    {
+      "name": "Acrobacias",
+      "related_stat": "dex",
+      "modifier": 2
+    },
+    {
+      "name": "Arcanos",
+      "related_stat": "int",
+      "modifier": 10
+    },
+    {
+      "name": "Atletismo",
+      "related_stat": "str",
+      "modifier": -1
+    },
+    {
+      "name": "Engañar",
+      "related_stat": "cha",
+      "modifier": 0
+    },
+    {
+      "name": "Historia",
+      "related_stat": "int",
+      "modifier": 5
+    },
+    {
+      "name": "Interpretación",
+      "related_stat": "cha",
+      "modifier": 0
+    },
+    {
+      "name": "Intimidar",
+      "related_stat": "cha",
+      "modifier": 0
+    },
+    {
+      "name": "Investigación",
+      "related_stat": "int",
+      "modifier": 10
+    },
+    {
+      "name": "Juego de Manos",
+      "related_stat": "dex",
+      "modifier": 2
+    },
+    {
+      "name": "Medicina",
+      "related_stat": "wis",
+      "modifier": 2
+    },
+    {
+      "name": "Naturaleza",
+      "related_stat": "int",
+      "modifier": 5
+    },
+    {
+      "name": "Percepción",
+      "related_stat": "wis",
+      "modifier": 2
+    },
+    {
+      "name": "Perspicacia",
+      "related_stat": "wis",
+      "modifier": 2
+    },
+    {
+      "name": "Persuasión",
+      "related_stat": "cha",
+      "modifier": 0
+    },
+    {
+      "name": "Religión",
+      "related_stat": "int",
+      "modifier": 5
+    },
+    {
+      "name": "Sigilo",
+      "related_stat": "dex",
+      "modifier": 2
+    },
+    {
+      "name": "Supervivencia",
+      "related_stat": "wis",
+      "modifier": 2
+    },
+    {
+      "name": "Trato con Animales",
+      "related_stat": "wis",
+      "modifier": 2
+    }
+  ],
+  "abilities_by_action": {
+    "action": [
+      {
+        "id": "ability-ilusion-menor",
+        "name": "Ilusión Menor",
+        "type": "spell",
+        "related_stat": "int",
+        "attack_type": "none",
+        "success_description": "La ilusión engaña por completo a los presentes.",
+        "failure_description": "Un observador atento detecta el truco.",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Kael crea un sonido o la imagen de un objeto pequeño dentro del alcance, que dura mientras se mantenga el conjuro. Una criatura puede detectar el engaño con una prueba de Investigación contra la CD de conjuro de Kael.",
+        "tactical_summary": "Truco de utilidad/engaño. Alcance 30 pies, duración 1 minuto. Sin ataque ni salvación forzada."
+      },
+      {
+        "id": "ability-impacto-verdadero",
+        "name": "Impacto Verdadero",
+        "type": "spell",
+        "related_stat": "int",
+        "attack_type": "none",
+        "success_description": "Kael localiza el punto débil de su objetivo.",
+        "failure_description": "No aplica; el conjuro no puede fallar por sí mismo.",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Kael señala a un objetivo dentro del alcance, revelando sus defensas mágicamente. En su siguiente turno tiene ventaja en el primer ataque que realice contra ese objetivo, mientras dure la concentración.",
+        "tactical_summary": "Truco de apoyo ofensivo. Da ventaja en el siguiente ataque propio contra el objetivo señalado. Requiere concentración 1 asalto."
+      },
+      {
+        "id": "ability-luces-danzantes",
+        "name": "Luces Danzantes",
+        "type": "spell",
+        "related_stat": "int",
+        "attack_type": "none",
+        "success_description": "Las luces flotan siguiendo la voluntad de Kael.",
+        "failure_description": "No aplica; el conjuro no requiere tirada enfrentada.",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Kael crea hasta cuatro luces del tamaño de una antorcha, o las combina en una silueta humanoide brillante, que puede mover hasta 60 pies como acción adicional en cada turno.",
+        "tactical_summary": "Truco de utilidad/iluminación. Concentración 1 minuto, alcance 120 pies."
+      },
+      {
+        "id": "ability-mano-del-mago",
+        "name": "Mano del Mago",
+        "type": "spell",
+        "related_stat": "int",
+        "attack_type": "none",
+        "success_description": "La mano espectral manipula el objeto con precisión.",
+        "failure_description": "No aplica; el conjuro no requiere tirada enfrentada.",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Una mano espectral aparece y puede manipular objetos, abrir puertas o recipientes, o verter el contenido de un vial a distancia. No puede atacar ni transportar más de 10 libras.",
+        "tactical_summary": "Truco de utilidad. Duración 1 minuto, alcance 30 pies."
+      },
+      {
+        "id": "ability-rayo-de-fuego",
+        "name": "Rayo de Fuego",
+        "type": "spell",
+        "related_stat": "int",
+        "attack_type": "attack",
+        "success_description": "La mota de fuego incinera al objetivo.",
+        "failure_description": "El proyectil ígneo falla su objetivo.",
+        "is_scalable": true,
+        "base_level": 0,
+        "damage_dice": "1d10",
+        "scaling_formula": "1d10",
+        "lore_description": "Kael arroja una mota de fuego que hace un ataque de conjuro a distancia. El daño escala con el nivel de personaje (2d10 a nivel 5, 3d10 a nivel 11, 4d10 a nivel 17), no con espacios de conjuro. Con su Bastón de fuego equipado, recibe +10 adicional al ataque y al daño.",
+        "tactical_summary": "Ataque de conjuro a distancia 120 pies, 1d10 fuego base (actualmente 3d10 a nivel 14) + 10 por el Bastón de fuego. Incendia objetos inflamables sueltos."
+      },
+      {
+        "id": "ability-disfrazarse",
+        "name": "Disfrazarse",
+        "type": "spell",
+        "related_stat": "int",
+        "attack_type": "none",
+        "success_description": "El disfraz resulta convincente.",
+        "failure_description": "Una inspección física revela el engaño.",
+        "is_scalable": false,
+        "base_level": 1,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Kael altera su apariencia y la de su equipo durante una hora. Una criatura puede descubrir el engaño con una prueba de Investigación contra su CD de conjuro si te examina físicamente.",
+        "tactical_summary": "Utilidad de sigilo/infiltración. Duración 1 hora, alcance personal."
+      },
+      {
+        "id": "ability-manos-ardientes",
+        "name": "Manos Ardientes",
+        "type": "spell",
+        "related_stat": "int",
+        "attack_type": "save",
+        "success_description": "Las llamas envuelven a los enemigos en el cono.",
+        "failure_description": "Los objetivos logran cubrirse a tiempo y reciben solo la mitad del daño.",
+        "is_scalable": true,
+        "base_level": 1,
+        "damage_dice": "3d6",
+        "scaling_formula": "1d6",
+        "lore_description": "Kael libera una lámina de fuego en un cono de 15 pies. Cada criatura en el área hace una salvación de Destreza: si falla recibe el daño completo, si tiene éxito recibe la mitad. Quema objetos inflamables sueltos en el área.",
+        "tactical_summary": "Salvación de Destreza (mitad), cono de 15 pies, 3d6 fuego + 1d6 por nivel de espacio superior a 1."
+      },
+      {
+        "id": "ability-retirada-expeditiva",
+        "name": "Retirada Expeditiva",
+        "type": "spell",
+        "related_stat": "int",
+        "attack_type": "none",
+        "success_description": "Kael se desplaza a una velocidad vertiginosa.",
+        "failure_description": "No aplica; el conjuro no requiere tirada enfrentada.",
+        "is_scalable": false,
+        "base_level": 1,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Mientras dura el conjuro, Kael puede usar la acción de esprintar como acción adicional en cada uno de sus turnos.",
+        "tactical_summary": "Movilidad. Concentración 10 minutos, acción adicional para lanzarlo."
+      },
+      {
+        "id": "ability-terribles-carcajadas",
+        "name": "Terribles Carcajadas",
+        "type": "spell",
+        "related_stat": "int",
+        "attack_type": "save",
+        "success_description": "El objetivo cae al suelo entre carcajadas incontrolables.",
+        "failure_description": "El objetivo resiste el efecto cómico del conjuro.",
+        "is_scalable": false,
+        "base_level": 1,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Una criatura elegida debe superar una salvación de Sabiduría o quedar tumbada e incapacitada, retorciéndose de la risa. Puede repetir la salvación al final de cada turno o al recibir daño (con ventaja en este caso). No afecta a criaturas con Inteligencia 4 o menos.",
+        "tactical_summary": "Control, salvación de Sabiduría niega. Alcance 30 pies, concentración 1 minuto."
+      },
+      {
+        "id": "ability-rayo-abrasador",
+        "name": "Rayo Abrasador",
+        "type": "spell",
+        "related_stat": "int",
+        "attack_type": "attack",
+        "success_description": "Los rayos de fuego calcinan a los objetivos.",
+        "failure_description": "Los rayos se disipan sin encontrar blanco.",
+        "is_scalable": true,
+        "base_level": 2,
+        "damage_dice": "2d6",
+        "scaling_formula": "2d6",
+        "lore_description": "Kael crea tres rayos de fuego, repartibles entre uno o varios objetivos dentro del alcance. Cada rayo requiere un ataque de conjuro a distancia independiente. Con el Bastón de fuego equipado, cada rayo recibe +10 al ataque y al daño.",
+        "tactical_summary": "3 ataques de conjuro a distancia (120 pies), 2d6 fuego cada uno + 10 por el Bastón de fuego; +1 rayo adicional (2d6) por cada nivel de espacio superior a 2."
+      },
+      {
+        "id": "ability-rayo-de-debilitamiento",
+        "name": "Rayo de Debilitamiento",
+        "type": "spell",
+        "related_stat": "int",
+        "attack_type": "attack",
+        "success_description": "El rayo negro drena la fuerza del objetivo.",
+        "failure_description": "El rayo de energía debilitante no impacta.",
+        "is_scalable": false,
+        "base_level": 2,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Un rayo negro de energía surge hacia una criatura mediante un ataque de conjuro a distancia. Si impacta, el objetivo solo inflige la mitad de daño con ataques de arma basados en Fuerza hasta que termine el conjuro (el objetivo puede salvar Constitución al final de cada uno de sus turnos para terminarlo).",
+        "tactical_summary": "Debuff de control, ataque de conjuro a distancia (60 pies). Sin daño directo. Concentración 1 minuto."
+      },
+      {
+        "id": "ability-bola-de-fuego",
+        "name": "Bola de Fuego",
+        "type": "spell",
+        "related_stat": "int",
+        "attack_type": "save",
+        "success_description": "La esfera de fuego arrasa el área señalada.",
+        "failure_description": "Los objetivos logran protegerse parcialmente y reciben la mitad del daño.",
+        "is_scalable": true,
+        "base_level": 3,
+        "damage_dice": "8d6",
+        "scaling_formula": "1d6",
+        "lore_description": "Un rayo surge del dedo de Kael y explota en una esfera de fuego de 20 pies de radio. Cada criatura en el área hace una salvación de Destreza: mitad de daño si tiene éxito. Incinera objetos inflamables sueltos. Con Canalización forzada, Kael puede hacer que este conjuro inflija el máximo daño posible.",
+        "tactical_summary": "Salvación de Destreza (mitad), esfera de 20 pies, alcance 150 pies. 8d6 fuego + 1d6 por nivel de espacio superior a 3. Candidato ideal para Canalización forzada."
+      },
+      {
+        "id": "ability-golpe-de-rayo",
+        "name": "Golpe de Rayo",
+        "type": "spell",
+        "related_stat": "int",
+        "attack_type": "save",
+        "success_description": "El rayo atraviesa la línea calcinando todo a su paso.",
+        "failure_description": "Los objetivos esquivan parcialmente el relámpago y reciben la mitad del daño.",
+        "is_scalable": true,
+        "base_level": 3,
+        "damage_dice": "8d6",
+        "scaling_formula": "1d6",
+        "lore_description": "Un rayo de 100 pies de largo y 5 de ancho surge de Kael en la dirección elegida. Cada criatura en la línea hace una salvación de Destreza: mitad de daño si tiene éxito. Quema objetos inflamables sueltos en el área.",
+        "tactical_summary": "Salvación de Destreza (mitad), línea de 100x5 pies. 8d6 relámpago + 1d6 por nivel de espacio superior a 3."
+      },
+      {
+        "id": "ability-volar",
+        "name": "Volar",
+        "type": "spell",
+        "related_stat": "int",
+        "attack_type": "none",
+        "success_description": "El objetivo se eleva con una velocidad de vuelo de 60 pies.",
+        "failure_description": "No aplica; el conjuro no requiere tirada enfrentada.",
+        "is_scalable": false,
+        "base_level": 3,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Kael toca a una criatura voluntaria, que obtiene una velocidad de vuelo de 60 pies mientras dure la concentración. Al terminar el conjuro, el objetivo cae si aún está en el aire, salvo que detenga la caída de otro modo. Lanzado con un espacio de nivel 4 o superior, puede afectar a una criatura adicional por cada nivel por encima de 3.",
+        "tactical_summary": "Movilidad/apoyo, alcance toque, concentración 10 minutos. Escalable a más objetivos (no a más daño) con espacios superiores."
+      },
+      {
+        "id": "ability-invisibilidad-mayor",
+        "name": "Invisibilidad Mayor",
+        "type": "spell",
+        "related_stat": "int",
+        "attack_type": "none",
+        "success_description": "Kael o su aliado desaparecen de la vista.",
+        "failure_description": "No aplica; el conjuro no requiere tirada enfrentada.",
+        "is_scalable": false,
+        "base_level": 4,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Kael o una criatura que toca se vuelve invisible, junto con todo lo que lleve puesto o transporte, mientras dure la concentración.",
+        "tactical_summary": "Sigilo/protección, alcance toque, concentración 1 minuto. Muy útil combinado con ataques a distancia."
+      },
+      {
+        "id": "ability-muro-de-fuego",
+        "name": "Muro de Fuego",
+        "type": "spell",
+        "related_stat": "int",
+        "attack_type": "save",
+        "success_description": "El muro de llamas calcina a quien se acerca demasiado.",
+        "failure_description": "Las criaturas logran esquivar parcialmente el impacto inicial, recibiendo la mitad del daño.",
+        "is_scalable": true,
+        "base_level": 4,
+        "damage_dice": "5d8",
+        "scaling_formula": "1d8",
+        "lore_description": "Kael crea un muro de fuego opaco (recto o en anillo) sobre una superficie sólida. Al aparecer, las criaturas en su área hacen una salvación de Destreza (mitad si tienen éxito). Un lado del muro, elegido por Kael, inflige daño adicional a quien termine su turno junto a él o lo cruce.",
+        "tactical_summary": "Salvación de Destreza (mitad) al aparecer, 5d8 fuego + 1d8 por nivel de espacio superior a 4. Control de área, concentración 1 minuto."
+      },
+      {
+        "id": "ability-tormenta-de-hielo",
+        "name": "Tormenta de Hielo",
+        "type": "spell",
+        "related_stat": "int",
+        "attack_type": "save",
+        "success_description": "El granizo golpea con fuerza a los enemigos en el área.",
+        "failure_description": "Los objetivos logran cubrirse y reciben solo la mitad del daño.",
+        "is_scalable": true,
+        "base_level": 4,
+        "damage_dice": "2d8+4d6",
+        "scaling_formula": "1d8",
+        "lore_description": "Cae granizo en un cilindro de 20 pies de radio y 40 de altura. Cada criatura en el área hace una salvación de Destreza: mitad de daño si tiene éxito. El área se convierte en terreno difícil hasta el final del siguiente turno de Kael.",
+        "tactical_summary": "Salvación de Destreza (mitad), cilindro de 20 pies. 2d8 contundente + 4d6 frío; la parte contundente sube 1d8 por nivel de espacio superior a 4. Alcance 300 pies."
+      },
+      {
+        "id": "ability-conjurar-elemental",
+        "name": "Conjurar Elemental",
+        "type": "spell",
+        "related_stat": "int",
+        "attack_type": "none",
+        "success_description": "El elemental invocado obedece las órdenes de Kael.",
+        "failure_description": "No aplica; el conjuro no requiere tirada enfrentada.",
+        "is_scalable": false,
+        "base_level": 5,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Kael invoca a un elemental (aire, tierra, fuego o agua, VD 5 o menos) que actúa como aliado amistoso mientras Kael mantenga la concentración. Si Kael se desconcentra, el elemental se vuelve hostil. Lanzado con espacios superiores, el VD del elemental invocado aumenta. Tiempo de lanzamiento real: 1 minuto.",
+        "tactical_summary": "Invocación de un aliado temporal, concentración 1 hora. Tiempo de lanzamiento 1 minuto, no apto para combate reactivo inmediato."
+      },
+      {
+        "id": "ability-muro-de-fuerza",
+        "name": "Muro de Fuerza",
+        "type": "spell",
+        "related_stat": "int",
+        "attack_type": "none",
+        "success_description": "El muro invisible bloquea por completo el paso.",
+        "failure_description": "No aplica; el conjuro no requiere tirada enfrentada.",
+        "is_scalable": false,
+        "base_level": 5,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Kael erige un muro de fuerza invisible e indestructible (salvo por Desintegrar), en forma de cúpula, esfera o hasta 10 paneles cuadrados. Bloquea el paso físico y el viaje etéreo mientras dure la concentración.",
+        "tactical_summary": "Control de área/protección total. Concentración 10 minutos, alcance 120 pies. Ideal para bloquear pasillos o proteger a aliados."
+      },
+      {
+        "id": "ability-transmigracion",
+        "name": "Transmigración",
+        "type": "spell",
+        "related_stat": "int",
+        "attack_type": "save",
+        "success_description": "El alma de Kael se apodera del cuerpo objetivo.",
+        "failure_description": "El objetivo resiste el intento de posesión.",
+        "is_scalable": false,
+        "base_level": 6,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "El cuerpo de Kael queda catatónico mientras su alma entra en un recipiente ornamental de al menos 500 po. Desde allí puede intentar poseer a un humanoide a 100 pies o menos: el objetivo hace una salvación de Carisma para resistir. Si Kael falla el intento sobre alguien, no puede reintentarlo con esa criatura hasta pasadas 24 horas. Tiempo de lanzamiento real: 1 minuto.",
+        "tactical_summary": "Control/posesión de alto riesgo, salvación de Carisma niega. Requiere recipiente material costoso; tiempo de lanzamiento 1 minuto."
+      },
+      {
+        "id": "ability-espada-arcana",
+        "name": "Espada Arcana",
+        "type": "spell",
+        "related_stat": "int",
+        "attack_type": "attack",
+        "success_description": "La espada de fuerza atraviesa al objetivo.",
+        "failure_description": "La espada espectral falla su golpe.",
+        "is_scalable": false,
+        "base_level": 7,
+        "damage_dice": "3d10",
+        "scaling_formula": "",
+        "lore_description": "Kael invoca una hoja de fuerza flotante que ataca cuerpo a cuerpo al aparecer. Mientras dure la concentración, puede usar una acción adicional en cada turno para mover la espada hasta 20 pies y repetir el ataque contra el mismo objetivo u otro distinto.",
+        "tactical_summary": "Ataque de conjuro cuerpo a cuerpo, 3d10 de fuerza. Concentración 1 minuto, reutilizable como acción adicional en turnos siguientes."
+      }
+    ],
+    "bonus_action": [
+      {
+        "id": "ability-paso-brumoso",
+        "name": "Paso Brumoso",
+        "type": "spell",
+        "related_stat": "int",
+        "attack_type": "none",
+        "success_description": "Kael se disuelve en bruma plateada y reaparece en el lugar elegido.",
+        "failure_description": "No aplica; el conjuro no puede fallar por sí mismo.",
+        "is_scalable": false,
+        "base_level": 2,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Rodeado brevemente de una bruma plateada, Kael se teletransporta hasta 30 pies a un espacio desocupado que pueda ver.",
+        "tactical_summary": "Teletransporte de escape/reposicionamiento, acción adicional, alcance personal 30 pies."
+      }
+    ],
+    "reaction": [],
+    "passive": [
+      {
+        "id": "ability-forma-cambiante",
+        "name": "Forma Cambiante",
+        "type": "racial_trait",
+        "lore_description": "Kael puede usar su acción para transformarse en zorro. Conserva sus estadísticas salvo el tamaño, y su equipo se funde con la nueva forma. Puede mantenerla tantas horas como su bonificador de Sabiduría (mínimo 1) antes de volver a su forma habitual, o revertir antes con una acción adicional. Dispone de dos usos, recuperables tras un descanso corto o largo.",
+        "tactical_summary": "2 usos por descanso (corto o largo). Útil para sigilo, huida o exploración discreta.",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-astucia-arcana",
+        "name": "Astucia Arcana",
+        "type": "racial_trait",
+        "lore_description": "Kael tiene ventaja en todas las tiradas de salvación de Inteligencia, Sabiduría y Carisma contra efectos mágicos.",
+        "tactical_summary": "Ventaja en salvaciones de Int/Sab/Car contra magia.",
+        "tactical_role": "Defensivo"
+      },
+      {
+        "id": "ability-encuentro-mistico",
+        "name": "Encuentro Místico",
+        "type": "racial_trait",
+        "lore_description": "Cuando Kael hace una prueba de Sabiduría (Perspicacia) a solas con su interlocutor, se considera competente y duplica su bonificador de competencia en la prueba.",
+        "tactical_summary": "Duplica el bonificador de competencia en Perspicacia durante conversaciones a solas.",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-mordisco",
+        "name": "Mordisco (solo en forma de zorro)",
+        "type": "racial_trait",
+        "lore_description": "En su forma de zorro, Kael posee un ataque natural de mordisco cuerpo a cuerpo (alcance 5 pies, 1d6 perforante), con el que se considera competente.",
+        "tactical_summary": "Ataque natural en forma de zorro: 1d6 perforante.",
+        "tactical_role": "Ofensivo"
+      },
+      {
+        "id": "ability-furtivo",
+        "name": "Furtivo (solo en forma de zorro)",
+        "type": "racial_trait",
+        "lore_description": "En su forma de zorro, Kael se considera competente en Destreza (Sigilo) y duplica su bonificador de competencia en dichas pruebas.",
+        "tactical_summary": "Duplica el bonificador de competencia en Sigilo mientras está en forma de zorro.",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-olfato-y-oido-agudizados",
+        "name": "Olfato y Oído Agudizados (solo en forma de zorro)",
+        "type": "racial_trait",
+        "lore_description": "En su forma de zorro, Kael tiene ventaja en las pruebas de Sabiduría (Percepción) basadas en el olfato o el oído.",
+        "tactical_summary": "Ventaja en Percepción por olfato/oído en forma de zorro.",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-idiomas",
+        "name": "Idiomas",
+        "type": "racial_trait",
+        "lore_description": "Kael puede hablar, leer y escribir común y gengo.",
+        "tactical_summary": "Conocimiento de los idiomas Común y Gengo.",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-truco-potenciado",
+        "name": "Truco Potenciado",
+        "type": "class_feature",
+        "lore_description": "El daño de los trucos de Kael afecta incluso a criaturas que superan la salvación contra su efecto: reciben la mitad del daño (si lo hay), aunque no sufren los efectos adicionales del truco.",
+        "tactical_summary": "Sus trucos con salvación nunca fallan del todo: mínimo mitad de daño incluso si el objetivo salva.",
+        "tactical_role": "Ofensivo"
+      },
+      {
+        "id": "ability-canalizacion-forzada",
+        "name": "Canalización Forzada",
+        "type": "class_feature",
+        "lore_description": "Kael puede lanzar un conjuro de mago de nivel 1 a 5 que inflija daño y hacer que inflija el máximo daño posible. La primera vez que lo use en el día no sufre penalización, pero cada uso adicional antes de un descanso largo le inflige daño necrótico creciente (2d12 por nivel de conjuro la primera repetición, aumentando 1d12 por cada uso extra), daño que ignora resistencia e inmunidad.",
+        "tactical_summary": "Nova de daño máximo en un conjuro de nivel 1-5 (ideal con Bola de fuego o Muro de fuego). Un uso gratuito por día; usos extra cuestan daño necrótico propio creciente.",
+        "tactical_role": "Ofensivo"
+      },
+      {
+        "id": "ability-copiar-un-conjuro-en-el-libro",
+        "name": "Copiar un Conjuro en el Libro",
+        "type": "class_feature",
+        "lore_description": "Cuando Kael encuentra un conjuro de mago de nivel 1 o superior que pueda preparar, puede añadirlo a su libro de conjuros invirtiendo 2 horas y 50 po por nivel del conjuro para descifrarlo y transcribirlo.",
+        "tactical_summary": "Permite ampliar el repertorio de conjuros conocidos entre aventuras (2h y 50po por nivel de conjuro).",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-erudito-de-la-evocacion",
+        "name": "Erudito de la Evocación",
+        "type": "class_feature",
+        "lore_description": "El coste en oro y tiempo que Kael debe invertir para copiar un conjuro de evocación en su libro de conjuros se reduce a la mitad.",
+        "tactical_summary": "Copiar conjuros de evocación cuesta la mitad de tiempo y oro.",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-esculpir-conjuros",
+        "name": "Esculpir Conjuros",
+        "type": "class_feature",
+        "lore_description": "Al lanzar un conjuro de evocación que afecte a otras criaturas que pueda ver, Kael puede elegir a un número de ellas igual a 1 + el nivel del conjuro para que superen automáticamente la salvación y no reciban daño si normalmente lo reducirían a la mitad.",
+        "tactical_summary": "Protege automáticamente a 1 + nivel del conjuro aliados de sus propios conjuros de evocación en área.",
+        "tactical_role": "Defensivo"
+      },
+      {
+        "id": "ability-evocacion-potenciada",
+        "name": "Evocación Potenciada",
+        "type": "class_feature",
+        "lore_description": "Kael añade su modificador de Inteligencia a una tirada de daño de cualquier conjuro de evocación que lance.",
+        "tactical_summary": "Suma +5 de daño extra (mod. Inteligencia) a un conjuro de evocación por lanzamiento.",
+        "tactical_role": "Ofensivo"
+      },
+      {
+        "id": "ability-lanzamiento-de-conjuros",
+        "name": "Lanzamiento de Conjuros",
+        "type": "class_feature",
+        "lore_description": "Como mago, Kael dispone de un libro de conjuros arcanos y del método de preparación de conjuros propio de la clase.",
+        "tactical_summary": "Rasgo base que habilita el lanzamiento de conjuros de mago mediante preparación diaria.",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-mejora-de-caracteristica",
+        "name": "Mejora de Característica",
+        "type": "class_feature",
+        "lore_description": "En los niveles 4, 8, 12, 16 y 19, Kael puede aumentar una puntuación de característica en 2, o dos puntuaciones en 1 cada una (o adquirir una dote), sin superar el máximo de 20.",
+        "tactical_summary": "Mejoras de característica ya aplicadas a lo largo de su progresión hasta nivel 14.",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-remplazar-el-libro",
+        "name": "Remplazar el Libro",
+        "type": "class_feature",
+        "lore_description": "Kael puede copiar un conjuro de su propio libro de conjuros a otro libro (por ejemplo, una copia de seguridad) invirtiendo solo 1 hora y 10 po por nivel del conjuro copiado. Si pierde su libro, puede usar el mismo proceso para transcribir los conjuros que tuviera preparados en uno nuevo.",
+        "tactical_summary": "Permite duplicar o restaurar su libro de conjuros de forma rápida y barata.",
+        "tactical_role": "Utilidad"
+      }
+    ]
+  },
+  "lore_info": {
+    "backstory": "Kael nació en un bosque encantado, hijo de dos kitsune exiliados que vivían ocultos en forma animal. Cuando era niño, unos cazadores furtivos masacraron a sus padres ante sus ojos; su madre, moribunda, lo envolvió en niebla mágica para salvarlo, y desde entonces juró venganza. Tras años sobreviviendo como ladrón, fue acogido como aprendiz por Tollias, un mago caído en desgracia, y más tarde ingresó en el Conclave de Ardynor, una escuela de evocación. Allí trabó una gran amistad con el elfo Calion y desarrolló una rivalidad mortal con Rhovan Thorne, hijo de uno de los cazadores que masacraron a su familia. Cuando Rhovan hizo desaparecer a Calion en un duelo, Kael lo mató en un ataque de furia y fue expulsado y desterrado de la escuela. Desde entonces vive como mercenario, viajando en busca de pistas sobre el paradero de Calion, acompañado por Nix, una compañera caótica que le devolvió la capacidad de reír tras años de dolor.",
+    "personality_traits": "Guarda silencio sobre su pasado hasta que confía plenamente en alguien, y entonces se abre por completo. Encuentra maneras oscuramente cómicas de aliviar la tensión en los peores momentos.",
+    "ideals": "Venganza y memoria. Los que hacen daño a los inocentes deben responder por ello, y los caídos no deben ser olvidados.",
+    "bonds": "Nix es la única familia que le queda; el Diario de Calion es la única pista que tiene de que su amigo aún podría estar vivo.",
+    "flaws": "Su sed de venganza contra quienes se parecen a sus antiguos enemigos puede nublar su juicio y ponerlo, o a su grupo, en peligro innecesario."
+  }
+}

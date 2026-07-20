@@ -85,6 +85,7 @@ class _MainHudScreenState extends State<MainHudScreen> {
               hp: info.currentHp,
               hpMax: info.hpMax,
               ac: info.ac,
+              initiative: character.stats.dex.mod,
               avatarPath: character.avatarPath,
               // La vida (HP/CA) solo se muestra en Stats y Mi Turno; en
               // Inventario, Lore y Aliados no aporta nada y solo resta espacio.
@@ -222,6 +223,7 @@ class _HudCards extends StatelessWidget {
   final int hp;
   final int hpMax;
   final int ac;
+  final int initiative;
   final String? avatarPath;
   final bool showVitals;
 
@@ -233,6 +235,7 @@ class _HudCards extends StatelessWidget {
     required this.hp,
     required this.hpMax,
     required this.ac,
+    required this.initiative,
     required this.avatarPath,
     this.showVitals = true,
   });
@@ -248,6 +251,8 @@ class _HudCards extends StatelessWidget {
     final segments = [race, characterClass].where((s) => s.trim().isNotEmpty);
     return segments.join(' · ');
   }
+
+  String get _initiativeDisplay => initiative >= 0 ? '+$initiative' : '$initiative';
 
   Future<void> _showAdjustHpDialog(BuildContext context, {required bool isDamage}) async {
     final controller = TextEditingController();
@@ -500,30 +505,14 @@ class _HudCards extends StatelessWidget {
                       ),
                       const SizedBox(width: 14),
 
-                      // CA, junto a la vida
-                      Container(
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(
-                          color: Color.alphaBlend(accent.withOpacity(0.1), context.appColors.surfaceLight),
-                          borderRadius: BorderRadius.circular(15),
-                          border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.06), width: 1),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'CA',
-                              style: GoogleFonts.inter(
-                                color: context.appColors.textSecondary,
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.8,
-                              ),
-                            ),
-                            JournalNumberText(text: '$ac', color: accent, fontSize: 20),
-                          ],
-                        ),
+                      // CA + Iniciativa, apiladas una sobre otra
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _MiniStatBox(label: 'CA', value: '$ac', accent: accent),
+                          const SizedBox(height: 8),
+                          _MiniStatBox(label: 'INI', value: _initiativeDisplay, accent: accent),
+                        ],
                       ),
                     ],
                   ),
@@ -858,6 +847,49 @@ class _HpActionButton extends StatelessWidget {
             child: Icon(icon, color: color, size: size * 0.56),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// Casilla compacta reutilizable para estadísticas pequeñas (CA, Iniciativa...)
+// ============================================================================
+class _MiniStatBox extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color accent;
+
+  const _MiniStatBox({
+    required this.label,
+    required this.value,
+    required this.accent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 64,
+      height: 46,
+      decoration: BoxDecoration(
+        color: Color.alphaBlend(accent.withOpacity(0.1), context.appColors.surfaceLight),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.06), width: 1),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              color: context.appColors.textSecondary,
+              fontSize: 9.5,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.6,
+            ),
+          ),
+          JournalNumberText(text: value, color: accent, fontSize: 17),
+        ],
       ),
     );
   }

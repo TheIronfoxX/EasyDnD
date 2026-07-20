@@ -13,6 +13,12 @@ class BasicInfo {
   int hpMax;
   int currentHp;
   int ac;
+  // Velocidad de movimiento base, en metros por turno (no en pies).
+  // Opcional en el constructor con 9 por defecto (la velocidad humana
+  // estándar) para no romper otros puntos donde ya se construye
+  // BasicInfo sin conocer este campo (p.ej. mock_data.dart), igual que
+  // se hizo con nivel20Link.
+  int speed;
   // Integración Nivel20: enlace a la ficha del personaje en la plataforma
   // Nivel20 (nivel20.com). Null si el jugador todavía no lo ha vinculado.
   // Vive en "basic_info" como "nivel20_link" — opcional para no romper
@@ -26,6 +32,7 @@ class BasicInfo {
     required this.hpMax,
     required this.currentHp,
     required this.ac,
+    this.speed = 9,
     this.nivel20Link,
   });
 
@@ -42,6 +49,10 @@ class BasicInfo {
       // El JSON de origen no trae hp_current, así que arrancamos a full vida.
       currentHp: json['hp_current'] ?? hpMax,
       ac: json['ac'] ?? 10,
+      // Fallback seguro: fichas anteriores a este campo no traen "speed"
+      // — 9 metros (la velocidad humana estándar) en vez de romper el
+      // parseo o dejar al personaje inmóvil con un 0.
+      speed: (json['speed'] as num?)?.toInt() ?? 9,
       // Fallback seguro: fichas anteriores a esta integración no traen
       // "nivel20_link" — queda null en vez de romper el parseo.
       nivel20Link: json['nivel20_link'] as String?,
@@ -56,6 +67,7 @@ class BasicInfo {
       'hp_max': hpMax,
       'hp_current': currentHp,
       'ac': ac,
+      'speed': speed,
       'nivel20_link': nivel20Link,
     };
   }

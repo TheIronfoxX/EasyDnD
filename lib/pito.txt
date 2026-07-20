@@ -1,10 +1,4 @@
-Vas a convertir la ficha de un personaje de D&D en un JSON con un formato EXACTO.
-Te voy a pasar la ficha (PDF, texto, enlace a la plataforma Nivel20 o imagen) y tú debes generar el JSON siguiendo ESTRICTAMENTE la estructura del ejemplo de abajo.
 
-Aviso, seguramente muchos de los rasgos pilles la version recortada, a la minima que sospeches de uno, dimelo y te lo paso entero, lo mismo con las dudas, a la minima mandalo porfaplis
-
-SI en algunos rasgos hay alguna accion, añadela como accion, si hay alguno que tenga varias, añadelo como varias
-REGLAS OBLIGATORIAS:
 
 NO añadas ningún campo, clave o sección que no exista en el JSON de ejemplo. La app que lo lee no soporta campos extra y se romperá.
 
@@ -46,8 +40,6 @@ Cada pasiva (cada objeto dentro de "passive") debe incluir además el campo "tac
 
 "purse": monedas del personaje (gold, silver, copper), como números enteros independientes. Si no hay dinero, usa 0.
 
-"speed": velocidad de movimiento base del personaje, en metros por turno (no en pies). Es un número entero. Parte de la velocidad base de su raza (Humano/Elfo/Semielfo = 9, Enano/Halfling/Gnomo = 7.5 si tu conversión lo permite, si no redondea a 7 u 8 según el resto de la ficha, Media-Elfo = 9...) y aplícale cualquier modificador de clase o rasgo que la aumente o reduzca (ej. Monje sin armadura pesada, Bárbaro, armadura pesada sin la Fuerza requerida). Si la ficha original ya trae la velocidad en metros, úsala tal cual; si viene en pies, conviértela (30 pies = 9 metros) en vez de copiar el número en pies directamente. Si el personaje tiene varias velocidades (andando, volando, nadando, escalando) usa aquí SOLO la de caminar/terrestre — no hay campos separados para las demás en este formato.
-
 "ai_tips", una serie de consejos generados por ti sobre como se usa el personaje
 
 
@@ -75,8 +67,7 @@ FORMATO EXACTO A SEGUIR (ejemplo mínimo con todos los campos):
     "race": "Humano",
     "characterClass": "Paladín 5",
     "hp_max": 44,
-    "ac": 18,
-    "speed": 9
+    "ac": 18
   },
   "purse": {
     "gold": 120,

@@ -1,4 +1,3 @@
-// lib/providers/character_provider.dart
 import 'dart:convert';
 import 'dart:io';
 
@@ -17,6 +16,35 @@ import '../data/mock_data.dart';
 /// ficha solo guarda el *nombre* de la condición activa
 /// (CharacterModel.activeConditions); este objeto es el que le da
 /// significado a ese nombre.
+/// Saneado de JSON pegado desde una IA. ChatGPT/Claude casi nunca devuelven
+/// JSON "puro": suele venir envuelto en un bloque de código Markdown
+/// (```json ... ```) y/o con texto de cortesía antes o después
+/// ("¡Aquí tienes tu personaje!", "Espero que lo disfrutes"...).
+/// jsonDecode() no tolera nada de eso y revienta con un FormatException
+/// genérico — este helper se queda solo con el objeto JSON real antes de
+/// intentar decodificarlo, para que el "texto extra" deje de ser un
+/// problema para el jugador.
+String _sanitizeJsonText(String raw) {
+  var text = raw.trim();
+
+  // Quita vallas de código Markdown si las hay (```json ... ``` o ``` ... ```).
+  final fenceMatch = RegExp(r'```(?:json)?\s*([\s\S]*?)\s*```', caseSensitive: false)
+      .firstMatch(text);
+  if (fenceMatch != null) {
+    text = fenceMatch.group(1)!.trim();
+  }
+
+  // Se queda con lo que hay entre la primera '{' y la última '}',
+  // por si aún queda texto de cortesía antes o después del objeto.
+  final start = text.indexOf('{');
+  final end = text.lastIndexOf('}');
+  if (start != -1 && end != -1 && end > start) {
+    text = text.substring(start, end + 1);
+  }
+
+  return text;
+}
+
 class ConditionDetail {
   final String description;
   final bool causesDisadvantage;
@@ -253,11 +281,38 @@ class CharacterProvider extends ChangeNotifier {
   /// FormatException si el texto no es JSON válido — la UI decide cómo
   /// mostrar ese error (ver character_selection_screen.dart).
   Future<void> importCharacterFromJsonString(String jsonText) async {
-    final decoded = jsonDecode(jsonText) as Map<String, dynamic>;
+    final decoded = jsonDecode(_sanitizeJsonText(jsonText)) as Map<String, dynamic>;
     final imported = CharacterModel.fromJson(decoded);
 
     roster.add(imported);
     _activeIndex = roster.length - 1;
+    notifyListeners();
+
+    await _persistRoster();
+    await _persistActiveIndex();
+  }
+
+  /// Sustituye el personaje en la posición `index` del roster por el
+  /// resultado de parsear `jsonText`, en vez de añadir uno nuevo. Pensado
+  /// para aplicar la corrección que devuelve la IA tras pegar el prompt de
+  /// `generateAIPrompt()`: el personaje ya se creó (o ya existía) en esa
+  /// posición del roster, así que aquí solo hace falta reemplazar esa
+  /// entrada por la versión corregida, sin duplicarla.
+  /// Si `index` queda fuera de rango (p.ej. el roster cambió entre medias
+  /// por otra acción del jugador), cae al comportamiento de
+  /// `importCharacterFromJsonString` y lo añade al final en vez de
+  /// fallar silenciosamente.
+  Future<void> replaceCharacterFromJsonString(int index, String jsonText) async {
+    final decoded = jsonDecode(_sanitizeJsonText(jsonText)) as Map<String, dynamic>;
+    final imported = CharacterModel.fromJson(decoded);
+
+    if (index < 0 || index >= roster.length) {
+      roster.add(imported);
+      _activeIndex = roster.length - 1;
+    } else {
+      roster[index] = imported;
+      _activeIndex = index;
+    }
     notifyListeners();
 
     await _persistRoster();
@@ -295,13 +350,16 @@ class CharacterProvider extends ChangeNotifier {
   }
 
   /// Construye el prompt listo para copiar y pegar en cualquier IA de
-  /// texto: le pide que visite el enlace de Nivel20 guardado y devuelva
-  /// los datos del personaje en nuestro formato JSON, con la estructura
-  /// base (campos vacíos) ya incluida para que la IA solo tenga que
-  /// rellenarla.
-  String generateAIPrompt() {
-    final link = activeCharacter.basicInfo.nivel20Link ?? '';
-
+  /// texto, con la estructura base (campos vacíos) ya incluida para que
+  /// la IA solo tenga que rellenarla.
+  ///
+  /// Tiene dos modos de origen para los datos del personaje:
+  /// - [rawSourceText] presente (viene de pegar un JSON crudo de Nivel20 ya
+  ///   pasado por `Nivel20Extractor.cleanRawJsonString()`): el prompt
+  ///   incluye ese texto directamente, sin pedirle a la IA que visite nada.
+  /// - [rawSourceText] ausente: modo clásico, le pide a la IA que visite el
+  ///   enlace de Nivel20 guardado (`basicInfo.nivel20Link`).
+  String generateAIPrompt({String? rawSourceText}) {
     const emptyStructure = {
       'basic_info': {
         'name': '',
@@ -340,6 +398,147 @@ class CharacterProvider extends ChangeNotifier {
 
     final structureJson = jsonEncode(emptyStructure);
 
+ if (rawSourceText != null && rawSourceText.trim().isNotEmpty) {
+  return 'Actúa como experto en D&D. A continuación tienes el texto ya '
+      'extraído de una ficha de Nivel20 (no hace falta que visites '
+      'ningún enlace):\n\n$rawSourceText\n\n'
+      'Vas a convertir esta ficha de personaje de D&D en un JSON con un '
+      'formato EXACTO. Debes seguir ESTRICTAMENTE la estructura del '
+      'ejemplo que te doy más abajo.\n\n'
+      'Aviso: seguramente en muchos rasgos captures la versión recortada '
+      'del texto; a la mínima que sospeches que un rasgo está incompleto, '
+      'dímelo y te paso el texto entero. Lo mismo con cualquier duda: en '
+      'cuanto tengas alguna, pregúntame antes de asumir nada.\n\n'
+      'REGLAS OBLIGATORIAS:\n\n'
+      'NO añadas ningún campo, clave o sección que no exista en el JSON '
+      'de ejemplo. La app que lo lee no soporta campos extra y se '
+      'romperá.\n\n'
+      'NO elimines ningún campo del ejemplo, aunque esté vacío (usa "", '
+      '[] o 0 si no hay dato). Mantén los mismos tipos de dato (número '
+      'vs string vs booleano vs array).\n\n'
+      '"spell_slots" es un array con un objeto por cada nivel de conjuro '
+      'que tenga espacios (level, max, current). NO incluyas niveles con '
+      '0 espacios. Ignora "conjuros preparados"; solo importan los '
+      'espacios.\n\n'
+      'Cada conjuro y truco del personaje = una habilidad dentro de '
+      '"abilities_by_action", clasificada según su tiempo de lanzamiento:\n'
+      '"action" → conjuros de 1 acción (incluye todos los trucos, '
+      'base_level: 0)\n'
+      '"bonus_action" → conjuros de 1 acción adicional\n'
+      '"reaction" → conjuros de reacción\n\n'
+      'Los rasgos de clase/raza (no conjuros) van en "passive", salvo que '
+      'sean reacciones activas (ej. "Suerte del Oscuro"), que van en '
+      '"reaction".\n\n'
+      'Cada pasiva (cada objeto dentro de "passive") debe incluir además '
+      'el campo "tactical_role", clasificándola en una de estas tres '
+      'categorías EXACTAS (respeta mayúsculas, sin variaciones ni '
+      'sinónimos): "Ofensivo" (aumenta daño propio, habilita ataques o '
+      'efectos ofensivos), "Defensivo" (resistencias, PG extra, '
+      'protección propia o de aliados), "Utilidad" (recursos, '
+      'exploración, rasgos base/definición que no encajan en las dos '
+      'anteriores). Si una pasiva combina varios usos, elige la función '
+      'PRINCIPAL, no inventes una cuarta categoría. Este campo es '
+      'EXCLUSIVO de "passive": no lo añadas a habilidades de "action", '
+      '"bonus_action" ni "reaction".\n\n'
+      '"attack_type": obligatorio en cada habilidad de "action", '
+      '"bonus_action" y "reaction" (NUNCA en "passive" — las pasivas no '
+      'lo llevan). Determina si el modal de resolución te pide tirar un '
+      'ataque, muestra la CD de salvación fija, o ninguna de las dos. '
+      'Valores EXACTOS permitidos, sin variaciones: "save", "attack", '
+      '"none".\n'
+      '- "save" → el OBJETIVO es quien tira, contra tu CD. Úsalo si el '
+      'texto del conjuro/rasgo menciona una "tirada de salvación de '
+      '[característica]" que el objetivo debe superar (ej. "el objetivo '
+      'debe superar una salvación de Destreza").\n'
+      '- "attack" → quien tira eres TÚ, para impactar. Úsalo si el texto '
+      'dice "ataque de conjuro" (a distancia o cuerpo a cuerpo) o si es '
+      'un ataque de arma.\n'
+      '- "none" → no hay ninguna tirada enfrentada. Úsalo para curación '
+      'automática, buffs sobre ti mismo, utilidad sin resistencia, '
+      'invocaciones, etc.\n'
+      '- Si el conjuro tiene un daño/efecto principal automático (sin '
+      'tirada) pero además dispara una salvación SECUNDARIA para un '
+      'efecto extra (ej. "si impactas, el objetivo también debe salvar '
+      'Fuerza o caer derribado"), usa el "attack_type" que corresponde '
+      'al efecto PRINCIPAL y explica la salvación secundaria en '
+      '"lore_description" y/o "tactical_summary" — no inventes un cuarto '
+      'valor para esto.\n'
+      '- Si después de leer el texto sigue sin estar claro cuál de los '
+      'tres aplica, PREGÚNTAME antes de asumir; no adivines.\n'
+      '- Las armas dentro de "inventory.weapons" NO llevan "attack_type" '
+      '— ese campo no existe para ellas, siempre se resuelven como '
+      'ataque.\n\n'
+      '"damage_dice": el dado BASE de daño o curación directa, al nivel '
+      'mínimo del conjuro (base_level). Formato ESTRICTO, sin '
+      'excepciones: notación de dado con o sin bono plano ("1d8", '
+      '"2d6+3", "8d6-2"), o si el efecto no tira dado pero sí suma un '
+      'número fijo, un plano puro ("+3"). NUNCA una frase, nunca texto '
+      'explicativo, nunca notas entre paréntesis. Si el conjuro/truco/'
+      'ataque no hace daño ni cura, usa "" (string vacío) — pero si SÍ '
+      'hace daño o cura, este campo tiene que llevar el dado, aunque '
+      'parezca redundante con lore_description o tactical_summary.\n\n'
+      '"is_scalable": true si el conjuro mejora al lanzarse con un '
+      'espacio de nivel superior o al subir de nivel de personaje; false '
+      'si no escala nunca.\n\n'
+      '"scaling_formula": SOLO rellenar si is_scalable es true. Mismo '
+      'formato estricto que damage_dice: un único término de dado con o '
+      'sin bono plano ("1d8", "2d4+1"), o un plano puro ("+2"). Es lo que '
+      'se SUMA por cada nivel por encima de base_level — el motor de la '
+      'app lo parsea con una expresión regular exacta, así que una frase '
+      'como "+1d8 por nivel de conjuro superior" o "sube con el nivel '
+      'del lanzador" NO funciona: el motor lo descarta en silencio y el '
+      'conjuro no escala nada en combate. Si is_scalable es false, deja '
+      '"scaling_formula": "".\n'
+      '- Toda la explicación en prosa de CÓMO o CUÁNDO escala (radiante '
+      'extra a muertos vivientes, condiciones especiales, etc.) va en '
+      '"lore_description" y/o "tactical_summary", nunca en '
+      '"scaling_formula".\n'
+      '- Ejemplo correcto para un conjuro de curación que sube 1d8 por '
+      'nivel de espacio: "damage_dice": "1d8", "scaling_formula": '
+      '"1d8". Ejemplo INCORRECTO (no uses esto): "damage_dice": "", '
+      '"scaling_formula": "+1d8 por nivel de conjuro superior."\n\n'
+      '"base_level": nivel de conjuro mínimo al que se lanza (0 para '
+      'trucos). Es el punto de partida desde el que se cuentan los '
+      'niveles extra al escalar.\n\n'
+      '"lore_info": si Rasgos / Ideales / Vínculos / Defectos están en '
+      'blanco, invéntalos de forma coherente con la historia. Si la '
+      'historia es muy larga, resúmela en un párrafo de 4-6 frases para '
+      '"backstory", sin perder los hitos clave.\n\n'
+      '"purse": monedas del personaje (gold, silver, copper), como '
+      'números enteros independientes. Si no hay dinero, usa 0.\n\n'
+      '"ai_tips": una serie de consejos generados por ti sobre cómo se '
+      'usa el personaje.\n\n'
+      '"user_tactics" y "adventure_notes" son campos de texto libre del '
+      'Códice. NO los rellenes con contenido inventado: déjalos siempre '
+      'como "" salvo que se te pida explícitamente redactar algo.\n\n'
+      'SISTEMA DE RECURSOS ("resources"): Este array es para "pools" de '
+      'puntos especiales (Ki, Puntos de Hechicería, Furia, Inspiración '
+      'Bárdica, Superioridad, Canalizar Divinidad, etc.).\n'
+      'Analiza la clase y nivel del personaje según las reglas oficiales '
+      'de D&D 5e para deducir el máximo ("max") si la ficha no lo dice '
+      'explícitamente (Ej: Monje Nivel 5 = 5 Puntos de Ki. Bardo con '
+      'Carisma 16 = 3 Inspiraciones).\n'
+      'Un objeto por recurso: { "name", "current", "max" }. "current" '
+      'arranca igual que "max". Si la clase no tiene recursos gastables, '
+      'usa un array vacío [].\n\n'
+      'INVENTARIO ("inventory"): Las armas van en "weapons". IMPORTANTE: '
+      'Incluye el campo "is_unique": true si el arma es legendaria, '
+      'artefacto u objeto mágico irrepetible. Si es común, "is_unique": '
+      'false.\n\n'
+      'El resto de equipo (pociones, cuerdas, herramientas, reliquias) '
+      'va en el array "mundane_items". Cada objeto usa: { "name", '
+      '"description", "quantity" }.\n\n'
+      'Si algo es ambiguo, PREGÚNTAME antes de asumir nada. No inventes '
+      'mecánicas. Si falta un dato que SÍ existe en el texto de la ficha '
+      '(ej. ac, hp_max, un stat), pregúntamelo.\n\n'
+      'Devuélveme el JSON completo, sin comentarios ni texto fuera del '
+      'bloque de código, y sin markdown adicional (solo el JSON listo '
+      'para parsear).\n\n'
+      'FORMATO EXACTO A SEGUIR (ejemplo mínimo con todos los campos):\n'
+      '$structureJson';
+}
+
+    final link = activeCharacter.basicInfo.nivel20Link ?? '';
     return 'Actúa como experto en D&D. Visita el siguiente enlace de la '
         'plataforma Nivel20: $link. Extrae todos los datos del personaje y '
         'devuélvelos estrictamente en este formato JSON (sin markdown '
@@ -623,6 +822,245 @@ class CharacterProvider extends ChangeNotifier {
   /// detalles más tarde en vez de pararse a escribirlos en el diálogo.
   void addEmptyMundaneItem() {
     addMundaneItem(name: 'Nuevo Objeto');
+  }
+
+  // -------------------------------------------------------------------
+  // Gestión de Habilidades (Ability) — alta y baja rápida
+  // Las habilidades del personaje activo NO viven en una lista plana:
+  // están repartidas en cuatro categorías de economía de acciones dentro
+  // de activeCharacter.abilitiesByAction (action/bonusAction/reaction/
+  // passive) — ver ability_model.dart. addAbility()/removeAbility()
+  // trabajan sobre esa estructura real en vez de asumir una lista única,
+  // para no divergir del modelo de datos ni de longRest()/customRest(),
+  // que ya recorren las cuatro listas por separado.
+  // -------------------------------------------------------------------
+
+  /// Devuelve la lista interna correspondiente a una categoría de la
+  /// economía de acciones. Acepta 'action', 'bonusAction', 'reaction' y
+  /// 'passive'; cualquier otro valor cae en 'action' por defecto para que
+  /// la UI no tenga que validar antes de llamar.
+  List<Ability> _abilityListForType(String actionType) {
+    final abilities = activeCharacter.abilitiesByAction;
+    switch (actionType) {
+      case 'bonusAction':
+        return abilities.bonusAction;
+      case 'reaction':
+        return abilities.reaction;
+      case 'passive':
+        return abilities.passive;
+      case 'action':
+      default:
+        return abilities.action;
+    }
+  }
+
+  /// Añade una habilidad nueva y sencilla (solo nombre + descripción) a la
+  /// categoría indicada del personaje activo. Pensada para el formulario
+  /// rápido de la UI: el resto de campos mecánicos de Ability (relatedStat,
+  /// attackType, damageDice...) quedan con sus valores por defecto y se
+  /// pueden refinar más adelante desde una pantalla de edición si hace
+  /// falta. La descripción libre se guarda en `loreDescription`, el campo
+  /// pensado justamente para texto de sabor/rol sin mecánica asociada.
+  ///
+  /// El id se genera a partir del nombre y la marca de tiempo actual para
+  /// que dos habilidades homebrew con el mismo nombre nunca choquen (el id
+  /// es la clave estable que usa el resto del provider, p.ej.
+  /// consumeAbilityCharge, para identificar la habilidad).
+  /// Añade una habilidad nueva al personaje activo. Los parámetros básicos
+  /// (name, description, actionType) cubren el formulario simple; el resto
+  /// son el bloque "Avanzado" opcional del modal de alta y llevan valores
+  /// por defecto neutros para que el atajo simple siga funcionando igual
+  /// que antes si la UI no los manda.
+  ///
+  /// - `type`: 'trait' o 'spell'. Se ignora (y se fuerza a 'passive') si
+  ///   actionType == 'passive', porque una pasiva nunca es un conjuro
+  ///   tirable — mismo criterio que ya usaba la versión simple de este
+  ///   método.
+  /// - `tacticalRole` solo tiene efecto en pasivas (agrupa el HUD por
+  ///   Ofensivo/Defensivo/Utilidad); en cualquier otra categoría se
+  ///   ignora, porque Ability.tacticalRole no se usa fuera de _PassivesSection.
+  /// - `hasCharges`/`maxCharges`: si hasCharges es true se construye un
+  ///   MagicCharges a tope de carga (current = max) vía
+  ///   MagicCharges.fromJson(), reutilizando su propio parseo en vez de
+  ///   asumir el constructor real de la clase (que vive en
+  ///   weapon_model.dart y no tengo delante) — incluso si su forma
+  ///   interna cambia, mientras siga leyendo has_charges/max/current esto
+  ///   no se rompe.
+  void addAbility({
+    required String actionType,
+    required String name,
+    String description = '',
+    String? type,
+    String relatedStat = '',
+    String attackType = 'attack',
+    String? damageDice,
+    String? tacticalSummary,
+    String? tacticalRole,
+    bool isScalable = false,
+    int baseLevel = 0,
+    String? scalingFormula,
+    bool hasCharges = false,
+    int maxCharges = 0,
+  }) {
+    final trimmedName = name.trim();
+    final list = _abilityListForType(actionType);
+    final isPassive = actionType == 'passive';
+
+    final trimmedDamageDice = damageDice?.trim();
+    final trimmedTacticalSummary = tacticalSummary?.trim();
+    final trimmedTacticalRole = tacticalRole?.trim();
+    final trimmedScalingFormula = scalingFormula?.trim();
+
+    final newAbility = Ability(
+      id: 'ability_${DateTime.now().microsecondsSinceEpoch}',
+      name: trimmedName.isEmpty ? 'Nueva Habilidad' : trimmedName,
+      type: isPassive ? 'passive' : (type ?? 'trait'),
+      relatedStat: relatedStat,
+      successDescription: '',
+      failureDescription: '',
+      attackType: attackType,
+      isScalable: isScalable,
+      baseLevel: baseLevel,
+      scalingFormula: (trimmedScalingFormula == null || trimmedScalingFormula.isEmpty)
+          ? null
+          : trimmedScalingFormula,
+      damageDice: (trimmedDamageDice == null || trimmedDamageDice.isEmpty) ? null : trimmedDamageDice,
+      loreDescription: description.trim().isEmpty ? null : description.trim(),
+      tacticalSummary:
+          (trimmedTacticalSummary == null || trimmedTacticalSummary.isEmpty) ? null : trimmedTacticalSummary,
+      // tacticalRole solo aplica a pasivas — en el resto de categorías
+      // Ability lo acepta igualmente (es un campo libre) pero ninguna
+      // pantalla lo lee fuera de _PassivesSection, así que forzarlo a
+      // null evita guardar en el JSON un dato que nunca se va a mostrar.
+      tacticalRole: isPassive && trimmedTacticalRole != null && trimmedTacticalRole.isNotEmpty
+          ? trimmedTacticalRole
+          : null,
+      magicCharges: hasCharges
+          ? MagicCharges.fromJson({
+              'has_charges': true,
+              'max': maxCharges,
+              'current': maxCharges,
+            })
+          : null,
+    );
+    list.add(newAbility);
+    notifyListeners();
+    _persistRoster();
+  }
+
+  /// Actualiza una habilidad existente del personaje activo, identificada
+  /// por su `id` (que se conserva — nunca se regenera al editar, para no
+  /// romper referencias como Ability.magicCharges en SharedPreferences).
+  /// Si `actionType` es distinto de la categoría original, la habilidad
+  /// se mueve de lista (ej. pasar de "Acción" a "Pasiva"): se quita de su
+  /// lista actual y se añade a la nueva, no se reordena in-place, así que
+  /// puede perder su posición relativa dentro de la lista destino.
+  ///
+  /// No hace nada si el id no existe en ninguna de las cuatro categorías
+  /// (habilidad borrada mientras el modal de edición seguía abierto, por
+  /// ejemplo). Mismos parámetros y mismos valores por defecto que
+  /// addAbility(); ver los comentarios de ahí para el detalle de cada uno.
+  void updateAbility({
+    required String abilityId,
+    required String actionType,
+    required String name,
+    String description = '',
+    String? type,
+    String relatedStat = '',
+    String attackType = 'attack',
+    String? damageDice,
+    String? tacticalSummary,
+    String? tacticalRole,
+    bool isScalable = false,
+    int baseLevel = 0,
+    String? scalingFormula,
+    bool hasCharges = false,
+    int maxCharges = 0,
+  }) {
+    final abilities = activeCharacter.abilitiesByAction;
+
+    Ability? existing;
+    List<Ability>? sourceList;
+    for (final list in [
+      abilities.action,
+      abilities.bonusAction,
+      abilities.reaction,
+      abilities.passive,
+    ]) {
+      final index = list.indexWhere((a) => a.id == abilityId);
+      if (index != -1) {
+        existing = list[index];
+        sourceList = list;
+        break;
+      }
+    }
+    if (existing == null || sourceList == null) return;
+
+    final isPassive = actionType == 'passive';
+    final trimmedName = name.trim();
+
+    final trimmedDamageDice = damageDice?.trim();
+    final trimmedTacticalSummary = tacticalSummary?.trim();
+    final trimmedTacticalRole = tacticalRole?.trim();
+    final trimmedScalingFormula = scalingFormula?.trim();
+
+    final updated = Ability(
+      id: abilityId,
+      name: trimmedName.isEmpty ? existing.name : trimmedName,
+      type: isPassive ? 'passive' : (type ?? existing.type),
+      relatedStat: relatedStat,
+      // successDescription/failureDescription no los expone el formulario
+      // de edición — se conservan tal cual estaban en vez de vaciarlos.
+      successDescription: existing.successDescription,
+      failureDescription: existing.failureDescription,
+      attackType: attackType,
+      isScalable: isScalable,
+      baseLevel: baseLevel,
+      scalingFormula: (trimmedScalingFormula == null || trimmedScalingFormula.isEmpty)
+          ? null
+          : trimmedScalingFormula,
+      damageDice: (trimmedDamageDice == null || trimmedDamageDice.isEmpty) ? null : trimmedDamageDice,
+      loreDescription: description.trim().isEmpty ? null : description.trim(),
+      tacticalSummary:
+          (trimmedTacticalSummary == null || trimmedTacticalSummary.isEmpty) ? null : trimmedTacticalSummary,
+      tacticalRole: isPassive && trimmedTacticalRole != null && trimmedTacticalRole.isNotEmpty
+          ? trimmedTacticalRole
+          : null,
+      magicCharges: hasCharges
+          ? MagicCharges.fromJson({
+              'has_charges': true,
+              'max': maxCharges,
+              'current': maxCharges,
+            })
+          : null,
+    );
+
+    sourceList.remove(existing);
+    _abilityListForType(actionType).add(updated);
+    notifyListeners();
+    _persistRoster();
+  }
+
+  /// Elimina una habilidad del personaje activo buscándola por su id en
+  /// las cuatro categorías de la economía de acciones. No hace nada si el
+  /// id no existe en ninguna, así la UI puede llamarlo sin validar antes
+  /// (p.ej. tras una doble pulsación accidental sobre el botón de borrar).
+  void removeAbility(String abilityId) {
+    final abilities = activeCharacter.abilitiesByAction;
+    for (final list in [
+      abilities.action,
+      abilities.bonusAction,
+      abilities.reaction,
+      abilities.passive,
+    ]) {
+      final index = list.indexWhere((a) => a.id == abilityId);
+      if (index != -1) {
+        list.removeAt(index);
+        notifyListeners();
+        _persistRoster();
+        return;
+      }
+    }
   }
 
   // -------------------------------------------------------------------
