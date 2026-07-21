@@ -3,7 +3,6 @@ Te voy a pasar la ficha (PDF, texto, enlace a la plataforma Nivel20 o imagen) y 
 
 Aviso, seguramente muchos de los rasgos pilles la version recortada, a la minima que sospeches de uno, dimelo y te lo paso entero, lo mismo con las dudas, a la minima mandalo porfaplis
 
-SI en algunos rasgos hay alguna accion, añadela como accion, si hay alguno que tenga varias, añadelo como varias
 REGLAS OBLIGATORIAS:
 
 NO añadas ningún campo, clave o sección que no exista en el JSON de ejemplo. La app que lo lee no soporta campos extra y se romperá.
@@ -15,6 +14,8 @@ NO elimines ningún campo del ejemplo, aunque esté vacío (usa "", [] o 0 si no
 Cada conjuro y truco del personaje = una habilidad dentro de "abilities_by_action", clasificada según su tiempo de lanzamiento:
 
 "action" → conjuros de 1 acción (incluye todos los trucos, base_level: 0)
+      Cosa importante, si alguno de los rasgos especifica una accion especifico, tambien hay que añadirlos aqui 
+      Un monje por ejemplo aqui deberia tener una tirada de daño basico, que seria su puñetazo
 
 "bonus_action" → conjuros de 1 acción adicional
 
@@ -42,16 +43,31 @@ Cada pasiva (cada objeto dentro de "passive") debe incluir además el campo "tac
 
 "base_level": nivel de conjuro mínimo al que se lanza (0 para trucos). Es el punto de partida desde el que se cuentan los niveles extra al escalar.
 
-"lore_info": si Rasgos / Ideales / Vínculos / Defectos están en blanco, invéntalos de forma coherente con la historia. Si la historia es muy larga, resúmela en un párrafo de 4-6 frases para "backstory", sin perder los hitos clave.
+IMPORTANTE — a quién va dirigida la app: quien la usa en mesa NO tiene por qué saber jerga de D&D. No puedes dar por hecho que sabe qué es un "ataque a distancia", una "tirada de salvación", "CaC", ni qué significa que algo "escale". "tactical_summary" y "lore_description" tienen que decirle, en la práctica, qué dados coger y qué hacer con ellos — no limitarse a nombrar el mecanismo.
 
-"purse": monedas del personaje (gold, silver, copper), como números enteros independientes. Si no hay dinero, usa 0.
+"tactical_summary": resumen corto de UNA o dos frases que le dice a la persona QUÉ HACER CON LOS DADOS, sin usar jerga de D&D (nada de "TS", "CaC", "ataque a distancia", "CD" a secas...). Escríbelo como si se lo explicaras a alguien que no ha jugado nunca: quién tira, qué dado, contra qué se compara, y qué pasa según el resultado. Formato:
 
-"speed": velocidad de movimiento base del personaje, en metros por turno (no en pies). Es un número entero. Parte de la velocidad base de su raza (Humano/Elfo/Semielfo = 9, Enano/Halfling/Gnomo = 7.5 si tu conversión lo permite, si no redondea a 7 u 8 según el resto de la ficha, Media-Elfo = 9...) y aplícale cualquier modificador de clase o rasgo que la aumente o reduzca (ej. Monje sin armadura pesada, Bárbaro, armadura pesada sin la Fuerza requerida). Si la ficha original ya trae la velocidad en metros, úsala tal cual; si viene en pies, conviértela (30 pies = 9 metros) en vez de copiar el número en pies directamente. Si el personaje tiene varias velocidades (andando, volando, nadando, escalando) usa aquí SOLO la de caminar/terrestre — no hay campos separados para las demás en este formato.
+   "[Frase en lenguaje llano sobre la tirada] | [Daño/Curación]: [dado] [Tipo]"
+
+   - La parte de la tirada depende de attack_type, usa estas plantillas como base y adáptalas a cada caso concreto (rellena corchetes, no dejes el texto genérico):
+     - attack_type "save" → "El enemigo (o todos los que estén en el área) tira un d20; si supera tu CD [dile el número si lo sabes, ej. "(13)"], [qué pasa en ese caso, ej. "solo recibe la mitad"]. Si no la supera, [qué pasa, ej. "recibe todo el daño"]."
+     - attack_type "attack" → "Tiras un d20 y sumas +X [tu bonificador de ataque]; le dices el resultado al máster y él te dice si le has dado."
+     - attack_type "none" → "No tienes que tirar nada, [qué ocurre directamente, ej. "el objetivo se cura al tocarlo", "el efecto pasa automáticamente"]."
+   - La parte de "[Daño/Curación]" es "Daño:" o "Curación:" seguido del dado tal cual está en "damage_dice" (más "+ Mod" si el texto original suma el modificador de característica) y el tipo de daño en una palabra ("Fuego", "Cortante", "Radiante"...). Si no hay daño ni curación (buffs, utilidad pura), omite esta segunda mitad y deja solo la frase de la tirada.
+   - Ejemplos de referencia (síguelos al pie de la letra, en tono y nivel de detalle):
+     - Bola de Fuego: "Los enemigos en el área tiran un d20; si superan tu CD reciben solo la mitad del daño, si no la superan reciben todo el daño | Daño: 8d6 Fuego"
+     - Rayo de Fuego: "Tiras un d20 y sumas +10; le dices el resultado al máster y él te dice si le has dado | Daño: 2d10 Fuego"
+     - Curar Heridas: "No tienes que tirar nada, el objetivo se cura al tocarlo | Curación: 1d8 + Mod"
+     - Un arma cuerpo a cuerpo: "Tiras un d20 y sumas +4; le dices el resultado al máster y él te dice si le has dado | Daño: 1d6 - 1 Contundente"
+
+añade tmb al final lo q2ue gasta (accion, accion adicional... , si alguna cosa gasta movimiento o recursos tmb)
+
+
+"lore_description": aquí va la explicación más larga y con más chicha, pero sigue sin ser un manual de mecánica — no repitas "tira 1d8", ni expliques CD, ni cómo funciona una tirada de salvación como concepto (eso ya lo hace el modal de resolución de la app con "tactical_summary" y "attack_type"). Este campo es para que la persona entienda, en un par de frases, QUÉ hace el hechizo/rasgo en la ficción y en qué situación conviene usarlo: qué le pasa al objetivo, qué efectos secundarios tiene, condiciones especiales, sabor narrativo. Escribe en lenguaje llano, sin dar por sentado vocabulario de D&D.
 
 "ai_tips", una serie de consejos generados por ti sobre como se usa el personaje
 
-
- "user_tactics" y "adventure_notes" son campos de texto libre del Códice. NO los rellenes con contenido inventado: déjalos siempre como "" salvo que yo te pida explícitamente redactar algo.
+"user_tactics" y "adventure_notes" son campos de texto libre del Códice. NO los rellenes con contenido inventado: déjalos siempre como "" salvo que yo te pida explícitamente redactar algo.
 
 SISTEMA DE RECURSOS ("resources"): Este array es para "pools" de puntos especiales (Ki, Puntos de Hechicería, Furia, Inspiración Bárdica, Superioridad, Canalizar Divinidad, etc.).
 
@@ -62,6 +78,12 @@ Un objeto por recurso: { "name", "current", "max" }. "current" arranca igual que
 INVENTARIO ("inventory"): - Las armas van en "weapons". IMPORTANTE: Incluye el campo "is_unique": true si el arma es legendaria, artefacto u objeto mágico irrepetible. Si es común, "is_unique": false.
 
 El resto de equipo (pociones, cuerdas, herramientas, reliquias) va en el array "mundane_items". Cada objeto usa: { "name", "description", "quantity" }.
+
+"purse": monedas del personaje (gold, silver, copper), como números enteros independientes. Si no hay dinero, usa 0.
+
+"speed": velocidad de movimiento base del personaje, en metros por turno (no en pies). Es un número entero. Parte de la velocidad base de su raza (Humano/Elfo/Semielfo = 9, Enano/Halfling/Gnomo = 7.5 si tu conversión lo permite, si no redondea a 7 u 8 según el resto de la ficha, Media-Elfo = 9...) y aplícale cualquier modificador de clase o rasgo que la aumente o reduzca (ej. Monje sin armadura pesada, Bárbaro, armadura pesada sin la Fuerza requerida). Si la ficha original ya trae la velocidad en metros, úsala tal cual; si viene en pies, conviértela (30 pies = 9 metros) en vez de copiar el número en pies directamente. Si el personaje tiene varias velocidades (andando, volando, nadando, escalando) usa aquí SOLO la de caminar/terrestre — no hay campos separados para las demás en este formato.
+
+"lore_info": si Rasgos / Ideales / Vínculos / Defectos están en blanco, invéntalos de forma coherente con la historia. Si la historia es muy larga, resúmela en un párrafo de 4-6 frases para "backstory", sin perder los hitos clave.
 
 Si algo es ambiguo, PREGÚNTAME antes de asumir nada. No inventes mecánicas. Si falta un dato que SÍ existe en el JSON (ej. ac, hp_max, un stat), pregúntamelo.
 
@@ -332,8 +354,8 @@ FORMATO EXACTO A SEGUIR (ejemplo mínimo con todos los campos):
         "base_level": 1,
         "damage_dice": "1d8",
         "scaling_formula": "1d8",
-        "lore_description": "Una criatura que tocas recupera un número de puntos de golpe igual a 1d8 + tu modificador de aptitud mágica, y +1d8 adicional por cada nivel de espacio de conjuro por encima del primero.",
-        "tactical_summary": "Cura 1d8+3 PG por nivel de espacio usado. Rango: Toque."
+        "lore_description": "Una criatura a la que tocas recupera puntos de golpe. Puedes lanzarlo con un espacio de nivel más alto para curar más si el aliado está muy malherido.",
+        "tactical_summary": "No tienes que tirar nada, el objetivo se cura al tocarlo | Curación: 1d8 + Mod"
       }
     ],
     "bonus_action": [
@@ -349,8 +371,8 @@ FORMATO EXACTO A SEGUIR (ejemplo mínimo con todos los campos):
         "base_level": 1,
         "damage_dice": "2d6",
         "scaling_formula": "",
-        "lore_description": "La próxima vez que impactes con un ataque de arma, el arma suena con un trueno. Inflige 2d6 daño de trueno extra automáticamente (no requiere tirada propia, se activa al impactar con el arma), y el objetivo debe además superar una salvación de Fuerza o quedar tumbado.",
-        "tactical_summary": "Requiere Concentración. Añade 2d6 Trueno automático al siguiente golpe + salvación de FUE secundaria para derribo."
+        "lore_description": "Encantas tu próximo golpe de arma para que estalle en trueno al impactar. Además del daño, el enemigo puede acabar tumbado en el suelo. Requiere concentración mientras esperas ese golpe.",
+        "tactical_summary": "No tienes que tirar nada, el trueno estalla solo al golpear con el arma; además el enemigo tira un d20 y si no supera tu CD cae al suelo | Daño: 2d6 Trueno"
       }
     ],
     "reaction": [],
@@ -359,24 +381,24 @@ FORMATO EXACTO A SEGUIR (ejemplo mínimo con todos los campos):
         "id": "ability-castigo-divino",
         "name": "Castigo Divino",
         "type": "class_feature",
-        "lore_description": "Cuando impactas a una criatura con un ataque de arma cuerpo a cuerpo, puedes gastar un espacio de conjuro para infligir daño radiante al objetivo.",
-        "tactical_summary": "Gasta espacio para sumar daño: 2d8 Radiante (nivel 1) + 1d8 por cada nivel adicional. +1d8 si es muerto viviente o infernal.",
+        "lore_description": "Cuando golpeas a un enemigo cuerpo a cuerpo, puedes sacrificar un espacio de conjuro para que el golpe arda con luz divina y haga más daño. Es aún más potente contra muertos vivientes o demonios.",
+        "tactical_summary": "No tienes que tirar nada extra: si acabas de golpear con el arma, puedes gastar un espacio de conjuro para sumar 2d8 de daño Radiante (nivel 1), +1d8 por cada nivel de espacio adicional, y +1d8 más si el enemigo es un muerto viviente o infernal.",
         "tactical_role": "Ofensivo"
       },
       {
         "id": "ability-ataque-adicional",
         "name": "Ataque Adicional",
         "type": "trait",
-        "lore_description": "Puedes atacar dos veces en lugar de una cuando realizas la acción de Atacar en tu turno.",
-        "tactical_summary": "2 ataques por Acción.",
+        "lore_description": "Tu entrenamiento te permite golpear más de una vez en el mismo turno.",
+        "tactical_summary": "Cuando ataques, hazlo 2 veces en vez de 1.",
         "tactical_role": "Ofensivo"
       },
       {
         "id": "ability-salud-divina",
         "name": "Salud Divina",
         "type": "trait",
-        "lore_description": "La magia divina que fluye a través de ti te hace inmune a las enfermedades.",
-        "tactical_summary": "Inmunidad total a enfermedades.",
+        "lore_description": "La magia divina que fluye por ti te protege de cualquier enfermedad.",
+        "tactical_summary": "No puedes enfermar nunca.",
         "tactical_role": "Defensivo"
       }
     ]

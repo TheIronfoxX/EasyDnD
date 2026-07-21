@@ -13,6 +13,14 @@ class BasicInfo {
   int hpMax;
   int currentHp;
   int ac;
+  // Hotfix (CD de Salvación mal calculada): nivel de personaje. Vive en
+  // "basic_info" como "level". Antes de este hotfix no existía en ningún
+  // punto del modelo, así que el bonificador de competencia nunca se
+  // sumaba a nada (ni a la CD de salvación, ni al modificador mostrado
+  // junto a cada conjuro/rasgo en turn_tab.dart) — solo se usaba el
+  // modificador puro de característica. Fallback a 1 para fichas
+  // anteriores a este campo.
+  int level;
   // Velocidad de movimiento base, en metros por turno (no en pies).
   // Opcional en el constructor con 9 por defecto (la velocidad humana
   // estándar) para no romper otros puntos donde ya se construye
@@ -32,23 +40,61 @@ class BasicInfo {
     required this.hpMax,
     required this.currentHp,
     required this.ac,
+    this.level = 1,
     this.speed = 9,
     this.nivel20Link,
   });
 
+  /// Bonificador de competencia estándar de D&D 5e según nivel de
+  /// personaje (2 en niveles 1-4, 3 en 5-8, 4 en 9-12, 5 en 13-16, 6 en
+  /// 17-20). Es lo que faltaba sumar a la CD de salvación y al
+  /// modificador de conjuros/rasgos: antes de este hotfix solo se usaba
+  /// el modificador puro de característica (ver _abilityToEntry en
+  /// turn_tab.dart), por eso un clérigo Nv.11 con Sabiduría +5 mostraba
+  /// CD 13 (8+5) en vez de CD 17 (8+5+4 de competencia).
+  int get proficiencyBonus => 2 + ((level.clamp(1, 20) - 1) ~/ 4);
+
+  /// Hotfix (Competencia Fantasma / "el bug del 14 en vez del 15"):
+  /// muchas fichas (ej. Jiseol, "Artillero 6") no traen un campo "level"
+  /// numérico propio — el nivel real solo existe como texto pegado al
+  /// final de "characterClass". Antes de este hotfix, esas fichas caían
+  /// directas al fallback `?? 1` de más abajo, así que un personaje de
+  /// nivel 6 se calculaba con competencia de nivel 1 (+2 en vez de +3),
+  /// y tanto la CD de salvación como el modificador de conjuros/rasgos en
+  /// turn_tab.dart salían un punto por debajo de lo correcto.
+  ///
+  /// Este parser busca el último número que aparece en el string (ej.
+  /// "Artillero 6" -> 6, "Druida 12" -> 12) en vez de asumir nivel 1 a
+  /// ciegas. Si no encuentra ningún número, sí que asume 1 — igual que el
+  /// comportamiento anterior — porque no hay ninguna pista mejor de la
+  /// que tirar.
+  static int _levelFromCharacterClass(String characterClass) {
+    final match = RegExp(r'(\d+)\s*$').firstMatch(characterClass.trim());
+    if (match == null) return 1;
+    return int.tryParse(match.group(1)!) ?? 1;
+  }
+
   factory BasicInfo.fromJson(Map<String, dynamic> json) {
     final hpMax = json['hp_max'] ?? 1;
+    final characterClass = json['characterClass'] ?? '';
     return BasicInfo(
       name: json['name'] ?? 'Aventurero sin nombre',
       // Fase 9 — Identidad: si la ficha no trae raza/clase (personaje
       // pre-Fase-9), quedan vacías y el subtítulo del header simplemente
       // no se pinta (ver main_hud_screen.dart).
       race: json['race'] ?? '',
-      characterClass: json['characterClass'] ?? '',
+      characterClass: characterClass,
       hpMax: hpMax,
       // El JSON de origen no trae hp_current, así que arrancamos a full vida.
       currentHp: json['hp_current'] ?? hpMax,
       ac: json['ac'] ?? 10,
+      // Fallback en dos pasos: si el JSON trae "level" explícito, se usa
+      // tal cual (fichas nuevas / ya migradas). Si no, en vez de asumir
+      // nivel 1 directamente, se intenta extraer el número de
+      // "characterClass" (fichas como la de Jiseol, "Artillero 6"). Solo
+      // si tampoco hay número ahí, se cae a nivel 1 de verdad.
+      level: (json['level'] as num?)?.toInt() ??
+          _levelFromCharacterClass(characterClass),
       // Fallback seguro: fichas anteriores a este campo no traen "speed"
       // — 9 metros (la velocidad humana estándar) en vez de romper el
       // parseo o dejar al personaje inmóvil con un 0.
@@ -67,6 +113,7 @@ class BasicInfo {
       'hp_max': hpMax,
       'hp_current': currentHp,
       'ac': ac,
+      'level': level,
       'speed': speed,
       'nivel20_link': nivel20Link,
     };

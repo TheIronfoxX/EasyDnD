@@ -31,6 +31,11 @@ class _TacticalEntry {
   final int baseLevel;
   final String? scalingFormula;
   final String? damageDice;
+  // Tipo de daño del arma (ej. "cortante", "contundente"). Solo lo llevan
+  // las armas (_weaponToEntry) — las Abilities no tienen un campo de tipo
+  // de daño separado en el modelo actual, así que para conjuros/rasgos
+  // queda en null y displaySubtitle no lo añade.
+  final String? damageType;
   final String? loreDescription;
   final String? tacticalSummary;
   // Fase 12 — Clasificación Táctica: solo lo llevan las pasivas, para que
@@ -79,6 +84,7 @@ class _TacticalEntry {
     this.baseLevel = 0,
     this.scalingFormula,
     this.damageDice,
+    this.damageType,
     this.loreDescription,
     this.tacticalSummary,
     this.tacticalRole,
@@ -97,6 +103,44 @@ class _TacticalEntry {
   bool get hasExpandableInfo =>
       (loreDescription != null && loreDescription!.trim().isNotEmpty) ||
       (tacticalSummary != null && tacticalSummary!.trim().isNotEmpty);
+
+  /// Subtítulo a mostrar en el HUD: formato compacto "Tirada +N / dado",
+  /// construido a partir de datos que ya tenemos en la entrada (nada de
+  /// texto libre, así que el ancho es predecible):
+  /// - Si hay damageDice: "Tirada +9 / 2d6+4" (y "+9 / 2d6+4 cortante" si
+  ///   además hay damageType, que solo llevan las armas).
+  /// - Si es tirada de salvación sin dado propio (el objetivo tira, no
+  ///   el personaje): "CD · 15" con el número objetivo ya resuelto
+  ///   (8 + modificador) — nunca el modificador en crudo con signo, que
+  ///   confundiría la CD con un bonificador de ataque.
+  /// - Si es tappable pero no tiene dado (ej. rasgo activable sin daño):
+  ///   solo "Tirada +9".
+  /// - Fallback a `subtitle` (origen · modificador · escalado) para lo
+  ///   no tappable, como las pasivas.
+  String get displaySubtitle {
+    final modStr = '${modifier >= 0 ? '+' : ''}$modifier';
+    final dice = damageDice?.trim();
+    if (dice != null && dice.isNotEmpty) {
+      final type = damageType?.trim();
+      final typeSuffix = (type != null && type.isNotEmpty) ? ' $type' : '';
+      return 'Tirada $modStr / $dice$typeSuffix';
+    }
+    if (isSavingThrow) {
+      // Hotfix (CD mostrada como bonificador): isSavingThrow solo lo
+      // llevan entradas de _abilityToEntry (armas y pasivas siempre caen
+      // en false), así que `modifier` aquí es siempre característica +
+      // competencia — el mismo valor que resolution_modal.dart usa en
+      // _saveDC = 8 + widget.modifier. Antes se imprimía ese modificador
+      // tal cual con signo ("CD · +7"), como si la CD fuera un
+      // bonificador en vez del número objetivo fijo que es en D&D
+      // ("CD · 15").
+      return 'CD · ${8 + modifier}';
+    }
+    if (tappable) {
+      return 'Tirada $modStr';
+    }
+    return subtitle;
+  }
 }
 
 /// Traduce la clave de una stat ('str', 'dex'...) al modificador real del
@@ -154,11 +198,21 @@ class TurnTab extends StatelessWidget {
     // Fase 9: separamos armas y habilidades/conjuros en listas propias
     // (antes iban todas mezcladas en actionEntries) para poder pintar las
     // subcategorías "ARMAS" / "CONJUROS Y RASGOS" dentro de cada sección.
-    final actionWeaponEntries = weapons.map((w) => _weaponToEntry(w)).toList();
-    final actionAbilityEntries = abilities.action.map((a) => _abilityToEntry(a, stats, 'action')).toList();
+    // Hotfix (CD de Salvación mal calculada): el bonificador de
+    // competencia del personaje, calculado a partir de su nivel. Antes de
+    // este hotfix _abilityToEntry solo usaba el modificador puro de
+    // característica, así que ni la CD de salvación ni el modificador
+    // mostrado junto a cada conjuro/rasgo incluían la competencia.
+    final proficiencyBonus = character.basicInfo.proficiencyBonus;
 
-    final bonusEntries = abilities.bonusAction.map((a) => _abilityToEntry(a, stats, 'bonusAction')).toList();
-    final reactionEntries = abilities.reaction.map((a) => _abilityToEntry(a, stats, 'reaction')).toList();
+    final actionWeaponEntries = weapons.map((w) => _weaponToEntry(w)).toList();
+    final actionAbilityEntries =
+        abilities.action.map((a) => _abilityToEntry(a, stats, 'action', proficiencyBonus)).toList();
+
+    final bonusEntries =
+        abilities.bonusAction.map((a) => _abilityToEntry(a, stats, 'bonusAction', proficiencyBonus)).toList();
+    final reactionEntries =
+        abilities.reaction.map((a) => _abilityToEntry(a, stats, 'reaction', proficiencyBonus)).toList();
     // Las pasivas nunca se tiran: no llevan modificador ni descripciones de
     // resultado, y sus tarjetas no son tappable. Al ser homogéneas (todo
     // Rasgos, nunca armas), no necesitan la subcategorización.
@@ -235,13 +289,21 @@ class TurnTab extends StatelessWidget {
       // reenviarlo tal cual — _parseDice() en resolution_modal.dart ya
       // sabe leer ese "+8".
       damageDice: w.damage.baseDice,
+      damageType: w.damage.baseType,
     );
   }
 
-  _TacticalEntry _abilityToEntry(Ability a, StatsBlock stats, String categoryKey) {
+  _TacticalEntry _abilityToEntry(Ability a, StatsBlock stats, String categoryKey, int proficiencyBonus) {
     final origin = a.type == 'spell' ? 'Conjuro' : 'Rasgo';
     final icon = a.type == 'spell' ? Icons.auto_fix_high : Icons.shield_moon;
-    final mod = _modForStatKey(stats, a.relatedStat);
+    // Hotfix (CD de Salvación mal calculada): el modificador de un
+    // conjuro/rasgo tirable es SIEMPRE modificador de característica +
+    // competencia (el personaje siempre es "competente" en sus propios
+    // conjuros y rasgos de clase) — nunca solo la característica sola.
+    // Antes de este hotfix faltaba sumar proficiencyBonus, así que tanto
+    // la CD de salvación (8 + modifier en resolution_modal.dart) como el
+    // "+X" mostrado en el subtítulo salían más bajos de lo que debían.
+    final mod = _modForStatKey(stats, a.relatedStat) + proficiencyBonus;
     final scaleTag = a.isScalable ? ' · Escalable desde Nv.${a.baseLevel}' : '';
     return _TacticalEntry(
       name: a.name,
@@ -907,7 +969,9 @@ class _TacticalCard extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                entry.subtitle,
+                entry.displaySubtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: context.appColors.textSecondary,
                   fontSize: 12,
@@ -972,7 +1036,9 @@ class _TacticalCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        entry.subtitle,
+                        entry.displaySubtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: context.appColors.textSecondary,
                           fontSize: 12,

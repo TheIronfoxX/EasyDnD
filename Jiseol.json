@@ -1,0 +1,507 @@
+{
+  "basic_info": {
+    "name": "Jiseol",
+    "race": "Dracónido",
+    "characterClass": "Artillero 6",
+    "hp_max": 63,
+    "ac": 14,
+    "speed": 9
+  },
+  "purse": {
+    "gold": 0,
+    "silver": 0,
+    "copper": 0
+  },
+  "ai_tips": "Jiseol es una artillera arcana: combina conjuros de evocación (fuego, frío, trueno) con un Cañón Arcano invocable y armas mágicas únicas que usan Inteligencia para impactar. En combate, saca el Cañón Arcano al principio (acción) y luego actívalo cada turno como acción adicional mientras usas tu acción principal para lanzar conjuros o atacar con tus armas exóticas. Guarda 'Escudo' como reacción para subir tu CA de golpe cuando te ataquen. El Arma de Fuego Arcana te da un dado extra de daño en cualquier conjuro de la lista 'Artillero' que lances a través de ella, así que prioriza mantenerla siempre grabada en tu arma principal. Tu Arma de aliento draconiana es un recurso aparte y sirve como daño de área extra una vez por descanso.",
+  "user_tactics": "",
+  "adventure_notes": "",
+  "resources": [
+    {
+      "name": "Arma de aliento",
+      "current": 1,
+      "max": 1
+    },
+    {
+      "name": "Cañón Arcano",
+      "current": 1,
+      "max": 1
+    }
+  ],
+  "inventory": {
+    "weapons": [
+      {
+        "id": "weapon-gemini-jsi-px01",
+        "name": "Gemini ©JSI-PX01",
+        "attack_bonus": 7,
+        "damage": {
+          "base_dice": "2d8+4",
+          "base_type": "perforante"
+        },
+        "conditional_damage": [],
+        "properties": [
+          "Arma marcial",
+          "A distancia (50/150 pies)",
+          "Mágica"
+        ],
+        "homebrew_effect": "",
+        "magic_charges": {
+          "has_charges": false,
+          "max": 0,
+          "current": 0
+        },
+        "success_description": "El disparo perfora limpiamente al objetivo.",
+        "failure_description": "El disparo se desvía y no impacta.",
+        "is_unique": true
+      },
+      {
+        "id": "weapon-hanamatsuri-jsi-px04",
+        "name": "Hanamatsuri ©JSI-PX04",
+        "attack_bonus": 7,
+        "damage": {
+          "base_dice": "1d6+4",
+          "base_type": "cortante"
+        },
+        "conditional_damage": [],
+        "properties": [
+          "Arma marcial",
+          "Cuerpo a cuerpo",
+          "Arrojadiza",
+          "Mágica"
+        ],
+        "homebrew_effect": "Este abanico está formado por hojas de acero grabadas con cerezos que parecen moverse. Usando una acción adicional para desplegarlo en combate cuerpo a cuerpo, obtienes +1 a tu CA hasta el inicio de tu siguiente turno. Si lo lanzas, se abre en el aire y crea un efecto de distracción: el objetivo debe superar una tirada de salvación de Destreza (CD 14) o quedar cegado hasta el final de su siguiente turno.",
+        "magic_charges": {
+          "has_charges": false,
+          "max": 0,
+          "current": 0
+        },
+        "success_description": "Las hojas del abanico cortan con precisión.",
+        "failure_description": "El abanico no logra alcanzar al enemigo.",
+        "is_unique": true
+      },
+      {
+        "id": "weapon-eidolon-jsi-omega02",
+        "name": "Eidolon ©JSI-Ω02",
+        "attack_bonus": 7,
+        "damage": {
+          "base_dice": "1d8+1d6+4",
+          "base_type": "cortante y radiante"
+        },
+        "conditional_damage": [
+          {
+            "condition": "Si impactas al objetivo principal, una ráfaga de luz dorada golpea a otra criatura a menos de 5 pies de él",
+            "damage_dice": "1d4",
+            "damage_type": "radiante"
+          }
+        ],
+        "properties": [
+          "Arma marcial",
+          "Cuerpo a cuerpo",
+          "Arrojadiza",
+          "Mágica"
+        ],
+        "homebrew_effect": "Un chakram dorado con incrustaciones opalescentes que deja una estela de energía al moverse. Si fallas el ataque, el chakram puede rebotar contra una superficie y realizar un nuevo ataque contra otro enemigo dentro de 10 pies del primero.",
+        "magic_charges": {
+          "has_charges": false,
+          "max": 0,
+          "current": 0
+        },
+        "success_description": "El chakram traza un arco de luz dorada al impactar.",
+        "failure_description": "El chakram rebota sin alcanzar a nadie... por ahora.",
+        "is_unique": true
+      },
+      {
+        "id": "weapon-null-spear-jsi-vx03",
+        "name": "Null Spear ©JSI-VX03",
+        "attack_bonus": 7,
+        "damage": {
+          "base_dice": "1d8+4",
+          "base_type": "perforante"
+        },
+        "conditional_damage": [
+          {
+            "condition": "Objetivo marcado al lanzarla: al inicio de tu siguiente turno la lanza vuelve volando a tu mano golpeándolo de paso",
+            "damage_dice": "1d8",
+            "damage_type": "fuerza"
+          }
+        ],
+        "properties": [
+          "Arma marcial",
+          "Cuerpo a cuerpo",
+          "Arrojadiza",
+          "Mágica"
+        ],
+        "homebrew_effect": "Una lanza de diseño elegante con tonos violáceos que emite un aura de energía arcana constante. La criatura marcada debe superar una tirada de salvación de Destreza (CD 15) o recibir el daño del impacto cinético de retorno.",
+        "magic_charges": {
+          "has_charges": false,
+          "max": 0,
+          "current": 0
+        },
+        "success_description": "La lanza atraviesa al objetivo con precisión arcana.",
+        "failure_description": "La lanza se desvía en el aire.",
+        "is_unique": true
+      }
+    ],
+    "mundane_items": []
+  },
+  "stats": {
+    "str": {
+      "name": "Fuerza",
+      "value": 13,
+      "mod": 1,
+      "description": "Mide la potencia física y capacidades deportivas."
+    },
+    "dex": {
+      "name": "Destreza",
+      "value": 18,
+      "mod": 4,
+      "description": "Mide la agilidad y los reflejos."
+    },
+    "con": {
+      "name": "Constitución",
+      "value": 18,
+      "mod": 4,
+      "description": "Mide la resistencia y la salud."
+    },
+    "int": {
+      "name": "Inteligencia",
+      "value": 19,
+      "mod": 4,
+      "description": "Mide el razonamiento y la memoria."
+    },
+    "wis": {
+      "name": "Sabiduría",
+      "value": 18,
+      "mod": 4,
+      "description": "Mide la perspicacia e intuición."
+    },
+    "cha": {
+      "name": "Carisma",
+      "value": 20,
+      "mod": 5,
+      "description": "Mide la fuerza de personalidad y la presencia."
+    }
+  },
+  "spell_slots": [
+    {
+      "level": 1,
+      "max": 4,
+      "current": 4
+    },
+    {
+      "level": 2,
+      "max": 3,
+      "current": 3
+    },
+    {
+      "level": 3,
+      "max": 3,
+      "current": 3
+    }
+  ],
+  "skills": [
+    {
+      "name": "Acrobacias",
+      "related_stat": "dex",
+      "modifier": 4
+    },
+    {
+      "name": "Arcanos",
+      "related_stat": "int",
+      "modifier": 7
+    },
+    {
+      "name": "Atletismo",
+      "related_stat": "str",
+      "modifier": 1
+    },
+    {
+      "name": "Engañar",
+      "related_stat": "cha",
+      "modifier": 5
+    },
+    {
+      "name": "Historia",
+      "related_stat": "int",
+      "modifier": 4
+    },
+    {
+      "name": "Interpretación",
+      "related_stat": "cha",
+      "modifier": 5
+    },
+    {
+      "name": "Intimidar",
+      "related_stat": "cha",
+      "modifier": 5
+    },
+    {
+      "name": "Investigación",
+      "related_stat": "int",
+      "modifier": 7
+    },
+    {
+      "name": "Juego de Manos",
+      "related_stat": "dex",
+      "modifier": 4
+    },
+    {
+      "name": "Medicina",
+      "related_stat": "wis",
+      "modifier": 4
+    },
+    {
+      "name": "Naturaleza",
+      "related_stat": "int",
+      "modifier": 4
+    },
+    {
+      "name": "Percepción",
+      "related_stat": "wis",
+      "modifier": 7
+    },
+    {
+      "name": "Perspicacia",
+      "related_stat": "wis",
+      "modifier": 4
+    },
+    {
+      "name": "Persuasión",
+      "related_stat": "cha",
+      "modifier": 5
+    },
+    {
+      "name": "Religión",
+      "related_stat": "int",
+      "modifier": 4
+    },
+    {
+      "name": "Sigilo",
+      "related_stat": "dex",
+      "modifier": 4
+    },
+    {
+      "name": "Supervivencia",
+      "related_stat": "wis",
+      "modifier": 4
+    },
+    {
+      "name": "Trato con Animales",
+      "related_stat": "wis",
+      "modifier": 4
+    }
+  ],
+  "abilities_by_action": {
+    "action": [
+      {
+        "id": "ability-rayo-de-escarcha",
+        "name": "Rayo de escarcha",
+        "type": "spell",
+        "related_stat": "int",
+        "attack_type": "attack",
+        "success_description": "Un rayo de luz azul blanquecina congela al objetivo y ralentiza sus pasos.",
+        "failure_description": "El rayo helado pasa de largo sin tocar al objetivo.",
+        "is_scalable": true,
+        "base_level": 0,
+        "damage_dice": "2d8",
+        "scaling_formula": "1d8",
+        "lore_description": "Lanzas un rayo de escarcha que congela al objetivo y reduce su velocidad hasta tu siguiente turno. A medida que ganas experiencia como artillera arcana, el frío se vuelve más letal.",
+        "tactical_summary": "Tiras un d20 y sumas +7; le dices el resultado al máster y él te dice si le has dado | Daño: 2d8 Frío | Coste: 1 acción"
+      },
+      {
+        "id": "ability-rociar-veneno",
+        "name": "Rociar veneno",
+        "type": "spell",
+        "related_stat": "int",
+        "attack_type": "save",
+        "success_description": "Una nube tóxica envuelve al objetivo, que apenas logra contener la náusea.",
+        "failure_description": "El veneno se disipa antes de hacer efecto.",
+        "is_scalable": true,
+        "base_level": 0,
+        "damage_dice": "2d12",
+        "scaling_formula": "1d12",
+        "lore_description": "Proyectas una nube de gas nocivo desde tu palma hacia una criatura cercana. Es un truco brutal a corta distancia, ideal para rematar a un enemigo débil o abrir combate con daño garantizado si falla su resistencia.",
+        "tactical_summary": "El enemigo tira un d20; si supera tu CD (15) no recibe nada, si no la supera recibe todo el daño | Daño: 2d12 Veneno | Coste: 1 acción"
+      },
+      {
+        "id": "ability-onda-atronadora",
+        "name": "Onda atronadora",
+        "type": "spell",
+        "related_stat": "int",
+        "attack_type": "save",
+        "success_description": "Una explosión de sonido sacude el área a tu alrededor y lanza a los enemigos lejos de ti.",
+        "failure_description": "Los enemigos aguantan el estruendo y se mantienen en pie.",
+        "is_scalable": true,
+        "base_level": 1,
+        "damage_dice": "2d8",
+        "scaling_formula": "1d8",
+        "lore_description": "Emites una ola de fuerza atronadora desde tu cuerpo que empuja 10 pies a quien falle su resistencia; los objetos sueltos cercanos también son arrastrados y el estruendo se oye a gran distancia. Útil para separarte de enemigos que te rodean.",
+        "tactical_summary": "Los enemigos cerca de ti tiran un d20; si superan tu CD (15) reciben solo la mitad del daño y no se mueven, si no la superan reciben todo el daño y son empujados 10 pies | Daño: 2d8 Trueno | Coste: 1 acción + 1 espacio de conjuro de nivel 1 (más si usas uno superior)"
+      },
+      {
+        "id": "ability-estallar",
+        "name": "Estallar",
+        "type": "spell",
+        "related_stat": "int",
+        "attack_type": "save",
+        "success_description": "Un sonido ensordecedor sacude el área elegida, resquebrajando objetos y oídos por igual.",
+        "failure_description": "El estruendo se disipa sin causar más que un pitido pasajero.",
+        "is_scalable": true,
+        "base_level": 2,
+        "damage_dice": "3d8",
+        "scaling_formula": "1d8",
+        "lore_description": "Provocas un sonido estridente en un punto que elijas; las criaturas hechas de piedra, cristal o metal lo pasan especialmente mal. También daña objetos no mágicos que nadie lleve encima, lo que lo hace útil para romper cerraduras o muros finos a distancia.",
+        "tactical_summary": "Los enemigos en el área tiran un d20; si superan tu CD (15) reciben solo la mitad del daño, si no la superan reciben todo el daño | Daño: 3d8 Trueno | Coste: 1 acción + 1 espacio de conjuro de nivel 2 (más si usas uno superior)"
+      },
+      {
+        "id": "ability-rayo-abrasador",
+        "name": "Rayo abrasador",
+        "type": "spell",
+        "related_stat": "int",
+        "attack_type": "attack",
+        "success_description": "Los rayos de fuego impactan dejando quemaduras humeantes.",
+        "failure_description": "Los rayos de fuego se dispersan sin alcanzar a nadie.",
+        "is_scalable": true,
+        "base_level": 2,
+        "damage_dice": "2d6",
+        "scaling_formula": "2d6",
+        "lore_description": "Creas tres rayos de fuego que puedes repartir entre uno o varios objetivos dentro del alcance; cada rayo se resuelve como un disparo independiente. Al usar un espacio de nivel más alto, creas un rayo extra por cada nivel adicional, así que representa cada rayo extra como otra tirada de daño idéntica.",
+        "tactical_summary": "Por cada rayo, tiras un d20 y sumas +7; le dices el resultado al máster y él te dice si le has dado con ese rayo | Daño: 2d6 Fuego (por rayo) | Coste: 1 acción + 1 espacio de conjuro de nivel 2 (más si usas uno superior)"
+      },
+      {
+        "id": "ability-arma-de-aliento",
+        "name": "Arma de aliento",
+        "type": "racial_feature",
+        "related_stat": "con",
+        "attack_type": "save",
+        "success_description": "Exhalas una ráfaga helada que congela todo lo que toca.",
+        "failure_description": "El aliento se dispersa sin causar daño relevante.",
+        "is_scalable": true,
+        "base_level": 0,
+        "damage_dice": "3d6",
+        "scaling_formula": "1d6",
+        "lore_description": "Usas tu acción para exhalar la energía destructiva heredada de tu antepasado dragón, en tu caso una energía helada. Solo puedes usarla una vez hasta que descanses, así que resérvala para el momento en que puedas alcanzar a varios enemigos a la vez.",
+        "tactical_summary": "Los enemigos en el área tiran un d20; si superan tu CD (15) reciben solo la mitad del daño, si no la superan reciben todo el daño | Daño: 3d6 Frío | Coste: 1 acción + 1 uso de Arma de aliento (se recupera con descanso corto o largo)"
+      },
+      {
+        "id": "ability-canon-arcano",
+        "name": "Cañón Arcano",
+        "type": "class_feature",
+        "related_stat": "int",
+        "attack_type": "none",
+        "success_description": "El cañón arcano cobra vida frente a ti, listo para disparar.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Usando tus herramientas de herrero o carpintero, invocas un pequeño cañón arcano mecánico a tu lado. Puedes elegirle un aspecto (patas, ruedas, hélices...) y decides uno de sus tres modos al crearlo: Lanzallamas, Balista de Fuerza o Protector. Permanece activo una hora y solo puedes tener uno a la vez; para volver a crearlo necesitas descansar o gastar un espacio de conjuro.",
+        "tactical_summary": "No tienes que tirar nada, el cañón aparece automáticamente a tu lado | Coste: 1 uso de Cañón Arcano (se recupera con descanso largo o gastando un espacio de conjuro)"
+      }
+    ],
+    "bonus_action": [
+      {
+        "id": "ability-canon-lanzallamas",
+        "name": "Cañón Arcano: Lanzallamas",
+        "type": "class_feature",
+        "related_stat": "int",
+        "attack_type": "save",
+        "success_description": "El cañón escupe un cono de llamas que carboniza todo a su paso.",
+        "failure_description": "Las llamas del cañón se apagan sin alcanzar a nadie importante.",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "2d8",
+        "scaling_formula": "",
+        "lore_description": "Ordenas a tu cañón arcano que proyecte un cono de fuego de 15 pies. Los objetos inflamables cercanos que nadie lleve puesto empiezan a arder. Ideal contra grupos de enemigos agrupados frente al cañón.",
+        "tactical_summary": "Los enemigos en el cono de fuego tiran un d20; si superan tu CD (15) reciben solo la mitad del daño, si no la superan reciben todo el daño | Daño: 2d8 Fuego | Coste: 1 acción adicional (debes estar a menos de 60 pies del cañón); además el cañón puede moverse hasta 15 pies antes o después"
+      },
+      {
+        "id": "ability-canon-balista-de-fuerza",
+        "name": "Cañón Arcano: Balista de Fuerza",
+        "type": "class_feature",
+        "related_stat": "int",
+        "attack_type": "attack",
+        "success_description": "El disparo de fuerza golpea con un impacto contundente que empuja al objetivo.",
+        "failure_description": "El disparo de fuerza pasa de largo.",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "2d8",
+        "scaling_formula": "",
+        "lore_description": "Ordenas a tu cañón que dispare un proyectil de fuerza pura contra una criatura u objeto a hasta 120 pies. Si es una criatura, además la empuja 5 pies hacia atrás, útil para alejar enemigos de un borde o de tus aliados.",
+        "tactical_summary": "El cañón tira un d20 y suma tu bonificador; le dices el resultado al máster y él te dice si ha impactado | Daño: 2d8 Fuerza | Coste: 1 acción adicional (debes estar a menos de 60 pies del cañón); además el cañón puede moverse hasta 15 pies antes o después"
+      },
+      {
+        "id": "ability-canon-protector",
+        "name": "Cañón Arcano: Protector",
+        "type": "class_feature",
+        "related_stat": "int",
+        "attack_type": "none",
+        "success_description": "Una descarga de energía protectora envuelve a ti y a tus aliados cercanos.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "1d8+4",
+        "scaling_formula": "",
+        "lore_description": "Ordenas a tu cañón que emita una descarga de energía protectora. Tú y cada criatura que elijas a 10 pies del cañón ganáis puntos de golpe temporales, perfecto para blindar al grupo justo antes de un impacto fuerte.",
+        "tactical_summary": "No tienes que tirar nada, los puntos de golpe temporales se aplican directamente | Curación: 1d8+4 (puntos de golpe temporales) | Coste: 1 acción adicional (debes estar a menos de 60 pies del cañón); además el cañón puede moverse hasta 15 pies antes o después"
+      }
+    ],
+    "reaction": [
+      {
+        "id": "ability-escudo",
+        "name": "Escudo",
+        "type": "spell",
+        "related_stat": "int",
+        "attack_type": "none",
+        "success_description": "Una barrera invisible de fuerza mágica te envuelve justo a tiempo.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 1,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Cuando te atacan o eres el objetivo de un proyectil mágico, invocas al instante una barrera de fuerza invisible que te rodea hasta tu siguiente turno, incluso contra el ataque que la activó. Guárdalo para el golpe que de verdad te preocupe.",
+        "tactical_summary": "No tienes que tirar nada, la barrera aparece automáticamente y te da +5 a la CA hasta tu siguiente turno | Coste: 1 reacción + 1 espacio de conjuro de nivel 1"
+      }
+    ],
+    "passive": [
+      {
+        "id": "ability-resistencia-al-dano",
+        "name": "Resistencia al daño (Frío)",
+        "type": "racial_feature",
+        "lore_description": "La sangre de dragón helado que corre por tus venas te hace naturalmente más resistente a las heridas frías, ya sean de origen mágico o natural.",
+        "tactical_summary": "El daño de frío que recibes se reduce a la mitad | Coste: ninguno, es un efecto pasivo constante",
+        "tactical_role": "Defensivo"
+      },
+      {
+        "id": "ability-herramientas-del-oficio",
+        "name": "Herramientas del Oficio",
+        "type": "class_feature",
+        "lore_description": "Tu formación como artillera te da soltura con armas marciales a distancia y con herramientas de carpintero, y además fabricas varitas mágicas en la mitad de tiempo de lo normal.",
+        "tactical_summary": "Tienes competencia con todas las armas marciales a distancia y con herramientas de carpintero; fabricas varitas en la mitad de tiempo | Coste: ninguno, es un efecto pasivo constante",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-arma-de-fuego-arcana",
+        "name": "Arma de Fuego Arcana",
+        "type": "class_feature",
+        "lore_description": "Al terminar un descanso largo grabas runas y sigilos arcanos en una de tus armas, convirtiéndola en tu foco de conjuros de Artillero. Mientras esa arma esté grabada, tus conjuros dañinos de esa lista salen reforzados.",
+        "tactical_summary": "Cada vez que un conjuro de Artillero que hace daño pase por esta arma, tiras 1d8 extra y lo sumas a una de las tiradas de daño de ese conjuro | Coste: ninguno en combate; grabar el arma requiere un descanso largo",
+        "tactical_role": "Ofensivo"
+      },
+      {
+        "id": "ability-inventora-errante",
+        "name": "Inventora Errante",
+        "type": "trait",
+        "lore_description": "Has pasado media vida desmontando y construyendo cualquier artefacto que cae en tus manos. Sueles encontrar soluciones poco convencionales a problemas aparentemente imposibles, aunque casi siempre implican bastante improvisación (y alguna que otra explosión).",
+        "tactical_summary": "Cuando el máster te lo permita, puedes intentar una solución poco ortodoxa a un problema mecánico o técnico usando tus conocimientos de artificiera | Coste: ninguno fijo, depende de la situación (a discreción del máster)",
+        "tactical_role": "Utilidad"
+      }
+    ]
+  },
+  "lore_info": {
+    "backstory": "Jiseol es una dracónida artillera obsesionada con desmontar y reinventar cualquier mecanismo o reliquia que cae en sus manos, y fue precisamente la búsqueda de unas antiguas reliquias dracónicas lo que la lanzó a la aventura. En el camino conoció a Miralia (clériga ciega) y Doloria Pussydestroyer (paladina), a quienes salvó de un monstruo con un cañón improvisado que también destruyó medio camino; poco después se les unieron la ranger Xyrqhazthylia, la monje silenciosa Mo, la hechicera Fecalith y la barda Spaccafiga. Juntas formaron 'Las Dragonas Livianas', un grupo tan famoso por sus desastres accidentales como por sus milagrosas victorias. Jiseol sigue buscando comprender y mejorar antiguas reliquias dracónicas, convencida de que cualquier problema puede resolverse construyendo algo, aunque rara vez funcione a la primera. Para ella, el verdadero tesoro nunca fueron las reliquias, sino la familia que fue encontrando por el camino.",
+    "personality_traits": "Siempre estoy pensando en un nuevo invento o en cómo mejorar uno antiguo. Afronto cualquier problema con entusiasmo, incluso cuando todos los demás creen que es una pésima idea.",
+    "ideals": "Innovación. Todo puede mejorarse si se comprende cómo funciona.",
+    "bonds": "Las Dragonas Livianas son la mejor creación que jamás he construido, aunque ninguna esté hecha por mí.",
+    "flaws": "Rara vez pienso en las consecuencias antes de probar una idea nueva."
+  }
+}

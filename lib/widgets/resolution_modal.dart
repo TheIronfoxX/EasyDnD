@@ -2,13 +2,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 
-// Aviso "CD de Salvación": valor fijo que usa toda la mesa (mismo DM,
-// misma CD para todos los personajes) — no se calcula por personaje, solo
-// se muestra tal cual durante la resolución de un hechizo de salvación.
-// TODO: ajustar este valor al que realmente use tu grupo / al que exporte
-// la ficha de Nivel20.
-const int CD_SALVACION_FIJA = 15;
-
 enum _RollMode { digital, manual }
 
 enum _AdvantageMode { normal, advantage, disadvantage }
@@ -306,6 +299,13 @@ class _ResolutionModalContentState extends State<_ResolutionModalContent> {
   }
 
   bool get _needsTwoDice => _advantage != _AdvantageMode.normal;
+
+  /// CD de Salvación real: fórmula estándar de D&D 5e, CD = 8 + modificador.
+  /// widget.modifier ya trae competencia + característica sumadas (es el
+  /// mismo valor que se muestra arriba como "Modificador: +X" y que se
+  /// usaría para un ataque), así que no hace falta pedir nada nuevo al
+  /// caller — solo calcular en vez de mostrar un número fijo por hechizo.
+  int get _saveDC => 8 + widget.modifier;
 
   /// Hotfix (Ranuras Fantasma): "¿este conjuro gasta una ranura al
   /// lanzarse?" NO es lo mismo que "¿se puede subir de nivel?"
@@ -752,10 +752,10 @@ class _ResolutionModalContentState extends State<_ResolutionModalContent> {
     );
   }
 
-  /// Aviso "CD de Salvación": banner fijo y bien visible, pensado para
-  /// leerse de un vistazo en mesa mientras se juega. No calcula nada — solo
-  /// muestra CD_SALVACION_FIJA tal cual, siempre que la habilidad/hechizo
-  /// sea de tipo salvación (widget.isSavingThrow).
+  /// Banner de CD de Salvación: bien visible, pensado para leerse de un
+  /// vistazo en mesa mientras se juega. Calcula CD = 8 + modificador (regla
+  /// estándar de D&D 5e) a partir de widget.modifier, siempre que la
+  /// habilidad/hechizo sea de tipo salvación (widget.isSavingThrow).
   Widget _savingThrowBanner(Color accent) {
     return Container(
       width: double.infinity,
@@ -774,7 +774,7 @@ class _ResolutionModalContentState extends State<_ResolutionModalContent> {
           Icon(Icons.shield, color: accent, size: 20),
           const SizedBox(width: 10),
           Text(
-            'CD de Salvación: $CD_SALVACION_FIJA',
+            'CD de Salvación: $_saveDC',
             style: TextStyle(
               color: accent,
               fontSize: 16,
@@ -790,8 +790,9 @@ class _ResolutionModalContentState extends State<_ResolutionModalContent> {
 
   /// Sustituye por completo al flujo de d20 (MÉTODO/TIRADA/RODAR DADO)
   /// cuando el hechizo es de salvación: aquí no tiras tú, tira el
-  /// objetivo contra CD_SALVACION_FIJA — así que el modal solo necesita
-  /// preguntar el resultado narrado en mesa, no simular ninguna tirada.
+  /// objetivo contra _saveDC (8 + modificador) — así que el modal solo
+  /// necesita preguntar el resultado narrado en mesa, no simular ninguna
+  /// tirada.
   Widget _buildSavingThrowButtons(Color accent) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
