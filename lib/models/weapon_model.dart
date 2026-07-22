@@ -107,6 +107,13 @@ class Weapon {
   // según si el ataque acierta o falla.
   String successDescription;
   String failureDescription;
+  // Paridad con Ability: lore/flavor del arma y resumen táctico, para que
+  // TurnTab pueda mostrarlas igual que hace con conjuros y rasgos (antes
+  // el modelo no traía estos campos y _weaponToEntry no tenía nada que
+  // reenviar). Nullable como en Ability: un arma sin lore homebrew no
+  // debe forzar texto vacío en la UI.
+  String? loreDescription;
+  String? tacticalSummary;
   // Fase 2 — Armas Únicas: objetos mágicos/legendarios que no se acumulan.
   // Si es true, la UI oculta el stepper de cantidad (siempre vale 1).
   bool isUnique;
@@ -122,6 +129,8 @@ class Weapon {
     required this.magicCharges,
     required this.successDescription,
     required this.failureDescription,
+    this.loreDescription,
+    this.tacticalSummary,
     this.isUnique = false,
   });
 
@@ -146,6 +155,8 @@ class Weapon {
       magicCharges: MagicCharges.fromJson(json['magic_charges']),
       successDescription: json['success_description'] ?? '',
       failureDescription: json['failure_description'] ?? '',
+      loreDescription: json['lore_description'] as String?,
+      tacticalSummary: json['tactical_summary'] as String?,
       isUnique: json['is_unique'] ?? false,
     );
   }
@@ -162,6 +173,8 @@ class Weapon {
       'magic_charges': magicCharges.toJson(),
       'success_description': successDescription,
       'failure_description': failureDescription,
+      'lore_description': loreDescription,
+      'tactical_summary': tacticalSummary,
       'is_unique': isUnique,
     };
   }

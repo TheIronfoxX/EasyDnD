@@ -1,4 +1,6 @@
 // lib/models/character_model.dart
+import 'dart:math';
+
 import 'weapon_model.dart';
 import 'ability_model.dart';
 import 'stats_model.dart';
@@ -32,6 +34,17 @@ class BasicInfo {
   // Vive en "basic_info" como "nivel20_link" — opcional para no romper
   // el parseo de fichas anteriores a esta integración.
   String? nivel20Link;
+  // CD de Salvación de conjuros, ya resuelta (8 + competencia + mod. de la
+  // característica de lanzamiento). Vive en "basic_info" como
+  // "spell_save_dc". A propósito NO se recalcula en la app a partir del
+  // related_stat de cada Ability (como hacía antes turn_tab.dart): ese
+  // cálculo asumía que todas las habilidades de tipo "save" comparten la
+  // misma característica de lanzamiento, lo que rompía con multiclase o
+  // rasgos homebrew. Este campo es el número que ya trae la ficha/JSON,
+  // así que es la app la que confía en él en vez de reconstruirlo.
+  // Null para personajes que no lanzan conjuros o fichas anteriores a este
+  // campo — en ese caso turn_tab.dart no pinta ningún aviso de CD.
+  int? spellSaveDc;
 
   BasicInfo({
     required this.name,
@@ -43,6 +56,7 @@ class BasicInfo {
     this.level = 1,
     this.speed = 9,
     this.nivel20Link,
+    this.spellSaveDc,
   });
 
   /// Bonificador de competencia estándar de D&D 5e según nivel de
@@ -102,6 +116,10 @@ class BasicInfo {
       // Fallback seguro: fichas anteriores a esta integración no traen
       // "nivel20_link" — queda null en vez de romper el parseo.
       nivel20Link: json['nivel20_link'] as String?,
+      // Fallback seguro: fichas anteriores a este campo, o de personajes
+      // sin conjuros, no traen "spell_save_dc" — queda null en vez de
+      // romper el parseo (turn_tab.dart simplemente no pinta el aviso).
+      spellSaveDc: (json['spell_save_dc'] as num?)?.toInt(),
     );
   }
 
@@ -116,35 +134,53 @@ class BasicInfo {
       'level': level,
       'speed': speed,
       'nivel20_link': nivel20Link,
+      'spell_save_dc': spellSaveDc,
     };
   }
 }
 
-/// Action Economy Tracker — estado de los tres recursos de acción del
-/// turno actual (acción, acción adicional, reacción). Los tres booleanos
-/// son mutables y arrancan en `false` (recurso disponible); se ponen a
-/// `true` cuando el jugador los gasta y vuelven a `false` con
-/// resetTurn() al terminar el turno. Vive en la raíz del JSON como
-/// "turn_status".
+/// Action Economy Tracker — estado de los recursos de acción del turno
+/// actual (acción, acción adicional, movimiento). Los dos booleanos
+/// arrancan en `false` (recurso disponible); se ponen a `true` cuando el
+/// jugador los gasta y vuelven a `false` con resetTurn() al terminar el
+/// turno. Vive en la raíz del JSON como "turn_status".
+///
+/// Refactor "Reacción -> Movimiento": el antiguo `reactionUsed` (bool) se
+/// sustituye por `movementRemaining` (int), porque el movimiento no es un
+/// recurso binario gastado/disponible sino una cantidad que se va
+/// consumiendo a lo largo del turno (ver turn_tab.dart, _MovementTile).
+/// No lleva su propio "máximo": el máximo siempre es
+/// BasicInfo.speed del personaje — guardarlo aparte solo lo
+/// desincronizaría si el jugador sube de nivel o cambia de raza/velocidad.
 class TurnStatus {
   bool actionUsed;
   bool bonusActionUsed;
-  bool reactionUsed;
+  int movementRemaining;
 
   TurnStatus({
     this.actionUsed = false,
     this.bonusActionUsed = false,
-    this.reactionUsed = false,
+    this.movementRemaining = 9,
   });
 
-  factory TurnStatus.fromJson(Map<String, dynamic>? json) {
+  /// [maxSpeed] es BasicInfo.speed del personaje al que pertenece este
+  /// TurnStatus — se usa como valor de arranque si la ficha todavía no
+  /// trae "movementRemaining" guardado (fichas anteriores a este campo, o
+  /// justo después de crear el personaje), en vez de un número fijo que
+  /// podría no coincidir con la velocidad real del personaje.
+  factory TurnStatus.fromJson(Map<String, dynamic>? json, {required int maxSpeed}) {
     // Fallback seguro: fichas anteriores a este módulo no traen
-    // "turn_status" — arrancan con los tres recursos disponibles.
-    if (json == null) return TurnStatus();
+    // "turn_status" — arrancan con acción/adicional disponibles y el
+    // movimiento a tope.
+    if (json == null) return TurnStatus(movementRemaining: maxSpeed);
     return TurnStatus(
       actionUsed: json['actionUsed'] ?? false,
       bonusActionUsed: json['bonusActionUsed'] ?? false,
-      reactionUsed: json['reactionUsed'] ?? false,
+      // Fallback seguro: fichas guardadas con el antiguo "reactionUsed"
+      // (o sin ningún dato de movimiento todavía) arrancan a velocidad
+      // completa en vez de a 0 — un personaje recién migrado no debería
+      // aparecer como si ya hubiera gastado todo su movimiento.
+      movementRemaining: (json['movementRemaining'] as num?)?.toInt() ?? maxSpeed,
     );
   }
 
@@ -152,7 +188,7 @@ class TurnStatus {
     return {
       'actionUsed': actionUsed,
       'bonusActionUsed': bonusActionUsed,
-      'reactionUsed': reactionUsed,
+      'movementRemaining': movementRemaining,
     };
   }
 }
@@ -454,6 +490,19 @@ class Companion {
 }
 
 class CharacterModel {
+  // Roster multi-personaje / HUD por personaje: identificador ESTABLE
+  // y único del personaje, independiente de su nombre (que el jugador
+  // puede cambiar o repetir entre fichas). Se genera una sola vez al
+  // crear el personaje (o, para fichas guardadas antes de este campo,
+  // la primera vez que se cargan — ver CharacterProvider.init(), que
+  // persiste el roster inmediatamente después de cargarlo para que el
+  // id de fallback no cambie en cada reinicio de la app).
+  //
+  // `final`: una vez asignado, no debe reescribirse nunca — cualquier
+  // dato namespaceado por personaje (como el layout del HUD) depende
+  // de que este valor no cambie bajo los pies.
+  final String id;
+
   BasicInfo basicInfo;
   Inventory inventory;
   AbilitiesByAction abilitiesByAction;
@@ -471,6 +520,14 @@ class CharacterModel {
   // de la foto de perfil. Null si el personaje aún no tiene avatar propio
   // (se pinta un icono por defecto en el header, ver main_hud_screen.dart).
   String? avatarPath;
+  // Fase 10.1 — Foto de la pestaña de Lore: ruta local independiente de
+  // "avatarPath". Null mientras el jugador no la edite explícitamente
+  // desde LoreTab; en ese caso lore_tab.dart cae en avatarPath como
+  // valor por defecto (misma foto que el header) SIN copiarlo aquí — así
+  // si luego el jugador cambia la foto de perfil, la de Lore no se queda
+  // "congelada" con la antigua a menos que el jugador la haya fijado a
+  // mano alguna vez.
+  String? loreAvatarPath;
   // Paso 1 — Gestión de Oro: bolsa de monedas del personaje. Vive en la
   // raíz del JSON como "purse". Parámetro opcional en el constructor
   // (con Purse() vacía por defecto) para no romper otros puntos de
@@ -528,7 +585,8 @@ class CharacterModel {
   List<Companion> companions;
 
   CharacterModel({
-    required this.basicInfo,
+    String? id,
+    required BasicInfo basicInfo,
     required this.inventory,
     required this.abilitiesByAction,
     required this.stats,
@@ -536,6 +594,7 @@ class CharacterModel {
     required this.skills,
     required this.loreInfo,
     this.avatarPath,
+    this.loreAvatarPath,
     Purse? purse,
     this.aiTips = '',
     this.userTactics = '',
@@ -544,17 +603,40 @@ class CharacterModel {
     TurnStatus? turnStatus,
     List<String>? activeConditions,
     List<Companion>? companions,
-  })  : purse = purse ?? Purse(),
+  })  : id = id ?? _generateId(),
+        basicInfo = basicInfo,
+        purse = purse ?? Purse(),
         resources = resources ?? [],
-        turnStatus = turnStatus ?? TurnStatus(),
+        // Sin turnStatus explícito (ej. personaje nuevo desde el
+        // formulario de alta), el movimiento arranca a tope según la
+        // velocidad real de ESE personaje — no un 9 fijo que solo casaba
+        // por casualidad con la velocidad humana estándar.
+        turnStatus = turnStatus ?? TurnStatus(movementRemaining: basicInfo.speed),
         activeConditions = activeConditions ?? [],
         companions = companions ?? [];
+
+  /// Genera un id de fallback para personajes creados o importados sin
+  /// uno explícito (fichas anteriores a este campo, o construidas a
+  /// mano en algún punto del código que aún no pasa `id`). No es un
+  /// UUID de verdad para no añadir una dependencia nueva solo por
+  /// esto — combina timestamp + aleatorio, suficiente para no colisionar
+  /// entre los pocos personajes de un roster local.
+  static String _generateId() {
+    final timestamp = DateTime.now().microsecondsSinceEpoch;
+    final random = Random().nextInt(0x7FFFFFFF);
+    return 'char_${timestamp}_$random';
+  }
 
   factory CharacterModel.fromJson(Map<String, dynamic> json) {
     final rawSkills = (json['skills'] as List<dynamic>?) ?? [];
     final rawResources = (json['resources'] as List<dynamic>?) ?? [];
+    final basicInfo = BasicInfo.fromJson(json['basic_info'] ?? {});
     return CharacterModel(
-      basicInfo: BasicInfo.fromJson(json['basic_info'] ?? {}),
+      // null si es una ficha guardada antes de este campo: el
+      // constructor genera un id de fallback automáticamente (ver
+      // _generateId más arriba).
+      id: json['id'] as String?,
+      basicInfo: basicInfo,
       inventory: Inventory.fromJson(json['inventory'] ?? {}),
       abilitiesByAction:
           AbilitiesByAction.fromJson(json['abilities_by_action'] ?? {}),
@@ -565,6 +647,10 @@ class CharacterModel {
           .toList(),
       loreInfo: LoreInfo.fromJson(json['lore_info'] ?? {}),
       avatarPath: json['avatar_path'] as String?,
+      // Fallback seguro: JSONs de personajes creados antes de este campo
+      // no traen "lore_avatar_path" — queda null y LoreTab cae en
+      // avatarPath como valor por defecto, ver lore_tab.dart.
+      loreAvatarPath: json['lore_avatar_path'] as String?,
       // Fallback seguro: JSONs de personajes creados antes del Paso 1 no
       // traen "purse" — Purse.fromJson(null) devuelve una bolsa a 0/0/0.
       purse: Purse.fromJson(json['purse'] as Map<String, dynamic>?),
@@ -580,9 +666,13 @@ class CharacterModel {
           .map((e) => ResourcePoint.fromJson(e as Map<String, dynamic>))
           .toList(),
       // Fallback seguro: JSONs de personajes creados antes de este módulo
-      // no traen "turn_status" — TurnStatus.fromJson(null) devuelve los
-      // tres recursos disponibles.
-      turnStatus: TurnStatus.fromJson(json['turn_status'] as Map<String, dynamic>?),
+      // no traen "turn_status" — TurnStatus.fromJson(null, ...) arranca
+      // con acción/adicional disponibles y el movimiento a tope según la
+      // velocidad real del personaje (basicInfo.speed).
+      turnStatus: TurnStatus.fromJson(
+        json['turn_status'] as Map<String, dynamic>?,
+        maxSpeed: basicInfo.speed,
+      ),
       // Fallback seguro: JSONs de personajes creados antes de este módulo
       // no traen "active_conditions" — lista vacía en vez de romper el
       // parseo.
@@ -604,6 +694,7 @@ class CharacterModel {
   /// ability_model.dart / stats_model.dart todavía no lo traen.
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'basic_info': basicInfo.toJson(),
       'inventory': inventory.toJson(),
       'abilities_by_action': abilitiesByAction.toJson(),
@@ -612,6 +703,7 @@ class CharacterModel {
       'skills': skills.map((s) => s.toJson()).toList(),
       'lore_info': loreInfo.toJson(),
       'avatar_path': avatarPath,
+      'lore_avatar_path': loreAvatarPath,
       'purse': purse.toJson(),
       'ai_tips': aiTips,
       'user_tactics': userTactics,

@@ -181,6 +181,16 @@ Future<void> showResolutionModal({
   // igual que con isScalable/damageDice, para que el modal siga sin
   // conocer Ability ni Weapon directamente.
   bool isSavingThrow = false,
+  // CD ya resuelta a mostrar cuando isSavingThrow es true (viene de
+  // CharacterModel.basicInfo.spellSaveDc, ya calculada en la ficha/JSON:
+  // 8 + competencia + mod. de la característica de lanzamiento). El modal
+  // ya NO recalcula la CD a partir de `modifier` — ese cálculo asumía que
+  // la característica de lanzamiento es siempre la misma que el
+  // modificador de ataque/tirada de la habilidad, lo cual no es cierto en
+  // general (multiclase, rasgos homebrew). Si viene null (ficha antigua
+  // sin este campo, o personaje sin conjuros), se cae a "—" en vez de
+  // inventar un número.
+  int? saveDc,
 }) {
   return showDialog<void>(
     context: context,
@@ -203,6 +213,7 @@ Future<void> showResolutionModal({
         loreDescription: loreDescription,
         tacticalSummary: tacticalSummary,
         isSavingThrow: isSavingThrow,
+        saveDc: saveDc,
       ),
     ),
   );
@@ -223,6 +234,7 @@ class _ResolutionModalContent extends StatefulWidget {
   final String? loreDescription;
   final String? tacticalSummary;
   final bool isSavingThrow;
+  final int? saveDc;
 
   const _ResolutionModalContent({
     required this.accent,
@@ -239,6 +251,7 @@ class _ResolutionModalContent extends StatefulWidget {
     required this.loreDescription,
     required this.tacticalSummary,
     required this.isSavingThrow,
+    required this.saveDc,
   });
 
   @override
@@ -300,12 +313,16 @@ class _ResolutionModalContentState extends State<_ResolutionModalContent> {
 
   bool get _needsTwoDice => _advantage != _AdvantageMode.normal;
 
-  /// CD de Salvación real: fórmula estándar de D&D 5e, CD = 8 + modificador.
-  /// widget.modifier ya trae competencia + característica sumadas (es el
-  /// mismo valor que se muestra arriba como "Modificador: +X" y que se
-  /// usaría para un ataque), así que no hace falta pedir nada nuevo al
-  /// caller — solo calcular en vez de mostrar un número fijo por hechizo.
-  int get _saveDC => 8 + widget.modifier;
+  /// CD de Salvación: se muestra tal cual viene de la ficha
+  /// (CharacterModel.basicInfo.spellSaveDc vía widget.saveDc), en vez de
+  /// recalcularla como 8 + widget.modifier. Ese cálculo antiguo asumía que
+  /// la característica de lanzamiento de conjuros era siempre la misma
+  /// que la del modificador de la habilidad concreta que abrió el modal —
+  /// rompía con multiclase o rasgos homebrew con característica distinta.
+  /// Null (ficha sin este campo) se resuelve como '—' en _saveDcLabel.
+  int? get _saveDC => widget.saveDc;
+
+  String get _saveDcLabel => _saveDC != null ? '$_saveDC' : '—';
 
   /// Hotfix (Ranuras Fantasma): "¿este conjuro gasta una ranura al
   /// lanzarse?" NO es lo mismo que "¿se puede subir de nivel?"
@@ -774,7 +791,7 @@ class _ResolutionModalContentState extends State<_ResolutionModalContent> {
           Icon(Icons.shield, color: accent, size: 20),
           const SizedBox(width: 10),
           Text(
-            'CD de Salvación: $_saveDC',
+            'CD de Salvación: $_saveDcLabel',
             style: TextStyle(
               color: accent,
               fontSize: 16,
@@ -790,9 +807,9 @@ class _ResolutionModalContentState extends State<_ResolutionModalContent> {
 
   /// Sustituye por completo al flujo de d20 (MÉTODO/TIRADA/RODAR DADO)
   /// cuando el hechizo es de salvación: aquí no tiras tú, tira el
-  /// objetivo contra _saveDC (8 + modificador) — así que el modal solo
-  /// necesita preguntar el resultado narrado en mesa, no simular ninguna
-  /// tirada.
+  /// objetivo contra _saveDC (el spellSaveDc de la ficha) — así que el
+  /// modal solo necesita preguntar el resultado narrado en mesa, no
+  /// simular ninguna tirada.
   Widget _buildSavingThrowButtons(Color accent) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

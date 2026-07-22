@@ -58,6 +58,12 @@ class _TacticalEntry {
   // quedan en false por defecto — las armas no tienen attackType propio y
   // las pasivas nunca abren el modal.
   final bool isSavingThrow;
+  // CD de Salvación ya resuelta, tal cual viene de la ficha
+  // (character.basicInfo.spellSaveDc) — ya no se calcula aquí como
+  // "8 + modifier". Solo tiene sentido cuando isSavingThrow es true; para
+  // el resto de entradas (armas, pasivas, conjuros que no son de tipo
+  // 'save') queda en null y no se pinta ni se usa.
+  final int? saveDc;
   // Borrado de habilidades: id estable de la Ability de origen (Ability.id).
   // Las entradas que vienen de un arma (_weaponToEntry) lo dejan en null a
   // propósito — borrar armas no entra en el alcance de esta función, y un
@@ -93,6 +99,7 @@ class _TacticalEntry {
     this.maxCharges = 0,
     this.isSpell = false,
     this.isSavingThrow = false,
+    this.saveDc,
     this.id,
     this.sourceAbility,
     this.categoryKey,
@@ -126,15 +133,15 @@ class _TacticalEntry {
       return 'Tirada $modStr / $dice$typeSuffix';
     }
     if (isSavingThrow) {
-      // Hotfix (CD mostrada como bonificador): isSavingThrow solo lo
-      // llevan entradas de _abilityToEntry (armas y pasivas siempre caen
-      // en false), así que `modifier` aquí es siempre característica +
-      // competencia — el mismo valor que resolution_modal.dart usa en
-      // _saveDC = 8 + widget.modifier. Antes se imprimía ese modificador
-      // tal cual con signo ("CD · +7"), como si la CD fuera un
-      // bonificador en vez del número objetivo fijo que es en D&D
-      // ("CD · 15").
-      return 'CD · ${8 + modifier}';
+      // Hotfix (CD de un solo número para todo el personaje): la CD ya no
+      // se calcula aquí a partir del modifier de esta habilidad concreta
+      // (eso asumía que la característica de lanzamiento de conjuros
+      // coincidía con el related_stat de cada Ability, lo que fallaba con
+      // multiclase o rasgos homebrew). Ahora se muestra directamente
+      // saveDc, que viene de character.basicInfo.spellSaveDc (el número
+      // que trae la ficha/JSON). Si la ficha no lo trae (personaje sin
+      // conjuros o ficha antigua), no se pinta nada de CD.
+      return saveDc != null ? 'CD · $saveDc' : subtitle;
     }
     if (tappable) {
       return 'Tirada $modStr';
@@ -204,15 +211,21 @@ class TurnTab extends StatelessWidget {
     // característica, así que ni la CD de salvación ni el modificador
     // mostrado junto a cada conjuro/rasgo incluían la competencia.
     final proficiencyBonus = character.basicInfo.proficiencyBonus;
+    // CD de Salvación de conjuros: un único número por personaje, tal cual
+    // viene de la ficha/JSON (character.basicInfo.spellSaveDc), en vez de
+    // recalcularse por habilidad a partir de related_stat + competencia.
+    // Se reparte igual a todas las entradas de tipo 'save', sea cual sea
+    // su característica asociada.
+    final saveDc = character.basicInfo.spellSaveDc;
 
     final actionWeaponEntries = weapons.map((w) => _weaponToEntry(w)).toList();
     final actionAbilityEntries =
-        abilities.action.map((a) => _abilityToEntry(a, stats, 'action', proficiencyBonus)).toList();
+        abilities.action.map((a) => _abilityToEntry(a, stats, 'action', proficiencyBonus, saveDc)).toList();
 
     final bonusEntries =
-        abilities.bonusAction.map((a) => _abilityToEntry(a, stats, 'bonusAction', proficiencyBonus)).toList();
+        abilities.bonusAction.map((a) => _abilityToEntry(a, stats, 'bonusAction', proficiencyBonus, saveDc)).toList();
     final reactionEntries =
-        abilities.reaction.map((a) => _abilityToEntry(a, stats, 'reaction', proficiencyBonus)).toList();
+        abilities.reaction.map((a) => _abilityToEntry(a, stats, 'reaction', proficiencyBonus, saveDc)).toList();
     // Las pasivas nunca se tiran: no llevan modificador ni descripciones de
     // resultado, y sus tarjetas no son tappable. Al ser homogéneas (todo
     // Rasgos, nunca armas), no necesitan la subcategorización.
@@ -247,10 +260,15 @@ class TurnTab extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 16),
-        // Action Economy Tracker: los tres recursos de acción del turno
-        // en curso, arriba del todo — es lo primero que hace falta
-        // consultar/marcar al empezar a resolver un turno.
-        _TurnStatusSection(status: character.turnStatus, accent: accent),
+        // Action Economy Tracker: los recursos de acción del turno en
+        // curso (Acción, Adicional, Movimiento), arriba del todo — es lo
+        // primero que hace falta consultar/marcar al empezar a resolver
+        // un turno.
+        _TurnStatusSection(
+          status: character.turnStatus,
+          maxSpeed: character.basicInfo.speed,
+          accent: accent,
+        ),
         _SpellSlotsBar(slots: character.spellSlots.slots, accent: accent),
         // Paso 3 (Vertical Slice) — Sistema Genérico de Recursos: Puntos
         // de Ki, Hechicería, Furia por día, etc. Se pinta justo debajo de
@@ -290,10 +308,24 @@ class TurnTab extends StatelessWidget {
       // sabe leer ese "+8".
       damageDice: w.damage.baseDice,
       damageType: w.damage.baseType,
+      // Paridad con conjuros/rasgos: el modal de resolución ya sabía
+      // pintar loreDescription/tacticalSummary para cualquier entrada
+      // tappable (ver showResolutionModal más abajo), pero _weaponToEntry
+      // nunca los reenviaba porque el modelo Weapon no los tenía. Ahora
+      // que Weapon los trae, un arma con lore homebrew se ve igual que un
+      // conjuro al tocarla.
+      loreDescription: w.loreDescription,
+      tacticalSummary: w.tacticalSummary,
     );
   }
 
-  _TacticalEntry _abilityToEntry(Ability a, StatsBlock stats, String categoryKey, int proficiencyBonus) {
+  _TacticalEntry _abilityToEntry(
+    Ability a,
+    StatsBlock stats,
+    String categoryKey,
+    int proficiencyBonus,
+    int? saveDc,
+  ) {
     final origin = a.type == 'spell' ? 'Conjuro' : 'Rasgo';
     final icon = a.type == 'spell' ? Icons.auto_fix_high : Icons.shield_moon;
     // Hotfix (CD de Salvación mal calculada): el modificador de un
@@ -324,6 +356,7 @@ class TurnTab extends StatelessWidget {
       maxCharges: a.magicCharges.max,
       isSpell: a.type == 'spell',
       isSavingThrow: a.isSavingThrowType,
+      saveDc: a.isSavingThrowType ? saveDc : null,
       id: a.id,
       sourceAbility: a,
       categoryKey: categoryKey,
@@ -533,16 +566,33 @@ class _ResourceStepButton extends StatelessWidget {
 
 /// Action Economy Tracker.
 ///
-/// Cabecera con los tres recursos de acción del turno en curso (Acción,
-/// Adicional, Reacción) como selectores táctiles: tocar un chip invierte
-/// su estado usado/disponible. Mismo lenguaje visual de sección que
-/// "RANURAS DE MAGIA" / "RECURSOS ACTIVOS" para leerse como parte del
-/// mismo bloque.
+/// Cabecera con los recursos de acción del turno en curso: Acción,
+/// Adicional y Movimiento, los tres como selectores táctiles (tocar un
+/// chip invierte su estado usado/disponible). Mismo lenguaje visual de
+/// sección que "RANURAS DE MAGIA" / "RECURSOS ACTIVOS" para leerse como
+/// parte del mismo bloque.
+///
+/// Refactor "Movimiento como botón": Movimiento deja de ser un campo de
+/// texto donde se teclea cuánto queda del desplazamiento — ahora es un
+/// toggle binario igual que los otros dos chips: tocarlo marca todo el
+/// movimiento como gastado (0) y volver a tocarlo lo restaura de golpe al
+/// máximo (BasicInfo.speed). Ya no hace falta StatefulWidget aquí porque
+/// no hay ningún TextEditingController que mantener vivo entre builds.
+///
+/// Refactor previo "Reacción -> Movimiento": el antiguo tercer chip
+/// (REACCIÓN, toggle usado/disponible) desapareció de aquí. Las
+/// habilidades de tipo Reacción (ej. "Escudo") siguen existiendo y
+/// viviendo en su propia _TacticalSection más abajo.
 class _TurnStatusSection extends StatelessWidget {
   final TurnStatus status;
+  final int maxSpeed;
   final Color accent;
 
-  const _TurnStatusSection({required this.status, required this.accent});
+  const _TurnStatusSection({
+    required this.status,
+    required this.maxSpeed,
+    required this.accent,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -595,17 +645,92 @@ class _TurnStatusSection extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: _ActionToggleTile(
-                  label: 'REACCIÓN',
-                  icon: Icons.shield,
-                  used: status.reactionUsed,
+                child: _MovementTile(
+                  current: status.movementRemaining,
+                  maxSpeed: maxSpeed,
                   accent: accent,
-                  onTap: () => provider.toggleAction('reaction'),
+                  onTap: () {
+                    // Toggle: si queda algo de movimiento lo damos todo por
+                    // gastado (0); si ya está a 0 lo restauramos de golpe
+                    // al máximo. setMovementRemaining ya clampea 0..max.
+                    final restored = status.movementRemaining <= 0;
+                    provider.setMovementRemaining(restored ? maxSpeed : 0);
+                  },
                 ),
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Tarjeta de Movimiento: mismo lenguaje visual e interacción que
+/// _ActionToggleTile (icono + etiqueta dentro de un ThemedCard tappable,
+/// atenuado a gris con icono de check cuando está "gastado"). Ya no es un
+/// campo de texto editable — el desplazamiento del turno se trata como un
+/// recurso binario más: libre (movimiento completo disponible) o gastado
+/// (0), igual que Acción y Adicional.
+class _MovementTile extends StatelessWidget {
+  final int current;
+  final int maxSpeed;
+  final Color accent;
+  final VoidCallback onTap;
+
+  const _MovementTile({
+    required this.current,
+    required this.maxSpeed,
+    required this.accent,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final used = current <= 0;
+    final color = used ? context.appColors.textSecondary : accent;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: ThemedCard(
+          accentColor: color,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                used ? Icons.check_circle_outline : Icons.directions_run,
+                color: color,
+                size: 22,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'MOVIMIENTO',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 10.5,
+                  letterSpacing: 0.6,
+                  fontFamily: 'serif',
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                used ? 'Gastado' : '$maxSpeed ft libres',
+                style: TextStyle(
+                  color: color.withOpacity(0.8),
+                  fontSize: 10,
+                  fontStyle: FontStyle.italic,
+                  fontFamily: 'serif',
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -681,10 +806,10 @@ class _ActionToggleTile extends StatelessWidget {
   }
 }
 
-/// Botón "Fin de Turno": llama a resetTurn() para liberar los tres
-/// recursos de acción de golpe. Vive al final del despliegue táctico,
-/// separado del resto por su propio espaciado, para que no se confunda
-/// con una tarjeta de acción más.
+/// Botón "Fin de Turno": llama a resetTurn() para liberar Acción/Adicional
+/// y recargar el Movimiento al máximo de golpe. Vive al final del
+/// despliegue táctico, separado del resto por su propio espaciado, para
+/// que no se confunda con una tarjeta de acción más.
 class _EndTurnButton extends StatelessWidget {
   final Color accent;
 
@@ -1144,6 +1269,7 @@ class _TacticalCard extends StatelessWidget {
               loreDescription: entry.loreDescription,
               tacticalSummary: entry.tacticalSummary,
               isSavingThrow: entry.isSavingThrow,
+              saveDc: entry.saveDc,
             );
           },
           child: Padding(

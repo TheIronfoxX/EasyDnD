@@ -198,6 +198,14 @@ class CharacterProvider extends ChangeNotifier {
           .map((raw) => CharacterModel.fromJson(
               jsonDecode(raw) as Map<String, dynamic>))
           .toList();
+      // Fichas guardadas antes de que CharacterModel tuviera "id" ya
+      // recibieron un id de fallback dentro de fromJson (ver
+      // CharacterModel._generateId). Lo persistimos de inmediato para
+      // que ese id quede fijo desde ya — si no lo guardáramos aquí,
+      // cada reinicio de la app generaría uno distinto y cualquier
+      // dato namespaceado por personaje (como el layout del HUD)
+      // perdería la referencia constantemente.
+      await _persistRoster();
     } else {
       // Protocolo de inicio en frío: Kael ha sido despedido.
       roster = []; 
@@ -332,6 +340,25 @@ class CharacterProvider extends ChangeNotifier {
     if (picked == null) return;
 
     activeCharacter.avatarPath = picked.path;
+    notifyListeners();
+    await _persistRoster();
+  }
+
+  /// Igual que pickAvatarForActiveCharacter pero solo toca
+  /// "loreAvatarPath": la foto que se ve en LoreTab. Deliberadamente
+  /// independiente de avatarPath (el del header) — así el jugador puede
+  /// ponerle al personaje una "foto de perfil" (ej. retrato heroico) y
+  /// una "foto de crónica" distinta (ej. una escena o un boceto) sin que
+  /// cambiar una afecte a la otra.
+  Future<void> pickLoreAvatarForActiveCharacter() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+    );
+    if (picked == null) return;
+
+    activeCharacter.loreAvatarPath = picked.path;
     notifyListeners();
     await _persistRoster();
   }
@@ -717,10 +744,14 @@ class CharacterProvider extends ChangeNotifier {
 
   // -------------------------------------------------------------------
   // Action Economy Tracker
-  // Estado de los tres recursos de acción del turno (acción, adicional,
-  // reacción) del personaje activo. "type" acepta 'action', 'bonus' y
-  // 'reaction' — cualquier otro valor no hace nada, así la UI puede
-  // llamarlo sin validar antes.
+  // Estado de los recursos de acción del turno (acción, adicional,
+  // movimiento) del personaje activo. "type" acepta 'action' y 'bonus'
+  // — cualquier otro valor no hace nada, así la UI puede llamarlo sin
+  // validar antes.
+  //
+  // Refactor "Reacción -> Movimiento": el antiguo tercer caso ('reaction')
+  // desaparece de aquí porque el movimiento ya no es un toggle
+  // usado/disponible — se gestiona con setMovementRemaining(), ver abajo.
   // -------------------------------------------------------------------
 
   /// Invierte el estado de uso del recurso de turno indicado.
@@ -733,9 +764,6 @@ class CharacterProvider extends ChangeNotifier {
       case 'bonus':
         status.bonusActionUsed = !status.bonusActionUsed;
         break;
-      case 'reaction':
-        status.reactionUsed = !status.reactionUsed;
-        break;
       default:
         return;
     }
@@ -743,13 +771,28 @@ class CharacterProvider extends ChangeNotifier {
     _persistRoster();
   }
 
-  /// Pone los tres recursos de turno a `false` (disponibles de nuevo).
-  /// Pensada para el botón "Fin de Turno" de turn_tab.dart.
+  /// Fija cuánto movimiento le queda al personaje en el turno en curso.
+  /// Se clampea entre 0 y BasicInfo.speed (no tiene sentido ni negativo
+  /// ni por encima de su velocidad máxima), así la UI (_MovementTile en
+  /// turn_tab.dart) puede pasar cualquier número tecleado sin validar
+  /// antes y confiar en que aquí se corrige solo.
+  void setMovementRemaining(int value) {
+    final character = activeCharacter;
+    character.turnStatus.movementRemaining =
+        value.clamp(0, character.basicInfo.speed);
+    notifyListeners();
+    _persistRoster();
+  }
+
+  /// Pone acción/adicional a `false` (disponibles de nuevo) y recarga el
+  /// movimiento a tope según BasicInfo.speed. Pensada para el botón "Fin
+  /// de Turno" de turn_tab.dart.
   void resetTurn() {
-    final status = activeCharacter.turnStatus;
+    final character = activeCharacter;
+    final status = character.turnStatus;
     status.actionUsed = false;
     status.bonusActionUsed = false;
-    status.reactionUsed = false;
+    status.movementRemaining = character.basicInfo.speed;
     notifyListeners();
     _persistRoster();
   }
