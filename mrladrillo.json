@@ -1,0 +1,319 @@
+{
+  "basic_info": {
+    "name": "Mr Ladrillo",
+    "race": "Golem",
+    "characterClass": "Guerrero 6",
+    "hp_max": 81,
+    "ac": 16,
+    "speed": 9,
+    "spell_save_dc": 0
+  },
+  "purse": {
+    "gold": 0,
+    "silver": 0,
+    "copper": 0
+  },
+  "ai_tips": "Mr Ladrillo es un guerrero cuerpo a cuerpo puro, sin magia, pensado para plantarse en primera línea y aguantar/repartir golpes con su Mazo de guerra (o directamente su propio cuerpo) a dos manos. Con Fuerza y Constitución al máximo (20 cada una), su plan de combate es simple: acercarse, atacar dos veces por turno gracias a Ataque Adicional, y usar Oleada de acción en los combates duros para meter un tercer ataque extra. Al ser un constructo, no necesita comer, dormir ni beber, así que puede quedarse de guardia toda la noche sin problema, y es resistente a venenos y enfermedades, lo que le hace muy fiable en escenarios de supervivencia o exploración larga. Su bajo Carisma efectivo con humanoides (desventaja en Persuasión) sugiere que no es el personaje para llevar la voz cantante en negociaciones; mejor usarlo para Intimidar, donde sí brilla.",
+  "user_tactics": "",
+  "adventure_notes": "",
+  "resources": [
+    {
+      "name": "Nuevas energías",
+      "current": 1,
+      "max": 1
+    },
+    {
+      "name": "Oleada de acción",
+      "current": 1,
+      "max": 1
+    }
+  ],
+  "inventory": {
+    "weapons": [
+      {
+        "id": "weapon-mazo-de-guerra",
+        "name": "Mazo de guerra",
+        "attack_bonus": 8,
+        "damage": {
+          "base_dice": "2d6+5",
+          "base_type": "contundente"
+        },
+        "conditional_damage": [],
+        "properties": [
+          "Dos manos",
+          "Pesada"
+        ],
+        "homebrew_effect": "",
+        "magic_charges": {
+          "has_charges": false,
+          "max": 0,
+          "current": 0
+        },
+        "success_description": "El mazo se estrella contra el enemigo con un golpe sordo y aplastante.",
+        "failure_description": "El golpe pasa rozando sin encontrar el blanco.",
+        "lore_description": "Un arma masiva pensada para sacrificar velocidad a cambio de fuerza aplastante, típica de guerreros que confían en su potencia física antes que en la finura.",
+        "tactical_summary": "Tiras un d20 y sumas +8; le dices el resultado al máster y él te dice si le has dado | Daño: 2d6+5 Contundente",
+        "is_unique": false
+      },
+      {
+        "id": "weapon-golpe-de-cuerpo",
+        "name": "Golpe de Cuerpo",
+        "attack_bonus": 8,
+        "damage": {
+          "base_dice": "2d6+5",
+          "base_type": "contundente"
+        },
+        "conditional_damage": [],
+        "properties": [
+          "Dos manos",
+          "Pesada"
+        ],
+        "homebrew_effect": "",
+        "magic_charges": {
+          "has_charges": false,
+          "max": 0,
+          "current": 0
+        },
+        "success_description": "Mr Ladrillo estampa su enorme cuerpo de piedra contra el enemigo con un impacto brutal.",
+        "failure_description": "El embiste pasa de largo sin encontrar el blanco.",
+        "lore_description": "Mr Ladrillo no necesita armas para hacer daño: su propio cuerpo, macizo y rocoso como el de un constructo, golpea con la misma fuerza aplastante que su mazo de guerra.",
+        "tactical_summary": "Tiras un d20 y sumas +8; le dices el resultado al máster y él te dice si le has dado | Daño: 2d6+5 Contundente",
+        "is_unique": false
+      }
+    ],
+    "mundane_items": []
+  },
+  "stats": {
+    "str": {
+      "name": "Fuerza",
+      "value": 20,
+      "mod": 5,
+      "description": "Mide la potencia física y capacidades deportivas"
+    },
+    "dex": {
+      "name": "Destreza",
+      "value": 19,
+      "mod": 4,
+      "description": "Mide la agilidad y los reflejos"
+    },
+    "con": {
+      "name": "Constitución",
+      "value": 20,
+      "mod": 5,
+      "description": "Mide la resistencia y la salud"
+    },
+    "int": {
+      "name": "Inteligencia",
+      "value": 8,
+      "mod": -1,
+      "description": "Mide el razonamiento y la memoria"
+    },
+    "wis": {
+      "name": "Sabiduría",
+      "value": 16,
+      "mod": 3,
+      "description": "Mide la perspicacia e intuición."
+    },
+    "cha": {
+      "name": "Carisma",
+      "value": 17,
+      "mod": 3,
+      "description": "Mide la fuerza de personalidad y la presencia"
+    }
+  },
+  "spell_slots": [],
+  "skills": [
+    {
+      "name": "Acrobacias",
+      "related_stat": "dex",
+      "modifier": 4
+    },
+    {
+      "name": "Arcanos",
+      "related_stat": "int",
+      "modifier": -1
+    },
+    {
+      "name": "Atletismo",
+      "related_stat": "str",
+      "modifier": 5
+    },
+    {
+      "name": "Engañar",
+      "related_stat": "cha",
+      "modifier": 3
+    },
+    {
+      "name": "Historia",
+      "related_stat": "int",
+      "modifier": -1
+    },
+    {
+      "name": "Interpretación",
+      "related_stat": "cha",
+      "modifier": 3
+    },
+    {
+      "name": "Intimidar",
+      "related_stat": "cha",
+      "modifier": 6
+    },
+    {
+      "name": "Investigación",
+      "related_stat": "int",
+      "modifier": -1
+    },
+    {
+      "name": "Juego de Manos",
+      "related_stat": "dex",
+      "modifier": 4
+    },
+    {
+      "name": "Medicina",
+      "related_stat": "wis",
+      "modifier": 3
+    },
+    {
+      "name": "Naturaleza",
+      "related_stat": "int",
+      "modifier": -1
+    },
+    {
+      "name": "Percepción",
+      "related_stat": "wis",
+      "modifier": 6
+    },
+    {
+      "name": "Perspicacia",
+      "related_stat": "wis",
+      "modifier": 3
+    },
+    {
+      "name": "Persuasión",
+      "related_stat": "cha",
+      "modifier": 3
+    },
+    {
+      "name": "Religión",
+      "related_stat": "int",
+      "modifier": -1
+    },
+    {
+      "name": "Sigilo",
+      "related_stat": "dex",
+      "modifier": 4
+    },
+    {
+      "name": "Supervivencia",
+      "related_stat": "wis",
+      "modifier": 6
+    },
+    {
+      "name": "Trato con Animales",
+      "related_stat": "wis",
+      "modifier": 6
+    }
+  ],
+  "abilities_by_action": {
+    "action": [],
+    "bonus_action": [
+      {
+        "id": "ability-nuevas-energias",
+        "name": "Nuevas energías",
+        "type": "class_feature",
+        "related_stat": "con",
+        "attack_type": "none",
+        "success_description": "Una oleada de vitalidad interna recorre el cuerpo de piedra de Mr Ladrillo, sellando heridas al instante.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "1d10+6",
+        "scaling_formula": "",
+        "lore_description": "Mr Ladrillo puede recurrir a una reserva interna de vitalidad para recuperarse a mitad de combate, sin depender de pociones ni de nadie más. Solo puede hacerlo una vez entre descansos.",
+        "tactical_summary": "No tienes que tirar nada enfrentado, simplemente recuperas puntos de golpe al momento | Curación: 1d10+6. Gasta: 1 acción adicional, 1 vez por descanso."
+      }
+    ],
+    "reaction": [],
+    "passive": [
+      {
+        "id": "ability-oleada-de-accion",
+        "name": "Oleada de acción",
+        "type": "class_feature",
+        "lore_description": "Te esfuerzas más allá de tus límites habituales durante un instante, encadenando una acción extra cuando el combate se pone feo.",
+        "tactical_summary": "Una vez por descanso corto o largo, puedes realizar una acción completa extra en tu turno (por ejemplo, atacar otra vez), además de tu acción normal y tu posible acción adicional. Gasta: se activa gratis, 1 vez por descanso.",
+        "tactical_role": "Ofensivo"
+      },
+      {
+        "id": "ability-ataque-adicional",
+        "name": "Ataque adicional",
+        "type": "trait",
+        "lore_description": "Tu entrenamiento marcial te permite golpear más de una vez en el mismo turno con la misma acción.",
+        "tactical_summary": "Cuando uses tu acción para atacar, hazlo 2 veces en vez de 1.",
+        "tactical_role": "Ofensivo"
+      },
+      {
+        "id": "ability-combate-armas-grandes",
+        "name": "Combate con armas grandes",
+        "type": "trait",
+        "lore_description": "Has perfeccionado tu técnica con armas pesadas empuñadas a dos manos, sacando el máximo partido de cada golpe.",
+        "tactical_summary": "Cuando saques un 1 o un 2 en un dado de daño de un arma a dos manos o versátil (como tu Mazo de guerra o tu Golpe de Cuerpo), puedes volver a tirar ese dado una vez y quedarte con el nuevo resultado.",
+        "tactical_role": "Ofensivo"
+      },
+      {
+        "id": "ability-critico-mejorado",
+        "name": "Crítico mejorado",
+        "type": "class_feature",
+        "lore_description": "Tus golpes encuentran puntos débiles con más facilidad que los de un guerrero corriente, propio de tu formación como Campeón.",
+        "tactical_summary": "En tus ataques con arma, sacar un 19 o un 20 en el dado de ataque también cuenta como golpe crítico (normalmente solo cuenta el 20).",
+        "tactical_role": "Ofensivo"
+      },
+      {
+        "id": "ability-mejora-caracteristica",
+        "name": "Mejora de característica",
+        "type": "class_feature",
+        "lore_description": "A medida que ganas experiencia, tu cuerpo y mente se perfeccionan, permitiéndote volverte más fuerte, resistente o hábil.",
+        "tactical_summary": "En los niveles 4, 6, 8, 12, 14, 16 y 19 puedes subir una característica en 2 puntos, o dos características en 1 punto cada una, sin superar nunca 20.",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-forma-inmutable",
+        "name": "Forma Inmutable",
+        "type": "racial_trait",
+        "lore_description": "Tu cuerpo pétreo se resiste a ser alterado por magia externa, manteniendo siempre su forma original de pie viviente.",
+        "tactical_summary": "Cuando alguien intente transformarte, agrandarte o encogerte con magia, tienes ventaja en la tirada relacionada con ese efecto.",
+        "tactical_role": "Defensivo"
+      },
+      {
+        "id": "ability-naturaleza-de-constructo",
+        "name": "Naturaleza de constructo",
+        "type": "racial_trait",
+        "lore_description": "Tu cuerpo no es del todo carne y hueso: hay algo de piedra y magia divina en tu interior que te hace distinto a los mortales corrientes.",
+        "tactical_summary": "Tienes ventaja para resistir enfermedades, venenos y daño necrótico. No necesitas comer, beber ni dormir: te basta con permanecer quieto 4 horas para completar un descanso largo, y sigues consciente durante ese tiempo.",
+        "tactical_role": "Defensivo"
+      },
+      {
+        "id": "ability-apariencia-mon",
+        "name": "Apariencia Mon",
+        "type": "racial_trait",
+        "lore_description": "Tu aspecto imponente y poco convencional —un enorme pie de piedra viviente— resulta desconcertante o directamente inquietante para la mayoría de la gente corriente.",
+        "tactical_summary": "Tienes desventaja en las tiradas de Persuasión cuando intentas convencer a humanoides.",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-miembro-de-una-tribu",
+        "name": "Miembro de una tribu",
+        "type": "background_feature",
+        "lore_description": "Creciste dentro de una tribu con normas sociales y religiosas muy marcadas, lo que te ha dado buen ojo para captar rápidamente las costumbres de otras culturas.",
+        "tactical_summary": "Cuando te reúnas con gente de otra cultura o región lejana, el máster puede darte pistas sobre qué cosas no debes decir delante de su líder, qué se considera una falta grave o cuál es el protocolo para presentar respetos.",
+        "tactical_role": "Utilidad"
+      }
+    ]
+  },
+  "lore_info": {
+    "backstory": "Los chochetes fueron la primera tribu de humanos que poblo el planeta. Su religion era monoteista y rezaban a Corpanius, un dios con un particular gusto por los pies.\n\nUna noche, como es ley de vida un cura de esa religion llamado Laminus Yamalus abuso de un niño pequeño, llamado el pequeño Jeremus Ladrillo. Le dio tan fuerte que el niño murió, y para esconder el cadaver el cura mando a construir una estatua de un pie y dentro de ella metio el cadaver del niño.\n\nMuchisimos años mas tarde, Corpanius se aparecio, destruyo el pueblo porque pillo a una persona con los calcetines puestos y al ver la estatua se puso tan cachondo que la penetro. El semen celestial se mezclo con el cadaver del niño dando vida a Mr Ladrillo.\n\nMr ladrillo, con su cuerpo rocoso en forma de pie, tiene la mision de matar a los descendientes de Laminus Yamalus pues si no, su alma no podra descansar en paz",
+    "personality_traits": "Los dioses y los espíritus tienen gran poder en nuestro mundo; no es sabio enfadarlos.",
+    "ideals": "Dioses. Existe una autoridad superior a nosotros y es nuestro deber honrarla, servirla y seguir sus designios (legal).",
+    "bonds": "Mi tribu me ha encomendado una tarea de vital importancia y no puedo faltar a mi deber.",
+    "flaws": "Suelo consumir grandes cantidades de plantas alucinógenas para que me ayuden en mis momentos de oración."
+  }
+}

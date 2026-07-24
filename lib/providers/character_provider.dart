@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -143,6 +144,26 @@ const Map<String, ConditionDetail> conditionDetails = {
   ),
 };
 
+/// Notificación de un cambio de HP (daño o curación) que llegó desde la
+/// party a través de la red — para que el HUD pueda mostrar un aviso
+/// (SnackBar/Toast) sin acoplar el provider a Flutter/ScaffoldMessenger.
+/// Solo se dispara para cambios de origen REMOTO: un cambio hecho por el
+/// propio jugador tocando un botón no necesita aviso, ya lo está viendo.
+class RemoteHpEvent {
+  final String characterId;
+  final String characterName;
+  // Positivo = curación, negativo = daño. Igual que "amount" en las
+  // acciones de sync, pero ya con el signo aplicado para que la UI no
+  // tenga que mirar el "type" para saber si sumar o restar.
+  final int amount;
+
+  RemoteHpEvent({
+    required this.characterId,
+    required this.characterName,
+    required this.amount,
+  });
+}
+
 /// Todo lo mutable del combate vive aquí. Desde la Fase 12, el provider ya
 /// no gestiona un único CharacterModel sino un `roster` completo — cada
 /// entrada se serializa entera (CharacterModel.toJson()) y se persiste como
@@ -165,6 +186,30 @@ class CharacterProvider extends ChangeNotifier {
   List<CharacterModel> roster = [];
   int _activeIndex = 0;
   bool _isReady = false;
+
+  // -------------------------------------------------------------------
+  // Sincronización en red local (Fase 4)
+  // `onSyncAction` lo asigna la pantalla que sí usa un Scaffold real
+  // (MainHudScreen) apuntando a WebSocketService.send. Cada uno de los
+  // métodos "esenciales de combate" (HP, condiciones, conjuros, cargas)
+  // llama a _emitSync() justo después de persistir, para que cualquier
+  // otro dispositivo conectado reciba el mismo cambio.
+  // `_applyingRemoteAction` evita el eco: cuando un cambio llega DESDE la
+  // red (applyRemoteAction), se reutilizan los mismos métodos locales
+  // pero con el broadcast desactivado, así no se reenvía lo que acaba de
+  // llegar.
+  void Function(Map<String, dynamic> action)? onSyncAction;
+  bool _applyingRemoteAction = false;
+
+  // La pantalla que construye el Scaffold (ver main_hud_screen.dart) lo
+  // asigna en initState, igual que hace con onSyncAction, para mostrar un
+  // SnackBar cuando el HP cambia por una acción llegada de la party.
+  void Function(RemoteHpEvent event)? onRemoteHpChange;
+
+  void _emitSync(Map<String, dynamic> action) {
+    if (_applyingRemoteAction) return;
+    onSyncAction?.call(action);
+  }
 
   bool get isReady => _isReady;
   int get activeIndex => _activeIndex;
@@ -238,6 +283,14 @@ class CharacterProvider extends ChangeNotifier {
   Future<void> _persistQuantity(String weaponId) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('weapon_quantity_$weaponId', quantityFor(weaponId));
+  }
+
+  /// Borra la cantidad persistida de un arma que ya no existe (tras
+  /// removeWeapon). Sin esto, el valor quedaría huérfano en
+  /// SharedPreferences para siempre, aunque ya no tenga arma asociada.
+  Future<void> _clearPersistedQuantity(String weaponId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('weapon_quantity_$weaponId');
   }
 
   // -------------------------------------------------------------------
@@ -858,6 +911,26 @@ class CharacterProvider extends ChangeNotifier {
     _persistRoster();
   }
 
+  /// Elimina el arma con el id indicado del inventario del personaje
+  /// activo. Las armas se identifican por su `id` estable (no por
+  /// posición, a diferencia de los objetos mundanos), así que se busca
+  /// primero con indexWhere. No hace nada si no existe ninguna arma con
+  /// ese id, así la UI puede llamarlo sin validar antes.
+  /// También limpia la cantidad asociada a ese id (en memoria y en el
+  /// valor persistido de SharedPreferences) para no dejar basura
+  /// huérfana si en el futuro se crea otra arma que reutilizase el
+  /// mismo id.
+  void removeWeapon(String weaponId) {
+    final weapons = activeCharacter.inventory.weapons;
+    final index = weapons.indexWhere((w) => w.id == weaponId);
+    if (index == -1) return;
+    weapons.removeAt(index);
+    _weaponQuantities.remove(weaponId);
+    notifyListeners();
+    _persistRoster();
+    _clearPersistedQuantity(weaponId);
+  }
+
   /// Constructor rápido: añade un objeto mundano "placeholder" listo
   /// para que el jugador lo edite después (nombre "Nuevo Objeto",
   /// cantidad 1, sin descripción). Pensada para el caso en que el
@@ -1116,6 +1189,11 @@ class CharacterProvider extends ChangeNotifier {
     info.currentHp = (info.currentHp - amount).clamp(0, info.hpMax);
     notifyListeners();
     _persistRoster();
+    _emitSync({
+      'type': 'applyDamage',
+      'characterId': activeCharacter.id,
+      'amount': amount,
+    });
   }
 
   void applyHealing(int amount) {
@@ -1123,6 +1201,11 @@ class CharacterProvider extends ChangeNotifier {
     info.currentHp = (info.currentHp + amount).clamp(0, info.hpMax);
     notifyListeners();
     _persistRoster();
+    _emitSync({
+      'type': 'applyHealing',
+      'characterId': activeCharacter.id,
+      'amount': amount,
+    });
   }
 
   void consumeWeaponCharge(Weapon weapon) {
@@ -1130,6 +1213,11 @@ class CharacterProvider extends ChangeNotifier {
       weapon.magicCharges.consumeCharge();
       notifyListeners();
       _persistRoster();
+      _emitSync({
+        'type': 'consumeWeaponCharge',
+        'characterId': activeCharacter.id,
+        'weaponIndex': activeCharacter.inventory.weapons.indexOf(weapon),
+      });
     }
   }
 
@@ -1137,6 +1225,11 @@ class CharacterProvider extends ChangeNotifier {
     weapon.magicCharges.restoreAll();
     notifyListeners();
     _persistRoster();
+    _emitSync({
+      'type': 'restoreWeaponCharges',
+      'characterId': activeCharacter.id,
+      'weaponIndex': activeCharacter.inventory.weapons.indexOf(weapon),
+    });
   }
 
   /// Alias público con el nombre pedido para la sección "RANURAS DE
@@ -1151,6 +1244,11 @@ class CharacterProvider extends ChangeNotifier {
     slot.current -= 1;
     notifyListeners();
     _persistRoster();
+    _emitSync({
+      'type': 'consumeSpellSlot',
+      'characterId': activeCharacter.id,
+      'level': level,
+    });
   }
 
   void restoreAllSpellSlots() {
@@ -1159,6 +1257,10 @@ class CharacterProvider extends ChangeNotifier {
     }
     notifyListeners();
     _persistRoster();
+    _emitSync({
+      'type': 'restoreAllSpellSlots',
+      'characterId': activeCharacter.id,
+    });
   }
 
   void consumeAbilityCharge(Ability ability) {
@@ -1166,6 +1268,11 @@ class CharacterProvider extends ChangeNotifier {
       ability.magicCharges.consumeCharge();
       notifyListeners();
       _persistRoster();
+      _emitSync({
+        'type': 'consumeAbilityCharge',
+        'characterId': activeCharacter.id,
+        'abilityId': ability.id,
+      });
     }
   }
 
@@ -1207,13 +1314,29 @@ class CharacterProvider extends ChangeNotifier {
     }
   }
 
+  /// Descanso Corto — Fase Reserva de Dados de Golpe.
+  /// Recupera hasta la mitad de los Dados de Golpe máximos del personaje
+  /// (redondeando hacia arriba, mínimo 1), tal y como marca la regla de
+  /// 5e para un descanso largo. Se llama desde longRest(); no existe
+  /// recuperación de dados de golpe en un descanso corto (al contrario,
+  /// ahí es donde se gastan).
+  void _restoreHalfHitDice() {
+    final info = activeCharacter.basicInfo;
+    if (info.hitDiceMax <= 0) return;
+    final recovered = (info.hitDiceMax / 2).ceil().clamp(1, info.hitDiceMax);
+    info.hitDiceCurrent = (info.hitDiceCurrent + recovered).clamp(0, info.hitDiceMax);
+  }
+
   /// Reinicio total: vida al máximo, todos los espacios de conjuro
   /// recargados y todas las cargas mágicas (armas y habilidades) a tope.
+  /// Además, recupera la mitad de los Dados de Golpe (regla estándar de
+  /// 5e para el descanso largo).
   void longRest() {
     _restoreHpToMax();
     _restoreAllWeaponCharges();
     _restoreAllAbilityCharges();
     _restoreAllSpellSlotsNoNotify();
+    _restoreHalfHitDice();
     notifyListeners();
     _persistRoster();
   }
@@ -1233,6 +1356,48 @@ class CharacterProvider extends ChangeNotifier {
     }
     notifyListeners();
     _persistRoster();
+  }
+
+  /// Descanso Corto — gasta hasta [diceCount] Dados de Golpe del personaje
+  /// activo para recuperar vida. Por cada dado gastado se tira
+  /// 1d(hitDieSides) + modificador de Constitución (nunca menos de 1 por
+  /// dado, igual que en las reglas de 5e) y se suma todo a la curación
+  /// total, que se aplica de una vez a currentHp.
+  ///
+  /// [diceCount] se clampea al número de dados realmente disponibles
+  /// (hitDiceCurrent) antes de tirar nada — así la UI puede pasar
+  /// cualquier valor del stepper sin validar antes, igual que el resto
+  /// de métodos de este provider.
+  ///
+  /// Devuelve el total de vida recuperada, para que la UI pueda mostrarlo
+  /// en el SnackBar de confirmación sin tener que recalcularlo aparte.
+  int spendHitDice(int diceCount) {
+    final info = activeCharacter.basicInfo;
+    final actualCount = diceCount.clamp(0, info.hitDiceCurrent);
+    if (actualCount <= 0) return 0;
+
+    final conMod = activeCharacter.stats.con.mod;
+    final random = Random();
+    var totalHealed = 0;
+
+    for (var i = 0; i < actualCount; i++) {
+      final roll = random.nextInt(info.hitDieSides) + 1; // 1..hitDieSides
+      final healedByDie = (roll + conMod) < 1 ? 1 : (roll + conMod);
+      totalHealed += healedByDie;
+    }
+
+    info.hitDiceCurrent -= actualCount;
+    info.currentHp = (info.currentHp + totalHealed).clamp(0, info.hpMax);
+
+    notifyListeners();
+    _persistRoster();
+    _emitSync({
+      'type': 'applyHealing',
+      'characterId': activeCharacter.id,
+      'amount': totalHealed,
+    });
+
+    return totalHealed;
   }
 
   // -------------------------------------------------------------------
@@ -1260,6 +1425,11 @@ class CharacterProvider extends ChangeNotifier {
     }
     notifyListeners();
     _persistRoster();
+    _emitSync({
+      'type': 'toggleCondition',
+      'characterId': activeCharacter.id,
+      'condition': condition,
+    });
   }
 
   /// True si alguna condición activa del personaje impone desventaja
@@ -1318,5 +1488,155 @@ class CharacterProvider extends ChangeNotifier {
     pet.currentHp = (pet.currentHp + amount).clamp(0, pet.maxHp);
     notifyListeners();
     _persistRoster();
+  }
+
+  // -------------------------------------------------------------------
+  // Sincronización en red local (Fase 4) — envío de personaje completo
+  // -------------------------------------------------------------------
+
+  /// Comparte el personaje activo entero por WebSocket, para que
+  /// "aparezca" en cualquier otro dispositivo conectado a la misma
+  /// sesión. A diferencia del resto de acciones de sync (daño,
+  /// condiciones, cargas...), esta no depende de que el receptor ya
+  /// tenga el personaje en su roster: manda el JSON completo
+  /// (CharacterModel.toJson()) para que applyRemoteAction pueda añadirlo
+  /// si no existe, o refrescarlo entero si ya lo tenía.
+  void shareActiveCharacter() {
+    _emitSync({
+      'type': 'syncCharacter',
+      'characterId': activeCharacter.id,
+      'character': activeCharacter.toJson(),
+    });
+  }
+
+  // -------------------------------------------------------------------
+  // Sincronización en red local (Fase 4) — recepción
+  // -------------------------------------------------------------------
+
+  /// Aplica localmente una acción llegada desde otro dispositivo por
+  /// WebSocket. Reutiliza los métodos públicos ya existentes (misma
+  /// lógica de clamps, persistencia, etc.) pero con `_applyingRemoteAction`
+  /// activo, así _emitSync() no vuelve a reenviar lo que acaba de llegar.
+  ///
+  /// Si `characterId` no corresponde al personaje activo del dispositivo
+  /// receptor, se busca en el roster local; si no se encuentra, la acción
+  /// se ignora (ese dispositivo no tiene esa ficha cargada).
+  void applyRemoteAction(Map<String, dynamic> action) {
+    final type = action['type'] as String?;
+    if (type == null) return;
+
+    // Caso especial: syncCharacter puede llegar con un id que el roster
+    // local todavía no tiene (es justo lo que hace que el personaje
+    // "aparezca" por primera vez), así que se resuelve aparte y antes
+    // del bloqueo genérico de más abajo, que descarta la acción si el
+    // id no está en el roster.
+    if (type == 'syncCharacter') {
+      final characterJson = action['character'] as Map<String, dynamic>?;
+      if (characterJson == null) return;
+
+      final incoming = CharacterModel.fromJson(characterJson);
+      final existingIndex = roster.indexWhere((c) => c.id == incoming.id);
+
+      _applyingRemoteAction = true;
+      try {
+        if (existingIndex != -1) {
+          // Mismo id: se sobrescribe con la versión que llega (también
+          // sirve para refrescar una ficha que ya tenías).
+          roster[existingIndex] = incoming;
+        } else {
+          // Id nuevo para este dispositivo: se añade al roster.
+          roster.add(incoming);
+        }
+        notifyListeners();
+        _persistRoster();
+      } finally {
+        _applyingRemoteAction = false;
+      }
+      return;
+    }
+
+    final characterId = action['characterId'] as String?;
+    final originalIndex = _activeIndex;
+
+    if (characterId != null) {
+      final targetIndex = roster.indexWhere((c) => c.id == characterId);
+      if (targetIndex == -1) return; // este dispositivo no tiene esa ficha
+      _activeIndex = targetIndex;
+    }
+
+    _applyingRemoteAction = true;
+    try {
+      switch (type) {
+        case 'applyDamage':
+          final amount = action['amount'] as int?;
+          if (amount != null) {
+            applyDamage(amount);
+            // Aviso para el HUD: este daño no lo ha pulsado el jugador,
+            // ha llegado de la party. El signo se aplica aquí (negativo)
+            // para que la UI no tenga que mirar el "type" del evento.
+            onRemoteHpChange?.call(RemoteHpEvent(
+              characterId: activeCharacter.id,
+              characterName: activeCharacter.basicInfo.name,
+              amount: -amount,
+            ));
+          }
+          break;
+        case 'applyHealing':
+          final amount = action['amount'] as int?;
+          if (amount != null) {
+            applyHealing(amount);
+            onRemoteHpChange?.call(RemoteHpEvent(
+              characterId: activeCharacter.id,
+              characterName: activeCharacter.basicInfo.name,
+              amount: amount,
+            ));
+          }
+          break;
+        case 'toggleCondition':
+          final condition = action['condition'] as String?;
+          if (condition != null) toggleCondition(condition);
+          break;
+        case 'consumeSpellSlot':
+          final level = action['level'] as int?;
+          if (level != null) consumeSpellSlot(level);
+          break;
+        case 'restoreAllSpellSlots':
+          restoreAllSpellSlots();
+          break;
+        case 'consumeWeaponCharge':
+        case 'restoreWeaponCharges':
+          final weapons = activeCharacter.inventory.weapons;
+          final index = action['weaponIndex'] as int?;
+          if (index != null && index >= 0 && index < weapons.length) {
+            if (type == 'consumeWeaponCharge') {
+              consumeWeaponCharge(weapons[index]);
+            } else {
+              restoreWeaponCharges(weapons[index]);
+            }
+          }
+          break;
+        case 'consumeAbilityCharge':
+          final abilityId = action['abilityId'] as String?;
+          if (abilityId != null) {
+            final abilities = activeCharacter.abilitiesByAction;
+            for (final list in [
+              abilities.action,
+              abilities.bonusAction,
+              abilities.reaction,
+              abilities.passive,
+            ]) {
+              final idx = list.indexWhere((a) => a.id == abilityId);
+              if (idx != -1) {
+                consumeAbilityCharge(list[idx]);
+                break;
+              }
+            }
+          }
+          break;
+      }
+    } finally {
+      _applyingRemoteAction = false;
+      _activeIndex = originalIndex;
+    }
   }
 }

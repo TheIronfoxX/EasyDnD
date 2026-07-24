@@ -2,7 +2,7 @@ Vas a convertir la ficha de un personaje de D&D en un JSON con un formato EXACTO
 Te voy a pasar la ficha (PDF, texto, enlace a la plataforma Nivel20 o imagen) y tú debes generar el JSON siguiendo ESTRICTAMENTE la estructura del ejemplo de abajo.
 
 Aviso, seguramente muchos de los rasgos pilles la version recortada, a la minima que sospeches de uno, dimelo y te lo paso entero, lo mismo con las dudas, a la minima mandalo porfaplis
-
+Tambien, si de algun rasgo te falta informacion, NO DUDES EN PREGUNTAR ESTO ES MUY IMPORTANTE A LA MINIMA PREGUNTA 
 REGLAS OBLIGATORIAS:
 
 NO añadas ningún campo, clave o sección que no exista en el JSON de ejemplo. La app que lo lee no soporta campos extra y se romperá.
@@ -54,6 +54,7 @@ IMPORTANTE — a quién va dirigida la app: quien la usa en mesa NO tiene por qu
      - attack_type "attack" → "Tiras un d20 y sumas +X [tu bonificador de ataque]; le dices el resultado al máster y él te dice si le has dado."
      - attack_type "none" → "No tienes que tirar nada, [qué ocurre directamente, ej. "el objetivo se cura al tocarlo", "el efecto pasa automáticamente"]."
    - La parte de "[Daño/Curación]" es "Daño:" o "Curación:" seguido del dado tal cual está en "damage_dice" (más "+ Mod" si el texto original suma el modificador de característica) y el tipo de daño en una palabra ("Fuego", "Cortante", "Radiante"...). Si no hay daño ni curación (buffs, utilidad pura), omite esta segunda mitad y deja solo la frase de la tirada.
+   - Cuando el attack_type sea "save", usa el número real de la CD del personaje (el mismo que calcules para "spell_save_dc" en "basic_info") en vez de dejar el corchete genérico — ej. "si supera tu CD (14)".
    - Ejemplos de referencia (síguelos al pie de la letra, en tono y nivel de detalle):
      - Bola de Fuego: "Los enemigos en el área tiran un d20; si superan tu CD reciben solo la mitad del daño, si no la superan reciben todo el daño | Daño: 8d6 Fuego"
      - Rayo de Fuego: "Tiras un d20 y sumas +10; le dices el resultado al máster y él te dice si le has dado | Daño: 2d10 Fuego"
@@ -64,6 +65,12 @@ añade tmb al final lo q2ue gasta (accion, accion adicional... , si alguna cosa 
 
 
 "lore_description": aquí va la explicación más larga y con más chicha, pero sigue sin ser un manual de mecánica — no repitas "tira 1d8", ni expliques CD, ni cómo funciona una tirada de salvación como concepto (eso ya lo hace el modal de resolución de la app con "tactical_summary" y "attack_type"). Este campo es para que la persona entienda, en un par de frases, QUÉ hace el hechizo/rasgo en la ficción y en qué situación conviene usarlo: qué le pasa al objetivo, qué efectos secundarios tiene, condiciones especiales, sabor narrativo. Escribe en lenguaje llano, sin dar por sentado vocabulario de D&D.
+
+ARMAS ("inventory.weapons") — "lore_description" y "tactical_summary": cada arma también lleva estos dos campos, con el mismo criterio de lenguaje llano que las habilidades (nada de jerga D&D). Diferencias respecto a las habilidades, porque un arma nunca tiene "attack_type" (siempre se resuelve como ataque):
+   - "tactical_summary" de un arma sigue siempre la plantilla de attack_type "attack": "Tiras un d20 y sumas +X; le dices el resultado al máster y él te dice si le has dado | Daño: [damage.base_dice] [damage.base_type]". La X es el "attack_bonus" del arma. Si el arma tiene daño condicional (ej. a dos manos) o un homebrew_effect que cambie la tirada o el daño, añádelo en una frase corta al final del tactical_summary (ej. "| Daño: 1d8+4 Cortante (1d10+4 a dos manos)").
+   - "lore_description" de un arma es 1-2 frases de sabor: de dónde viene, qué aspecto tiene, por qué es especial o qué la hace destacar — igual que harías con el lore de un rasgo, pero centrado en el objeto. Si "homebrew_effect" no está vacío y es un efecto pasivo/ambiental (no algo que cambie la tirada), descríbelo aquí en vez de en tactical_summary.
+   - Si el arma es mundana y no tiene nada especial que contar, un lore_description breve y genérico está bien (ej. "Una espada larga de manufactura estándar, bien cuidada."); nunca lo dejes en "".
+   - Recuerda que siguen sin llevar "attack_type": ese campo no existe para armas, solo se añaden estos dos campos nuevos.
 
 "ai_tips", una serie de consejos generados por ti sobre como se usa el personaje
 
@@ -81,9 +88,12 @@ El resto de equipo (pociones, cuerdas, herramientas, reliquias) va en el array "
 
 "purse": monedas del personaje (gold, silver, copper), como números enteros independientes. Si no hay dinero, usa 0.
 
-"speed": velocidad de movimiento base del personaje, en metros por turno (no en pies). Es un número entero. Parte de la velocidad base de su raza (Humano/Elfo/Semielfo = 9, Enano/Halfling/Gnomo = 7.5 si tu conversión lo permite, si no redondea a 7 u 8 según el resto de la ficha, Media-Elfo = 9...) y aplícale cualquier modificador de clase o rasgo que la aumente o reduzca (ej. Monje sin armadura pesada, Bárbaro, armadura pesada sin la Fuerza requerida). Si la ficha original ya trae la velocidad en metros, úsala tal cual; si viene en pies, conviértela (30 pies = 9 metros) en vez de copiar el número en pies directamente. Si el personaje tiene varias velocidades (andando, volando, nadando, escalando) usa aquí SOLO la de caminar/terrestre — no hay campos separados para las demás en este formato.
+"speed": velocidad de movimiento base del personaje, en pies por turno (no en metros). Es un número entero. Parte de la velocidad base de su raza (esto esta en metros, ponlo tu bien) (Humano/Elfo/Semielfo = 9, Enano/Halfling/Gnomo = 7.5 si tu conversión lo permite, si no redondea a 7 u 8 según el resto de la ficha, Media-Elfo = 9...) y aplícale cualquier modificador de clase o rasgo que la aumente o reduzca (ej. Monje sin armadura pesada, Bárbaro, armadura pesada sin la Fuerza requerida). Si la ficha original ya trae la velocidad en metros, úsala tal cual; si viene en pies, conviértela (30 pies = 9 metros) en vez de copiar el número en pies directamente. Si el personaje tiene varias velocidades (andando, volando, nadando, escalando) usa aquí SOLO la de caminar/terrestre — no hay campos separados para las demás en este formato.
 
-"lore_info": si Rasgos / Ideales / Vínculos / Defectos están en blanco, invéntalos de forma coherente con la historia. Si la historia es muy larga, resúmela en un párrafo de 4-6 frases para "backstory", sin perder los hitos clave.
+"spell_save_dc": la CD de salvación de conjuros del personaje, dentro de "basic_info", como número entero. Se calcula: 8 + bonificador de competencia (según el nivel total del personaje: +2 en niveles 1-4, +3 en 5-8, +4 en 9-12, +5 en 13-16, +6 en 17-20) + modificador de la característica de lanzamiento de conjuros de su clase (Carisma para Paladín/Bardo/Hechicero/Brujo, Sabiduría para Clérigo/Druida/Explorador, Inteligencia para Mago/Artífice).
+   - Si el personaje tiene varias clases de lanzador (multiclase), pregúntame cuál característica usar antes de asumir una — no la adivines.
+   - Si el personaje NO es lanzador de conjuros de ninguna clase (no tiene "spell_slots" ni conjuros en "abilities_by_action"), usa 0.
+   - Si te falta algún dato para calcularla (nivel real, o no tienes claro cuál es la característica de lanzamiento), PREGÚNTAME antes de poner un número — no lo dejes a ojo.
 
 Si algo es ambiguo, PREGÚNTAME antes de asumir nada. No inventes mecánicas. Si falta un dato que SÍ existe en el JSON (ej. ac, hp_max, un stat), pregúntamelo.
 
@@ -98,7 +108,8 @@ FORMATO EXACTO A SEGUIR (ejemplo mínimo con todos los campos):
     "characterClass": "Paladín 5",
     "hp_max": 44,
     "ac": 18,
-    "speed": 9
+    "speed": 9,
+    "spell_save_dc": 14
   },
   "purse": {
     "gold": 120,
@@ -154,6 +165,8 @@ FORMATO EXACTO A SEGUIR (ejemplo mínimo con todos los campos):
         },
         "success_description": "La hoja bendita atraviesa la armadura del enemigo.",
         "failure_description": "El tajo es bloqueado ruidosamente.",
+        "lore_description": "Reliquia forjada con el fragmento de una estrella caída, transmitida por generaciones dentro de la Orden de la Llama Sagrada. Su hoja nunca se mancha de sangre por mucho que la use.",
+        "tactical_summary": "Tiras un d20 y sumas +7; le dices el resultado al máster y él te dice si le has dado | Daño: 1d8+4 Cortante (1d10+4 a dos manos)",
         "is_unique": true
       },
       {
@@ -177,6 +190,8 @@ FORMATO EXACTO A SEGUIR (ejemplo mínimo con todos los campos):
         },
         "success_description": "La jabalina impacta con fuerza.",
         "failure_description": "El proyectil pasa de largo.",
+        "lore_description": "Una jabalina de manufactura estándar, pensada para lanzarse antes de que el combate llegue al cuerpo a cuerpo.",
+        "tactical_summary": "Tiras un d20 y sumas +6; le dices el resultado al máster y él te dice si le has dado | Daño: 1d6+3 Perforante",
         "is_unique": false
       }
     ],
@@ -372,7 +387,7 @@ FORMATO EXACTO A SEGUIR (ejemplo mínimo con todos los campos):
         "damage_dice": "2d6",
         "scaling_formula": "",
         "lore_description": "Encantas tu próximo golpe de arma para que estalle en trueno al impactar. Además del daño, el enemigo puede acabar tumbado en el suelo. Requiere concentración mientras esperas ese golpe.",
-        "tactical_summary": "No tienes que tirar nada, el trueno estalla solo al golpear con el arma; además el enemigo tira un d20 y si no supera tu CD cae al suelo | Daño: 2d6 Trueno"
+        "tactical_summary": "No tienes que tirar nada, el trueno estalla solo al golpear con el arma; además el enemigo tira un d20 y si no supera tu CD (14) cae al suelo | Daño: 2d6 Trueno"
       }
     ],
     "reaction": [],

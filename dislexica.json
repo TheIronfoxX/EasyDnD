@@ -1,0 +1,443 @@
+{
+  "basic_info": {
+    "name": "Xyrqhazthylia",
+    "race": "Dracónido",
+    "characterClass": "Explorador 6 (Cazador)",
+    "hp_max": 72,
+    "ac": 15,
+    "speed": 9
+  },
+  "purse": {
+    "gold": 0,
+    "silver": 0,
+    "copper": 0
+  },
+  "ai_tips": "Xyrqhazthylia es una luchadora a distancia/versátil con buen daño físico gracias a Ataque Adicional y Combate con Dos Armas: usa la ballesta (Argentum) para abrir combate a distancia y cambia a Veredicto + Silencio en cuerpo a cuerpo para maximizar ataques por turno. Marca del Cazador (acción adicional) es tu mejor apertura contra el enemigo más peligroso: añade 1d6 extra por golpe y te da ventaja para rastrearlo si huye. Guarda el Arma de Aliento (rayo) para cuando varios enemigos estén en línea, ya que es tu único daño en área y necesita descanso para recargar. Aprovecha Rompehordas cuando dos enemigos estén pegados entre sí para sacar un ataque extra gratis. Fuera de combate, sus rasgos de Explorador de la Naturaleza y Enemigo Predilecto la convierten en la guía perfecta en bosques y minas/montañas, y contra orcos y humanos. Ten en cuenta su dislexia y daltonismo a nivel narrativo: es meticulosa y revisa todo varias veces antes de actuar, lo que puede jugarse como un pequeño retraso o duda antes de tomar decisiones rápidas.",
+  "user_tactics": "",
+  "adventure_notes": "",
+  "resources": [],
+  "inventory": {
+    "weapons": [
+      {
+        "id": "weapon-argentum",
+        "name": "Argentum",
+        "attack_bonus": 8,
+        "damage": {
+          "base_dice": "1d8+5",
+          "base_type": "perforante"
+        },
+        "conditional_damage": [],
+        "properties": [
+          "De carga",
+          "Distancia (80/320)",
+          "Dos manos",
+          "Munición"
+        ],
+        "homebrew_effect": "Ballesta semiautomática con cargador de cinco virotes, construida por Jiseol.",
+        "magic_charges": {
+          "has_charges": false,
+          "max": 0,
+          "current": 0
+        },
+        "success_description": "El virote atraviesa limpiamente al objetivo.",
+        "failure_description": "El virote se pierde entre el traqueteo del mecanismo.",
+        "lore_description": "Un artefacto de Jiseol, la artificiera del grupo, que insiste en que 'es completamente segura... o puede que medio segura'. Es una ballesta semiautomática poco común, capaz de disparar varios virotes sin recargar entre disparo y disparo.",
+        "tactical_summary": "Tiras un d20 y sumas +8; le dices el resultado al máster y él te dice si le has dado | Daño: 1d8+5 Perforante",
+        "is_unique": true
+      },
+      {
+        "id": "weapon-veredicto",
+        "name": "Veredicto",
+        "attack_bonus": 7,
+        "damage": {
+          "base_dice": "1d8+4",
+          "base_type": "cortante"
+        },
+        "conditional_damage": [
+          {
+            "condition": "Ataque a dos manos",
+            "damage_dice": "1d10+4",
+            "damage_type": "cortante"
+          }
+        ],
+        "properties": [
+          "Versátil"
+        ],
+        "homebrew_effect": "Tiene un giroscopio interno que le permite desenvainarse sola, y el filo grabado con runas puede cargarse mágicamente para liberar una onda cortante de 1d4 al golpear.",
+        "magic_charges": {
+          "has_charges": false,
+          "max": 0,
+          "current": 0
+        },
+        "success_description": "La hoja rúnica muerde con precisión.",
+        "failure_description": "El giroscopio hace que el filo se desvíe en el último instante.",
+        "lore_description": "Una espada marcial creada por Jiseol, grabada con runas arcanas y equipada con un mecanismo interno que la hace desenvainarse por sí sola cuando su portadora lo necesita.",
+        "tactical_summary": "Tiras un d20 y sumas +7; le dices el resultado al máster y él te dice si le has dado | Daño: 1d8+4 Cortante (1d10+4 a dos manos, más 1d4 cortante extra si está cargada mágicamente)",
+        "is_unique": true
+      },
+      {
+        "id": "weapon-silencio",
+        "name": "Silencio",
+        "attack_bonus": 7,
+        "damage": {
+          "base_dice": "1d4+4",
+          "base_type": "perforante"
+        },
+        "conditional_damage": [],
+        "properties": [
+          "Arrojadiza",
+          "Distancia (20/60)",
+          "Ligera",
+          "Sutil"
+        ],
+        "homebrew_effect": "Puede inyectar venenos, añadiendo 1d4 de daño de veneno adicional si está cargada con alguno.",
+        "magic_charges": {
+          "has_charges": false,
+          "max": 0,
+          "current": 0
+        },
+        "success_description": "La daga se clava en silencio, sin que el objetivo llegue a reaccionar.",
+        "failure_description": "El objetivo esquiva el golpe silencioso.",
+        "lore_description": "Una daga de infiltración diseñada por Jiseol, pensada para golpes rápidos y precisos, con un compartimento para cargar venenos antes de un ataque.",
+        "tactical_summary": "Tiras un d20 y sumas +7; le dices el resultado al máster y él te dice si le has dado | Daño: 1d4+4 Perforante (+1d4 Veneno si está cargada)",
+        "is_unique": true
+      }
+    ],
+    "mundane_items": []
+  },
+  "stats": {
+    "str": {
+      "name": "Fuerza",
+      "value": 18,
+      "mod": 4,
+      "description": "Mide la potencia física y capacidades deportivas"
+    },
+    "dex": {
+      "name": "Destreza",
+      "value": 20,
+      "mod": 5,
+      "description": "Mide la agilidad y los reflejos"
+    },
+    "con": {
+      "name": "Constitución",
+      "value": 16,
+      "mod": 3,
+      "description": "Mide la resistencia y la salud"
+    },
+    "int": {
+      "name": "Inteligencia",
+      "value": 13,
+      "mod": 1,
+      "description": "Mide el razonamiento y la memoria"
+    },
+    "wis": {
+      "name": "Sabiduría",
+      "value": 18,
+      "mod": 4,
+      "description": "Mide la perspicacia e intuición."
+    },
+    "cha": {
+      "name": "Carisma",
+      "value": 17,
+      "mod": 3,
+      "description": "Mide la fuerza de personalidad y la presencia"
+    }
+  },
+  "spell_slots": [
+    {
+      "level": 1,
+      "max": 4,
+      "current": 4
+    },
+    {
+      "level": 2,
+      "max": 2,
+      "current": 2
+    }
+  ],
+  "skills": [
+    {
+      "name": "Acrobacias",
+      "related_stat": "dex",
+      "modifier": 5
+    },
+    {
+      "name": "Arcanos",
+      "related_stat": "int",
+      "modifier": 1
+    },
+    {
+      "name": "Atletismo",
+      "related_stat": "str",
+      "modifier": 7
+    },
+    {
+      "name": "Engañar",
+      "related_stat": "cha",
+      "modifier": 3
+    },
+    {
+      "name": "Historia",
+      "related_stat": "int",
+      "modifier": 1
+    },
+    {
+      "name": "Interpretación",
+      "related_stat": "cha",
+      "modifier": 3
+    },
+    {
+      "name": "Intimidar",
+      "related_stat": "cha",
+      "modifier": 3
+    },
+    {
+      "name": "Investigación",
+      "related_stat": "int",
+      "modifier": 4
+    },
+    {
+      "name": "Juego de Manos",
+      "related_stat": "dex",
+      "modifier": 5
+    },
+    {
+      "name": "Medicina",
+      "related_stat": "wis",
+      "modifier": 4
+    },
+    {
+      "name": "Naturaleza",
+      "related_stat": "int",
+      "modifier": 4
+    },
+    {
+      "name": "Percepción",
+      "related_stat": "wis",
+      "modifier": 4
+    },
+    {
+      "name": "Perspicacia",
+      "related_stat": "wis",
+      "modifier": 4
+    },
+    {
+      "name": "Persuasión",
+      "related_stat": "cha",
+      "modifier": 3
+    },
+    {
+      "name": "Religión",
+      "related_stat": "int",
+      "modifier": 1
+    },
+    {
+      "name": "Sigilo",
+      "related_stat": "dex",
+      "modifier": 8
+    },
+    {
+      "name": "Supervivencia",
+      "related_stat": "wis",
+      "modifier": 7
+    },
+    {
+      "name": "Trato con Animales",
+      "related_stat": "wis",
+      "modifier": 4
+    }
+  ],
+  "abilities_by_action": {
+    "action": [
+      {
+        "id": "ability-arma-de-aliento",
+        "name": "Arma de Aliento (Rayo)",
+        "type": "trait",
+        "related_stat": "con",
+        "attack_type": "save",
+        "success_description": "El objetivo se aparta a tiempo y solo sufre parte de la descarga.",
+        "failure_description": "El rayo golpea de lleno, chamuscando y sacudiendo al objetivo.",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "3d6",
+        "scaling_formula": "",
+        "lore_description": "Xyrqhazthylia exhala una descarga eléctrica en línea recta, herencia de su antepasado dragón de rayo. Es ideal cuando varios enemigos están alineados uno detrás de otro, ya que el chorro los atraviesa a todos. Tras usarla necesita descansar (breve o prolongado) para recargar. El daño de este aliento aumenta con el nivel de personaje (será 4d6 en nivel 11 y 5d6 en nivel 16), no con espacios de conjuro.",
+        "tactical_summary": "Todos los enemigos en la línea tiran un d20; si superan tu CD (14) reciben solo la mitad del daño, si no la superan reciben todo el daño | Daño: 3d6 Rayo | Gasta: 1 acción, requiere descanso para volver a usarse"
+      },
+      {
+        "id": "ability-amistad-con-animales",
+        "name": "Amistad con los Animales",
+        "type": "spell",
+        "related_stat": "wis",
+        "attack_type": "save",
+        "success_description": "El animal se muestra receloso pero no ataca.",
+        "failure_description": "El animal queda calmado y confía en ti mientras dure el efecto.",
+        "is_scalable": false,
+        "base_level": 1,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Convence a un animal salvaje de que no quieres hacerle daño, calmándolo durante todo un día. El efecto se rompe de inmediato si tú o algún compañero le hacéis daño. Con espacios de conjuro más altos puedes calmar a más de un animal a la vez. Requiere ofrecer un trozo de comida.",
+        "tactical_summary": "El animal tira un d20; si supera tu CD (15) no se deja calmar, si no la supera queda hechizado y tranquilo | Gasta: 1 acción y un espacio de conjuro"
+      },
+      {
+        "id": "ability-buenas-bayas",
+        "name": "Buenas Bayas",
+        "type": "spell",
+        "related_stat": "wis",
+        "attack_type": "none",
+        "success_description": "La baya se disuelve en la boca, dejando una calidez reconfortante.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 1,
+        "damage_dice": "+1",
+        "scaling_formula": "",
+        "lore_description": "Crea hasta diez bayas mágicas en tu mano. Cualquiera puede comerse una usando su acción: alimenta durante un día entero y además cura un poco. Si no se comen en 24 horas, pierden su magia.",
+        "tactical_summary": "No tienes que tirar nada, quien se come una baya se cura al instante | Curación: +1 por baya comida | Gasta: 1 acción para crearlas"
+      },
+      {
+        "id": "ability-hablar-con-los-animales",
+        "name": "Hablar con los Animales",
+        "type": "spell",
+        "related_stat": "wis",
+        "attack_type": "none",
+        "success_description": "El animal responde con claridad, dentro de lo que su instinto le permite entender.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 1,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Te permite entender y hablar con animales durante diez minutos. Pueden contarte lo que hayan visto u oído en el último día cerca de donde están, y a veces puedes convencerles de que te hagan un pequeño favor.",
+        "tactical_summary": "No tienes que tirar nada, entiendes y hablas con animales directamente | Gasta: 1 acción (puede lanzarse como ritual sin gastar espacio de conjuro si dispones de tiempo extra)"
+      },
+      {
+        "id": "ability-crecimiento-de-espinas",
+        "name": "Crecimiento de Espinas",
+        "type": "spell",
+        "related_stat": "wis",
+        "attack_type": "none",
+        "success_description": "El terreno se convierte en una trampa de espinas para quien lo cruce.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 2,
+        "damage_dice": "2d4",
+        "scaling_formula": "",
+        "lore_description": "Haces brotar espinas y pinchos ocultos en un radio de 6 metros, convirtiendo el suelo en terreno difícil. El daño se aplica automáticamente cada vez que alguien entra o se mueve por dentro del área, y las espinas están camufladas para parecer terreno normal a simple vista.",
+        "tactical_summary": "No tienes que tirar nada: cualquiera que entre o se mueva por el área recibe daño automáticamente cada 1,5 metros que recorra dentro | Daño: 2d4 Perforante | Gasta: 1 acción y concentración (hasta 10 minutos)"
+      },
+      {
+        "id": "ability-restablecimiento-menor",
+        "name": "Restablecimiento Menor",
+        "type": "spell",
+        "related_stat": "wis",
+        "attack_type": "none",
+        "success_description": "El malestar desaparece al instante bajo tu toque.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 2,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Tocas a alguien y eliminas de un plumazo una enfermedad o uno de estos problemas: ceguera, sordera, parálisis o veneno en su cuerpo.",
+        "tactical_summary": "No tienes que tirar nada, el efecto o enfermedad desaparece al tocar al objetivo | Gasta: 1 acción y un espacio de conjuro"
+      }
+    ],
+    "bonus_action": [
+      {
+        "id": "ability-marca-del-cazador",
+        "name": "Marca del Cazador",
+        "type": "spell",
+        "related_stat": "wis",
+        "attack_type": "none",
+        "success_description": "El objetivo queda marcado como tu presa; cada golpe con tu arma le duele un poco más.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 1,
+        "damage_dice": "1d6",
+        "scaling_formula": "",
+        "lore_description": "Marcas a una criatura como tu presa. Mientras dure, cada vez que la golpees con un arma le haces daño extra, y tienes ventaja para localizarla mediante Percepción o Supervivencia. Si la matas antes de que se acabe el conjuro, puedes usar una acción adicional en un turno posterior para marcar a otra criatura nueva. Con espacios de conjuro más altos puedes mantenerlo activo durante mucho más tiempo (hasta 24 horas).",
+        "tactical_summary": "No tienes que tirar nada extra: la próxima vez que golpees con un arma al objetivo marcado, se añade el daño automáticamente | Daño: 1d6 (del tipo de tu arma) | Gasta: 1 acción adicional y concentración (hasta 1 hora), más un espacio de conjuro"
+      }
+    ],
+    "reaction": [],
+    "passive": [
+      {
+        "id": "ability-ataque-adicional",
+        "name": "Ataque Adicional",
+        "type": "class_feature",
+        "lore_description": "Tu entrenamiento como exploradora te permite golpear más de una vez en el mismo turno cuando decides atacar.",
+        "tactical_summary": "Cuando realizas la acción de atacar, golpeas 2 veces en vez de 1.",
+        "tactical_role": "Ofensivo"
+      },
+      {
+        "id": "ability-combate-con-dos-armas",
+        "name": "Combate con Dos Armas",
+        "type": "class_feature",
+        "lore_description": "Al luchar con un arma en cada mano (como Veredicto y Silencio), tu destreza en el combate te permite golpear con más fuerza incluso con el segundo ataque.",
+        "tactical_summary": "Cuando ataques con dos armas, suma también tu modificador de característica al daño del segundo golpe (normalmente esto no ocurre).",
+        "tactical_role": "Ofensivo"
+      },
+      {
+        "id": "ability-rompehordas",
+        "name": "Rompehordas",
+        "type": "class_feature",
+        "lore_description": "Cuando dos o más enemigos luchan pegados entre sí, tu entrenamiento como cazadora te permite castigarlos a ambos con la misma arma antes de que puedan reaccionar.",
+        "tactical_summary": "Una vez por turno, si golpeas a un enemigo con un ataque de arma, puedes atacar automáticamente a otro enemigo distinto que esté a menos de 1,5 metros del primero y dentro del alcance de tu arma, sin gastar tu segundo ataque en él.",
+        "tactical_role": "Ofensivo"
+      },
+        {
+        "id": "ability-enemigo-predilecto",
+        "name": "Enemigo Predilecto (Pies y Humanos)",
+        "type": "class_feature",
+        "lore_description": "Por algún motivo que nadie en el grupo ha llegado a entender del todo, Xyrqhazthylia ha estudiado y rastreado durante años a los pies (sí, pies, como parte del cuerpo) y a los humanos. Conoce sus costumbres, sabe seguirles el rastro y entiende alguno de sus idiomas.",
+        "tactical_summary": "Tienes ventaja en las pruebas de Supervivencia para rastrear pies o humanos, y ventaja en pruebas de Inteligencia para recordar información sobre ellos. Además hablas un idioma extra que uno de estos grupos suele usar.",
+        "tactical_role": "Utilidad"
+        },
+      {
+        "id": "ability-explorador-de-la-naturaleza",
+        "name": "Explorador de la Naturaleza (Bosque y Minas)",
+        "type": "class_feature",
+        "lore_description": "Se siente como en casa tanto en bosques densos como en túneles y minas, terrenos que conoce como la palma de su mano gracias a su trabajo como cartógrafa.",
+        "tactical_summary": "Al hacer pruebas de Inteligencia o Sabiduría relacionadas con bosques o minas, tu bonificador de competencia se duplica si tienes competencia en esa habilidad. Además, viajando una hora o más por estos terrenos: el grupo no se pierde, el terreno difícil no os frena, seguís alerta al peligro, podéis moveros con sigilo si vais solos, encontráis el doble de comida al forrajear, y al rastrear sabéis el número, tamaño y antigüedad del rastro.",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-conciencia-primigenia",
+        "name": "Conciencia Primigenia",
+        "type": "class_feature",
+        "lore_description": "Puede concentrarse para sentir la presencia de criaturas de naturaleza extraña o sobrenatural en la zona, sin llegar a saber cuántas son ni dónde están exactamente.",
+        "tactical_summary": "No tienes que tirar nada: al gastar tu acción y un espacio de conjuro, durante 1 minuto por nivel del espacio gastado (o 6 millas si estás en tu terreno predilecto) sabes si hay cerca aberraciones, celestiales, dragones, elementales, fatas, infernales o no muertos.",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-lanzamiento-de-conjuros",
+        "name": "Lanzamiento de Conjuros",
+        "type": "class_feature",
+        "lore_description": "Ha aprendido a canalizar la esencia mágica de la naturaleza para lanzar conjuros propios de exploradores, apoyándose en su Sabiduría.",
+        "tactical_summary": "Te da acceso a tus espacios de conjuro y a la lista de conjuros de Explorador que conoces.",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-resistencia-al-rayo",
+        "name": "Resistencia al Rayo",
+        "type": "racial_trait",
+        "lore_description": "Su sangre dracónica desciende de un ancestro relacionado con el rayo, lo que hace que su cuerpo resista mejor las descargas eléctricas.",
+        "tactical_summary": "Cuando recibes daño de tipo Rayo, ese daño se reduce a la mitad.",
+        "tactical_role": "Defensivo"
+      },
+      {
+        "id": "ability-cartografa-incansable",
+        "name": "Cartógrafa Incansable",
+        "type": "background_feature",
+        "lore_description": "Siempre lleva encima mapas, notas y rutas alternativas. Pese a su dislexia y daltonismo, jamás entra en un lugar sin haber pensado antes cómo salir, revisando cada plan varias veces antes de actuar.",
+        "tactical_summary": "Sin efecto mecánico directo en combate; es un rasgo narrativo que refuerza su cuidado extremo a la hora de planificar rutas y exploraciones.",
+        "tactical_role": "Utilidad"
+      }
+    ]
+  },
+  "lore_info": {
+    "backstory": "Xyrqhazthylia es una exploradora dracónida, disléxica y daltónica, que compensa esas dificultades revisando cada plan y cada ruta varias veces antes de actuar. Fue contratada como guía para cruzar unas montañas en busca de una reliquia dracónica, y ahí conoció a Jiseol, Miralia y Doloria Pussydestroyer, cuyo estilo caótico e improvisado chocaba frontalmente con su meticulosidad. Juró abandonarlas en cuanto terminara el trabajo, pero nunca cumplió esa promesa: terminó encariñándose con ellas y se convirtió en la organizadora involuntaria del grupo, llevando las provisiones, las rutas y recordando los objetivos de cada misión. Junto a Mo, Fecalith y Spaccafiga, forma parte de las Dragonas Livianas, un grupo tan desastroso como querido en todo el continente.",
+    "personality_traits": "Siempre reviso todo varias veces antes de actuar.\nSoy la única que parece recordar cuál era el plan original.",
+    "ideals": "Preparación. Un buen plan evita cientos de problemas.",
+    "bonds": "Aunque me desesperen constantemente, jamás abandonaría a las Dragonas Livianas.",
+    "flaws": "Me cuesta improvisar cuando las cosas salen mal... lo cual ocurre constantemente."
+  }
+}

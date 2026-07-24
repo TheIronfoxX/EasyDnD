@@ -63,6 +63,7 @@ class InventoryTab extends StatelessWidget {
                       quantity: provider.quantityFor(weapon.id),
                       onIncrement: () => provider.incrementQuantity(weapon.id),
                       onDecrement: () => provider.decrementQuantity(weapon.id),
+                      onRemove: () => provider.removeWeapon(weapon.id),
                     ),
                   ),
                 ),
@@ -772,6 +773,7 @@ class _WeaponCard extends StatelessWidget {
   final int quantity;
   final VoidCallback onIncrement;
   final VoidCallback onDecrement;
+  final VoidCallback onRemove;
 
   const _WeaponCard({
     required this.weapon,
@@ -779,6 +781,7 @@ class _WeaponCard extends StatelessWidget {
     required this.quantity,
     required this.onIncrement,
     required this.onDecrement,
+    required this.onRemove,
   });
 
   @override
@@ -821,6 +824,14 @@ class _WeaponCard extends StatelessWidget {
                 child: Text(
                   '+${weapon.attackBonus}',
                   style: TextStyle(color: accent, fontWeight: FontWeight.bold, fontFamily: 'serif'),
+                ),
+              ),
+              InkWell(
+                onTap: onRemove,
+                borderRadius: BorderRadius.circular(6),
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 6, top: 4, bottom: 4, right: 4),
+                  child: Icon(Icons.delete_outline, color: context.appColors.textSecondary, size: 18),
                 ),
               ),
             ],

@@ -1,0 +1,580 @@
+{
+  "basic_info": {
+    "name": "Fecalith",
+    "race": "Dracónido",
+    "characterClass": "Hechicero 6 (Linaje de dragón)",
+    "hp_max": 58,
+    "ac": 16,
+    "speed": 30,
+    "spell_save_dc": 16
+  },
+  "purse": {
+    "gold": 0,
+    "silver": 0,
+    "copper": 0
+  },
+  "ai_tips": "Fecalith es una hechicera de linaje dracónico con ancestro ácido: sus conjuros de daño elemental están reflavoreados como ataques 'escatológicos' (ácido/veneno). En combate a distancia abre con Rayo de Caca (truco fiable) y guarda espacios de nivel 3 para Bola de Mierda como gran daño en área. Dormir es excelente contra hordas de enemigos débiles al inicio del combate. Usa Contraconjuro como reacción para anular lanzadores enemigos peligrosos. Los puntos de sortilegio son su recurso flexible: puede convertirlos en espacios de conjuro extra (acción adicional) o recuperarlos gastando un espacio, así que hay que vigilar cuántos quedan tras cada combate. Arma de aliento es un buen recurso de respaldo cuando se queda sin espacios de conjuro (una vez por descanso). Su armadura natural (13+Des) le permite ir sin armadura sin penalización.",
+  "user_tactics": "",
+  "adventure_notes": "",
+  "resources": [
+    {
+      "name": "Puntos de Sortilegio",
+      "current": 6,
+      "max": 6
+    },
+    {
+      "name": "Arma de Aliento (usos)",
+      "current": 1,
+      "max": 1
+    }
+  ],
+  "inventory": {
+    "weapons": [
+      {
+        "id": "weapon-catalizador-del-caos",
+        "name": "Catalizador del Caos ©JSI-F01",
+        "attack_bonus": 6,
+        "damage": {
+          "base_dice": "1d6+3",
+          "base_type": "contundente"
+        },
+        "conditional_damage": [
+          {
+            "condition": "Ataque a dos manos",
+            "damage_dice": "1d8+3",
+            "damage_type": "contundente"
+          }
+        ],
+        "properties": [
+          "Versátil"
+        ],
+        "homebrew_effect": "Tiene un botón rojo escondido en el mango cuya función nadie ha logrado descubrir, ni siquiera su creadora.",
+        "magic_charges": {
+          "has_charges": false,
+          "max": 0,
+          "current": 0
+        },
+        "success_description": "El bastón golpea con fuerza mientras el cristal violeta destella con el color del último hechizo canalizado.",
+        "failure_description": "El golpe no logra atravesar la defensa del enemigo.",
+        "lore_description": "Un bastón de madera negra y cristal violeta forjado por Jiseol, la artificiera de las Dragonas Livianas, expresamente para Fecalith. El cristal cambia de color según el conjuro que se canaliza a través de él.",
+        "tactical_summary": "Tiras un d20 y sumas +6; le dices el resultado al máster y él te dice si le has dado | Daño: 1d6+3 Contundente (1d8+3 a dos manos)",
+        "is_unique": true
+      }
+    ],
+    "mundane_items": []
+  },
+  "stats": {
+    "str": {
+      "name": "Fuerza",
+      "value": 16,
+      "mod": 3,
+      "description": "Mide la potencia física y capacidades deportivas"
+    },
+    "dex": {
+      "name": "Destreza",
+      "value": 16,
+      "mod": 3,
+      "description": "Mide la agilidad y los reflejos"
+    },
+    "con": {
+      "name": "Constitución",
+      "value": 18,
+      "mod": 4,
+      "description": "Mide la resistencia y la salud"
+    },
+    "int": {
+      "name": "Inteligencia",
+      "value": 13,
+      "mod": 1,
+      "description": "Mide el razonamiento y la memoria"
+    },
+    "wis": {
+      "name": "Sabiduría",
+      "value": 19,
+      "mod": 4,
+      "description": "Mide la perspicacia e intuición."
+    },
+    "cha": {
+      "name": "Carisma",
+      "value": 20,
+      "mod": 5,
+      "description": "Mide la fuerza de personalidad y la presencia"
+    }
+  },
+  "spell_slots": [
+    {
+      "level": 1,
+      "max": 4,
+      "current": 4
+    },
+    {
+      "level": 2,
+      "max": 3,
+      "current": 3
+    },
+    {
+      "level": 3,
+      "max": 3,
+      "current": 3
+    }
+  ],
+  "skills": [
+    {
+      "name": "Acrobacias",
+      "related_stat": "dex",
+      "modifier": 3
+    },
+    {
+      "name": "Arcanos",
+      "related_stat": "int",
+      "modifier": 4
+    },
+    {
+      "name": "Atletismo",
+      "related_stat": "str",
+      "modifier": 3
+    },
+    {
+      "name": "Engañar",
+      "related_stat": "cha",
+      "modifier": 8
+    },
+    {
+      "name": "Historia",
+      "related_stat": "int",
+      "modifier": 1
+    },
+    {
+      "name": "Interpretación",
+      "related_stat": "cha",
+      "modifier": 5
+    },
+    {
+      "name": "Intimidar",
+      "related_stat": "cha",
+      "modifier": 8
+    },
+    {
+      "name": "Investigación",
+      "related_stat": "int",
+      "modifier": 1
+    },
+    {
+      "name": "Juego de Manos",
+      "related_stat": "dex",
+      "modifier": 3
+    },
+    {
+      "name": "Medicina",
+      "related_stat": "wis",
+      "modifier": 4
+    },
+    {
+      "name": "Naturaleza",
+      "related_stat": "int",
+      "modifier": 1
+    },
+    {
+      "name": "Percepción",
+      "related_stat": "wis",
+      "modifier": 4
+    },
+    {
+      "name": "Perspicacia",
+      "related_stat": "wis",
+      "modifier": 4
+    },
+    {
+      "name": "Persuasión",
+      "related_stat": "cha",
+      "modifier": 5
+    },
+    {
+      "name": "Religión",
+      "related_stat": "int",
+      "modifier": 1
+    },
+    {
+      "name": "Sigilo",
+      "related_stat": "dex",
+      "modifier": 3
+    },
+    {
+      "name": "Supervivencia",
+      "related_stat": "wis",
+      "modifier": 4
+    },
+    {
+      "name": "Trato con Animales",
+      "related_stat": "wis",
+      "modifier": 4
+    }
+  ],
+  "abilities_by_action": {
+    "action": [
+      {
+        "id": "ability-ilusion-menor",
+        "name": "Ilusión menor",
+        "type": "spell",
+        "related_stat": "cha",
+        "attack_type": "none",
+        "success_description": "Un sonido o una pequeña imagen aparece justo donde lo has decidido.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Creas un sonido o la imagen de un objeto pequeño en un punto cercano. Es pura ilusión: no puede hacer daño ni tocarse de verdad, y si alguien la examina con atención puede acabar dándose cuenta del truco.",
+        "tactical_summary": "No tienes que tirar nada, el sonido o la imagen aparece directamente donde tú quieras."
+      },
+      {
+        "id": "ability-luz",
+        "name": "Luz",
+        "type": "spell",
+        "related_stat": "cha",
+        "attack_type": "none",
+        "success_description": "El objeto elegido empieza a brillar con el color que hayas escogido.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Tocas un objeto pequeño y lo haces brillar como una antorcha durante una hora, del color que quieras. Si intentas hacerlo sobre algo que lleva encima un enemigo, este puede esquivar el efecto con un movimiento rápido.",
+        "tactical_summary": "No tienes que tirar nada, el objeto empieza a brillar en el momento en que lo tocas."
+      },
+      {
+        "id": "ability-mano-del-mago",
+        "name": "Mano del mago",
+        "type": "spell",
+        "related_stat": "cha",
+        "attack_type": "none",
+        "success_description": "Una mano espectral aparece flotando y hace justo lo que le pides.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Invocas una mano fantasmal que puedes mover y usar para coger cosas, abrir puertas o verter líquidos a distancia. No puede pelear ni cargar mucho peso, pero es perfecta para resolver pequeños problemas sin acercarte.",
+        "tactical_summary": "No tienes que tirar nada, la mano hace lo que le indiques mientras la controles."
+      },
+      {
+        "id": "ability-rayo-de-caca",
+        "name": "Rayo de Caca",
+        "type": "spell",
+        "related_stat": "cha",
+        "attack_type": "attack",
+        "success_description": "Un proyectil ácido y maloliente impacta de lleno, corroyendo lo que toca.",
+        "failure_description": "El proyectil falla su objetivo.",
+        "is_scalable": true,
+        "base_level": 0,
+        "damage_dice": "2d10",
+        "scaling_formula": "1d10",
+        "lore_description": "Arrojas una mota de materia ácida y pestilente contra un enemigo. Si nadie lo lleva puesto, puede incluso incinerar o corroer objetos inflamables cercanos. El daño ya está calculado para tu nivel actual.",
+        "tactical_summary": "Tiras un d20 y sumas +8; le dices el resultado al máster y él te dice si le has dado | Daño: 2d10 Ácido"
+      },
+      {
+        "id": "ability-pedo-cardoso",
+        "name": "Pedo cardoso",
+        "type": "spell",
+        "related_stat": "cha",
+        "attack_type": "save",
+        "success_description": "El objetivo esquiva a tiempo la nube y solo respira un poco de gas.",
+        "failure_description": "El objetivo queda envuelto en la nube y sufre todo el daño.",
+        "is_scalable": true,
+        "base_level": 0,
+        "damage_dice": "2d12",
+        "scaling_formula": "1d12",
+        "lore_description": "Extiendes la mano y proyectas una nube de gas nocivo y ácido directamente sobre un enemigo cercano. El daño ya está calculado para tu nivel actual.",
+        "tactical_summary": "El enemigo tira un d20; si supera tu CD (16) no recibe daño, si no la supera recibe todo el daño | Daño: 2d12 Ácido"
+      },
+      {
+        "id": "ability-dormir",
+        "name": "Dormir",
+        "type": "spell",
+        "related_stat": "cha",
+        "attack_type": "none",
+        "success_description": "Los enemigos con menos vida empiezan a caer dormidos uno tras otro.",
+        "failure_description": "No queda 'presupuesto' suficiente para dormir a más enemigos.",
+        "is_scalable": true,
+        "base_level": 1,
+        "damage_dice": "",
+        "scaling_formula": "2d8",
+        "lore_description": "Sumes en un sueño mágico a las criaturas cercanas, empezando por las que tengan menos puntos de golpe. Es ideal contra grupos de enemigos débiles, pero no afecta a no muertos ni a quienes sean inmunes a ser hechizados. Cualquier daño despierta a la criatura.",
+        "tactical_summary": "No tienes que tirar ningún ataque ni salvación, tiras 5d8 para repartir ese total entre los enemigos con menos vida hasta que se agote, empezando por el que tenga menos puntos de golpe."
+      },
+      {
+        "id": "ability-hechizar-persona",
+        "name": "Hechizar persona",
+        "type": "spell",
+        "related_stat": "cha",
+        "attack_type": "save",
+        "success_description": "El objetivo se resiste y nota que has intentado meterte en su cabeza.",
+        "failure_description": "El objetivo queda convencido de que eres un viejo conocido amistoso.",
+        "is_scalable": true,
+        "base_level": 1,
+        "damage_dice": "",
+        "scaling_formula": "+1",
+        "lore_description": "Intentas convencer mágicamente a un humanoide de que eres alguien de confianza. Mientras dure el efecto, te tratará como a un amigo cercano; cuando se termine, se dará cuenta de que estaba hechizado. Si tú o tus aliados ya estáis luchando contra él, es más fácil que caiga en el hechizo.",
+        "tactical_summary": "El enemigo tira un d20; si supera tu CD (16) no le afecta, si no la supera queda hechizado y te ve como un amigo."
+      },
+      {
+        "id": "ability-mirada-del-me-cago",
+        "name": "Mirada del !!!!!ME CAGO¡¡¡¡¡",
+        "type": "spell",
+        "related_stat": "cha",
+        "attack_type": "save",
+        "success_description": "Los enemigos alcanzados por la línea de energía oscura reciben solo la mitad del daño.",
+        "failure_description": "La energía oscura los golpea de lleno.",
+        "is_scalable": false,
+        "base_level": 1,
+        "damage_dice": "3d6",
+        "scaling_formula": "",
+        "lore_description": "Tus ojos brillan con una luz maléfica y disparas una onda de energía oscura en línea recta, atravesando a todo lo que se cruce en su camino.",
+        "tactical_summary": "Los enemigos en la línea tiran un d20; si superan tu CD (16) reciben solo la mitad del daño, si no la superan reciben todo el daño | Daño: 3d6 Necrótico"
+      },
+      {
+        "id": "ability-eructito",
+        "name": "Eructito",
+        "type": "spell",
+        "related_stat": "cha",
+        "attack_type": "save",
+        "success_description": "El enemigo aguanta el envite y solo recibe la mitad del daño, sin ser empujado.",
+        "failure_description": "El enemigo recibe todo el daño y sale despedido 3 metros hacia atrás.",
+        "is_scalable": true,
+        "base_level": 1,
+        "damage_dice": "2d8",
+        "scaling_formula": "1d8",
+        "lore_description": "Sueltas una ola de fuerza venenosa y maloliente a tu alrededor que empuja a todo lo que encuentra en su camino. También hace un ruido tan escandaloso que se oye desde muy lejos.",
+        "tactical_summary": "Los enemigos cercanos tiran un d20; si superan tu CD (16) reciben solo la mitad del daño y no son empujados, si no la superan reciben todo el daño y salen empujados 3 metros | Daño: 2d8 Veneno"
+      },
+      {
+        "id": "ability-abrir-cerraduras",
+        "name": "Abrir cerraduras",
+        "type": "spell",
+        "related_stat": "cha",
+        "attack_type": "none",
+        "success_description": "La cerradura, puerta o candado se abre con un fuerte golpe audible.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 2,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Abres a distancia una puerta, cofre, candado o esposas cerrados, ya sea por medios normales o mágicos. Si hay varias cerraduras, solo se abre una. El propio conjuro hace un ruido muy fuerte que se puede oír desde bastante lejos.",
+        "tactical_summary": "No tienes que tirar nada, el objeto elegido se abre directamente."
+      },
+      {
+        "id": "ability-diarrea-explosiva",
+        "name": "Diarrea explosiva",
+        "type": "spell",
+        "related_stat": "cha",
+        "attack_type": "save",
+        "success_description": "Los enemigos cercanos aguantan el ruido y solo reciben la mitad del daño.",
+        "failure_description": "El estruendo los golpea con todo el daño.",
+        "is_scalable": true,
+        "base_level": 2,
+        "damage_dice": "3d8",
+        "scaling_formula": "1d8",
+        "lore_description": "Provocas un sonido estridente y nauseabundo en un punto cercano que sacude a todo lo que esté alrededor, además de dañar objetos no mágicos que no lleve nadie encima.",
+        "tactical_summary": "Los enemigos cerca del punto elegido tiran un d20; si superan tu CD (16) reciben solo la mitad del daño, si no la superan reciben todo el daño | Daño: 3d8 Veneno"
+      },
+      {
+        "id": "ability-inmovilizar-persona",
+        "name": "Inmovilizar persona",
+        "type": "spell",
+        "related_stat": "cha",
+        "attack_type": "save",
+        "success_description": "El humanoide se resiste y puede seguir moviéndose con normalidad.",
+        "failure_description": "El humanoide queda completamente paralizado.",
+        "is_scalable": true,
+        "base_level": 2,
+        "damage_dice": "",
+        "scaling_formula": "+1",
+        "lore_description": "Intentas paralizar por completo a un humanoide con tu magia. Mientras dure el efecto, el objetivo puede intentar liberarse al final de cada uno de sus turnos.",
+        "tactical_summary": "El enemigo tira un d20; si supera tu CD (16) no le afecta, si no la supera queda paralizado hasta que consiga superar la tirada en un turno posterior."
+      },
+      {
+        "id": "ability-bola-de-mierda",
+        "name": "Bola de Mierda",
+        "type": "spell",
+        "related_stat": "cha",
+        "attack_type": "save",
+        "success_description": "Los enemigos en la zona de la explosión reciben solo la mitad del daño.",
+        "failure_description": "La explosión ácida los golpea con todo el daño.",
+        "is_scalable": true,
+        "base_level": 3,
+        "damage_dice": "8d6",
+        "scaling_formula": "1d6",
+        "lore_description": "Lanzas un proyectil que explota en una gran bola de materia corrosiva, cubriendo una zona amplia y quemando cualquier objeto inflamable que nadie lleve encima. Es tu mayor golpe de área.",
+        "tactical_summary": "Todos los enemigos en la zona tiran un d20; si superan tu CD (16) reciben solo la mitad del daño, si no la superan reciben todo el daño | Daño: 8d6 Ácido"
+      },
+      {
+        "id": "ability-diarrea",
+        "name": "Diarrea",
+        "type": "spell",
+        "related_stat": "cha",
+        "attack_type": "save",
+        "success_description": "La criatura aguanta las náuseas y actúa con normalidad ese turno.",
+        "failure_description": "La criatura pasa el turno vomitando y tambaleándose, sin poder hacer nada más.",
+        "is_scalable": false,
+        "base_level": 3,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Creas una gran nube de gas amarillo y nauseabundo en un punto cercano. Cualquiera que empiece su turno dentro corre el riesgo de pasarlo vomitando en vez de actuando con normalidad. Un viento fuerte puede dispersar la nube antes de tiempo.",
+        "tactical_summary": "Cada criatura que empiece su turno dentro de la nube tira un d20; si supera tu CD (16) actúa con normalidad, si no la supera gasta su turno vomitando."
+      },
+      {
+        "id": "ability-arma-de-aliento",
+        "name": "Arma de Aliento",
+        "type": "trait",
+        "related_stat": "con",
+        "attack_type": "save",
+        "success_description": "Los enemigos alcanzados por el chorro ácido reciben solo la mitad del daño.",
+        "failure_description": "El chorro ácido los golpea con todo el daño.",
+        "is_scalable": true,
+        "base_level": 0,
+        "damage_dice": "3d6",
+        "scaling_formula": "1d6",
+        "lore_description": "Exhalas un chorro de energía ácida propio de tu ancestro dracónico en una línea recta que atraviesa a todo lo que se cruce en su camino. Es tu recurso racial más potente, pero necesitas descansar (aunque sea un rato corto) antes de poder repetirlo.",
+        "tactical_summary": "Los enemigos en la línea tiran un d20; si superan tu CD (16) reciben solo la mitad del daño, si no la superan reciben todo el daño | Daño: 3d6 Ácido | Gasta: 1 acción y 1 uso de Arma de Aliento (se recupera con un descanso)"
+      }
+    ],
+    "bonus_action": [
+      {
+        "id": "ability-crear-espacios-de-conjuro",
+        "name": "Crear espacios de conjuro",
+        "type": "class_feature",
+        "related_stat": "cha",
+        "attack_type": "none",
+        "success_description": "Consigues un espacio de conjuro extra listo para usar.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Transformas puntos de sortilegio sobrantes en un espacio de conjuro nuevo. Cuanto más alto el nivel del espacio que quieras crear, más puntos de sortilegio cuesta (2 para nivel 1, 3 para nivel 2, 5 para nivel 3, 6 para nivel 4, 7 para nivel 5). No puedes crear espacios de nivel superior a 5.",
+        "tactical_summary": "No tienes que tirar nada, simplemente gastas puntos de sortilegio para ganar un espacio de conjuro | Gasta: 1 acción adicional y puntos de sortilegio"
+      },
+      {
+        "id": "ability-recuperar-puntos-de-sortilegio",
+        "name": "Recuperar puntos de sortilegio",
+        "type": "class_feature",
+        "related_stat": "cha",
+        "attack_type": "none",
+        "success_description": "Recuperas puntos de sortilegio a cambio de gastar un espacio de conjuro.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Sacrificas un espacio de conjuro para recargar tu reserva de puntos de sortilegio, consiguiendo tantos puntos como el nivel de ese espacio.",
+        "tactical_summary": "No tienes que tirar nada, simplemente gastas un espacio de conjuro para recuperar puntos de sortilegio | Gasta: 1 acción adicional y 1 espacio de conjuro"
+      }
+    ],
+    "reaction": [
+      {
+        "id": "ability-contraconjuro",
+        "name": "Contraconjuro",
+        "type": "spell",
+        "related_stat": "cha",
+        "attack_type": "none",
+        "success_description": "El conjuro enemigo se disuelve en el aire sin efecto.",
+        "failure_description": "No consigues interrumpir el conjuro (solo puede fallar si el conjuro rival es de nivel alto y tu prueba no supera su CD).",
+        "is_scalable": true,
+        "base_level": 3,
+        "damage_dice": "",
+        "scaling_formula": "+1",
+        "lore_description": "Cuando ves a alguien cercano lanzando un conjuro, puedes intentar anularlo antes de que surta efecto. Contra conjuros de nivel bajo funciona siempre; contra conjuros más poderosos necesitas hacer una prueba de característica para lograrlo.",
+        "tactical_summary": "No tienes que tirar nada si el conjuro rival es de nivel 3 o inferior (se anula directamente); si es de nivel más alto, haces una prueba de característica contra una CD igual a 10 + el nivel de ese conjuro | Gasta: 1 reacción y 1 espacio de conjuro de nivel 3"
+      }
+    ],
+    "passive": [
+      {
+        "id": "ability-resistencia-al-dano",
+        "name": "Resistencia al daño (Ácido)",
+        "type": "trait",
+        "lore_description": "Tu sangre dracónica te protege especialmente bien del tipo de daño asociado a tu ancestro: el ácido.",
+        "tactical_summary": "Cuando recibas daño ácido, ese daño se reduce a la mitad.",
+        "tactical_role": "Defensivo"
+      },
+      {
+        "id": "ability-fortaleza-de-dragon",
+        "name": "Fortaleza de dragón",
+        "type": "class_feature",
+        "lore_description": "Tu piel muestra un brillo similar al de las escamas de un dragón. Esto te da una armadura natural cuando no llevas armadura encima, y tu cuerpo aguanta un poco más de daño en cada nivel gracias a tu sangre dracónica.",
+        "tactical_summary": "Sin armadura, tu Clase de Armadura es 13 + tu modificador de Destreza. Además, tus puntos de golpe máximos ya incluyen +1 por cada nivel de hechicero que tengas.",
+        "tactical_role": "Defensivo"
+      },
+      {
+        "id": "ability-conjuro-cuidadoso",
+        "name": "Conjuro cuidadoso",
+        "type": "class_feature",
+        "lore_description": "Puedes ajustar un conjuro para que ciertos aliados salgan completamente ilesos de su efecto, aunque el resto de objetivos sí lo sufran con normalidad.",
+        "tactical_summary": "Cuando lances un conjuro que obligue a hacer una salvación, puedes gastar 1 punto de sortilegio para que hasta 5 (tu modificador de Carisma) criaturas elegidas por ti superen esa salvación automáticamente.",
+        "tactical_role": "Defensivo"
+      },
+      {
+        "id": "ability-conjuro-potenciado",
+        "name": "Conjuro potenciado",
+        "type": "class_feature",
+        "lore_description": "Puedes forzar a la suerte a que te favorezca justo cuando más lo necesitas, repitiendo los dados de daño más flojos de un conjuro.",
+        "tactical_summary": "Cuando tires el daño de un conjuro, puedes gastar 1 punto de sortilegio para volver a tirar hasta 5 (tu modificador de Carisma) dados de daño, usando obligatoriamente el nuevo resultado.",
+        "tactical_role": "Ofensivo"
+      },
+      {
+        "id": "ability-afinidad-elemental",
+        "name": "Afinidad elemental",
+        "type": "class_feature",
+        "lore_description": "Tu vínculo con tu ancestro dracónico hace que el daño ácido fluya con más fuerza a través de tus conjuros, y también puede protegerte de él durante un rato.",
+        "tactical_summary": "Cuando lances un conjuro que haga daño ácido, suma tu modificador de Carisma (+5) a una de las tiradas de daño de ese conjuro. Además, puedes gastar 1 punto de sortilegio para conseguir resistencia al daño ácido durante 1 hora.",
+        "tactical_role": "Ofensivo"
+      },
+      {
+        "id": "ability-ancestro-dragon",
+        "name": "Ancestro dragón",
+        "type": "trait",
+        "lore_description": "Tu antepasado dracónico determina el tipo de daño de tus rasgos raciales (en tu caso, ácido). También puedes hablar, leer y escribir dracónico.",
+        "tactical_summary": "Cuando hagas una prueba de Carisma para interactuar con dragones, tu bonificador de competencia en esa prueba se duplica si ya se aplicaba.",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-fuente-de-magia",
+        "name": "Fuente de magia",
+        "type": "class_feature",
+        "lore_description": "Tienes acceso a una reserva interna de magia bruta que puedes moldear para conseguir distintos efectos mágicos, como crear espacios de conjuro extra o potenciar tus hechizos.",
+        "tactical_summary": "Dispones de 6 puntos de sortilegio (igual a tu nivel de hechicero). Recuperas todos los que hayas gastado al terminar un descanso largo.",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-lanzamiento-de-conjuros",
+        "name": "Lanzamiento de conjuros",
+        "type": "class_feature",
+        "lore_description": "Un suceso de tu pasado, ligado a tu extraño linaje dracónico, dejó una marca imborrable en ti que despertó tu magia arcana. Esa fuente de poder, sea cual sea su origen, alimenta todos tus conjuros.",
+        "tactical_summary": "Tu Carisma es la característica que usas para lanzar conjuros, calcular tu CD de conjuro y tu bonificador de ataque con conjuros.",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-metamagia",
+        "name": "Metamagia",
+        "type": "class_feature",
+        "lore_description": "Has aprendido a moldear tus conjuros para adaptarlos a cada situación concreta, usando opciones especiales como Conjuro cuidadoso o Conjuro potenciado.",
+        "tactical_summary": "Puedes usar una opción de Metamagia en un conjuro cada vez que lo lances, salvo que se indique lo contrario.",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-mejora-de-caracteristica",
+        "name": "Mejora de característica",
+        "type": "class_feature",
+        "lore_description": "En ciertos niveles has podido entrenar y mejorar tus capacidades naturales, subiendo alguna de tus características.",
+        "tactical_summary": "Ya aplicado en tus valores de característica actuales; no requiere ninguna acción en mesa.",
+        "tactical_role": "Utilidad"
+      }
+    ]
+  },
+  "lore_info": {
+    "backstory": "Fecalith es una joven hechicera cuyo peculiar linaje dracónico (con un aliento y una magia de tipo ácido tan extraños como impredecibles) la convirtió durante años en blanco de burlas; además, carece por completo de olfato y gusto. Conoció a Jiseol y al resto de las Dragonas Livianas en una bulliciosa ciudad portuaria: mientras otros aventureros la evitaban, Jiseol vio en ella un fenómeno mágico fascinante y la trató, por primera vez, como algo más que un chiste. Fecalith encontró en el grupo un lugar donde podía ser ella misma, y decidió quedarse con ellas para siempre.",
+    "personality_traits": "Tengo una curiosidad casi infantil por cualquier cosa nueva. Me río de mí misma antes de que otros puedan hacerlo.",
+    "ideals": "Aceptación. Nadie debería ser juzgado por aquello que no puede cambiar.",
+    "bonds": "Las Dragonas Livianas fueron las primeras personas que me aceptaron tal y como soy.",
+    "flaws": "A veces experimento con cosas que probablemente no debería tocar."
+  }
+}

@@ -46,6 +46,23 @@ class BasicInfo {
   // campo — en ese caso turn_tab.dart no pinta ningún aviso de CD.
   int? spellSaveDc;
 
+  // Descanso Corto (Reserva de Dados de Golpe): caras del dado de golpe de
+  // la clase (6/8/10/12 en 5e). Vive en "basic_info" como
+  // "hit_die_sides". Fallback a 8 (el más común entre las clases) si la
+  // ficha no lo trae explícito y no se pudo inferir de "characterClass" —
+  // ver _hitDieSidesFromClass más abajo.
+  int hitDieSides;
+  // Total de Dados de Golpe que tiene el personaje — en 5e, uno por nivel
+  // de personaje. Vive en "basic_info" como "hit_dice_max". Fallback al
+  // "level" ya resuelto si la ficha no lo trae.
+  int hitDiceMax;
+  // Dados de Golpe que le quedan sin gastar al personaje. Mutable: baja
+  // al usar un Descanso Corto y sube (hasta la mitad de hitDiceMax) con
+  // un Descanso Largo. Vive en "basic_info" como "hit_dice_current".
+  // Fallback al máximo si la ficha no lo trae (arranca a tope, igual que
+  // currentHp con hpMax).
+  int hitDiceCurrent;
+
   BasicInfo({
     required this.name,
     required this.race,
@@ -57,7 +74,12 @@ class BasicInfo {
     this.speed = 9,
     this.nivel20Link,
     this.spellSaveDc,
-  });
+    int? hitDieSides,
+    int? hitDiceMax,
+    int? hitDiceCurrent,
+  })  : hitDieSides = hitDieSides ?? _hitDieSidesFromClass(characterClass),
+        hitDiceMax = hitDiceMax ?? level,
+        hitDiceCurrent = hitDiceCurrent ?? (hitDiceMax ?? level);
 
   /// Bonificador de competencia estándar de D&D 5e según nivel de
   /// personaje (2 en niveles 1-4, 3 en 5-8, 4 en 9-12, 5 en 13-16, 6 en
@@ -86,6 +108,39 @@ class BasicInfo {
     final match = RegExp(r'(\d+)\s*$').firstMatch(characterClass.trim());
     if (match == null) return 1;
     return int.tryParse(match.group(1)!) ?? 1;
+  }
+
+  /// Infiera el dado de golpe (caras) a partir del texto libre de
+  /// "characterClass" cuando la ficha no trae "hit_die_sides" explícito
+  /// — mismo espíritu que _levelFromCharacterClass: mejor una inferencia
+  /// razonable que asumir un valor a ciegas. Busca el nombre de clase
+  /// como substring (case-insensitive), así "Bárbaro 6" o "Artillero
+  /// (Bárbaro)" siguen encontrando la clase aunque venga acompañada de
+  /// más texto. Si no reconoce ninguna clase, cae a d8 — el dado más
+  /// común entre las clases de 5e.
+  static int _hitDieSidesFromClass(String characterClass) {
+    final normalized = characterClass.toLowerCase();
+    const d12Classes = ['bárbaro', 'barbaro'];
+    const d10Classes = ['guerrero', 'paladín', 'paladin', 'explorador', 'ranger'];
+    const d8Classes = [
+      'clérigo', 'clerigo', 'druida', 'monje', 'pícaro', 'picaro',
+      'bardo', 'brujo', 'artillero', 'artífice', 'artifice',
+    ];
+    const d6Classes = ['hechicero', 'mago', 'sorcerer', 'wizard'];
+
+    for (final name in d12Classes) {
+      if (normalized.contains(name)) return 12;
+    }
+    for (final name in d10Classes) {
+      if (normalized.contains(name)) return 10;
+    }
+    for (final name in d6Classes) {
+      if (normalized.contains(name)) return 6;
+    }
+    for (final name in d8Classes) {
+      if (normalized.contains(name)) return 8;
+    }
+    return 8;
   }
 
   factory BasicInfo.fromJson(Map<String, dynamic> json) {
@@ -120,6 +175,13 @@ class BasicInfo {
       // sin conjuros, no traen "spell_save_dc" — queda null en vez de
       // romper el parseo (turn_tab.dart simplemente no pinta el aviso).
       spellSaveDc: (json['spell_save_dc'] as num?)?.toInt(),
+      // Fallback seguro: fichas anteriores al Descanso Corto no traen
+      // estas claves — se infiere el dado según la clase (o d8) y el
+      // máximo de dados según el nivel ya resuelto, arrancando a tope
+      // (igual que currentHp con hpMax).
+      hitDieSides: (json['hit_die_sides'] as num?)?.toInt(),
+      hitDiceMax: (json['hit_dice_max'] as num?)?.toInt(),
+      hitDiceCurrent: (json['hit_dice_current'] as num?)?.toInt(),
     );
   }
 
@@ -135,6 +197,9 @@ class BasicInfo {
       'speed': speed,
       'nivel20_link': nivel20Link,
       'spell_save_dc': spellSaveDc,
+      'hit_die_sides': hitDieSides,
+      'hit_dice_max': hitDiceMax,
+      'hit_dice_current': hitDiceCurrent,
     };
   }
 }

@@ -5,7 +5,7 @@
     "characterClass": "Artillero 6",
     "hp_max": 63,
     "ac": 14,
-    "speed": 9
+    "speed": 30
   },
   "purse": {
     "gold": 0,

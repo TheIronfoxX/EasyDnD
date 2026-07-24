@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
@@ -11,6 +12,9 @@ import '../theme/app_colors.dart';
 import '../theme/app_theme_extension.dart';
 import '../widgets/journal_number_text.dart';
 import '../widgets/hsv_color_picker.dart';
+import '../services/websocket_service.dart';
+import '../services/party_roster_service.dart';
+import '../widgets/connection_dialog.dart';
 import 'character_selection_screen.dart';
 import 'codex_screen.dart';
 import 'tabs/stats_tab.dart';
@@ -18,6 +22,7 @@ import 'tabs/turn_tab.dart';
 import 'tabs/inventory_tab.dart';
 import 'tabs/lore_tab.dart';
 import 'tabs/allies_tab.dart';
+import 'tabs/party_tab.dart';
 
 class MainHudScreen extends StatefulWidget {
   const MainHudScreen({super.key});
@@ -28,6 +33,122 @@ class MainHudScreen extends StatefulWidget {
 
 class _MainHudScreenState extends State<MainHudScreen> {
   int _selectedIndex = 0;
+  StreamSubscription<Map<String, dynamic>>? _syncSubscription;
+
+  // Referencia guardada para poder quitar el listener en dispose() y para
+  // no depender de context.read() fuera de _wireSync().
+  WebSocketService? _wsService;
+  ConnectionStatus? _lastStatus;
+
+  // Igual que _wsService: se guarda para poder desengancharla en dispose()
+  // sin depender de context.read() (el widget ya puede estar desmontado).
+  CharacterProvider? _characterProvider;
+
+  // Servicio de roster de la party (Fase Party). A diferencia de
+  // _wsService/_characterProvider, este SÍ se puede crear dentro de
+  // build() (memoizado con ??=): a esas alturas el árbol de providers
+  // ya está montado, así que no hace falta esperar al
+  // postFrameCallback ni manejar un estado nulo mientras tanto en el
+  // resto del árbol de pestañas.
+  PartyRosterService? _partyRosterService;
+
+  @override
+  void initState() {
+    super.initState();
+    // postFrameCallback: hay que esperar a que el árbol de providers esté
+    // montado antes de leerlos con context.read().
+    WidgetsBinding.instance.addPostFrameCallback((_) => _wireSync());
+  }
+
+  /// Conecta CharacterProvider <-> WebSocketService en ambas direcciones:
+  ///  - Salida: cada mutación esencial de combate (HP, condiciones,
+  ///    conjuros, cargas) dispara onSyncAction, que aquí apunta a
+  ///    WebSocketService.send.
+  ///  - Entrada: cada mensaje que llega del servidor se pasa a
+  ///    applyRemoteAction(), que actualiza el estado local. Al ser
+  ///    CharacterProvider un ChangeNotifier ya escuchado con
+  ///    context.watch() en este mismo build(), el cambio se refleja al
+  ///    instante en todo el HUD sin necesidad de un setState manual aquí
+  ///    (usar setState directamente sería redundante y rompería el
+  ///    patrón Provider que ya usa el resto de la app).
+  ///
+  /// Además, en cuanto la conexión pasa a `connected` (primera vez o tras
+  /// una reconexión), se comparte el personaje activo automáticamente
+  /// (ver _onConnectionStatusChanged) — así "aparece" al otro lado sin
+  /// que el jugador tenga que acordarse de un paso manual aparte.
+  void _wireSync() {
+    if (!mounted) return;
+    final wsService = context.read<WebSocketService>();
+    final characterProvider = context.read<CharacterProvider>();
+
+    characterProvider.onSyncAction = wsService.send;
+
+    // Aviso en pantalla cuando el HP cambia por una acción llegada de la
+    // party (no por un botón local). Ver RemoteHpEvent en
+    // character_provider.dart: el signo del amount ya viene aplicado
+    // (negativo = daño, positivo = curación), así que aquí solo hay que
+    // pintarlo.
+    characterProvider.onRemoteHpChange = _showRemoteHpSnackBar;
+    _characterProvider = characterProvider;
+
+    _syncSubscription = wsService.messages.listen(
+      characterProvider.applyRemoteAction,
+    );
+
+    _wsService = wsService;
+    _lastStatus = wsService.status;
+    wsService.addListener(_onConnectionStatusChanged);
+  }
+
+  /// Pinta el SnackBar cuando llega un RemoteHpEvent desde
+  /// CharacterProvider. Separado de _wireSync() para no mezclar el cableado
+  /// de la conexión con la presentación del aviso.
+  void _showRemoteHpSnackBar(RemoteHpEvent event) {
+    if (!mounted) return;
+    final isDamage = event.amount < 0;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          isDamage
+              ? '${event.characterName} ha recibido ${-event.amount} de daño'
+              : '${event.characterName} ha recibido ${event.amount} de curación',
+        ),
+        backgroundColor: isDamage ? Colors.red.shade700 : Colors.green.shade700,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  /// Se dispara con cada notifyListeners() de WebSocketService. Solo nos
+  /// interesa el flanco de subida (algo distinto de `connected` -> ahora
+  /// sí `connected`): eso cubre tanto la primera conexión como cualquier
+  /// reconexión posterior, y evita reenviar en cada rebuild mientras ya
+  /// se está conectado.
+  void _onConnectionStatusChanged() {
+    final service = _wsService;
+    if (service == null || !mounted) return;
+
+    final wasConnected = _lastStatus == ConnectionStatus.connected;
+    final isConnected = service.status == ConnectionStatus.connected;
+    _lastStatus = service.status;
+
+    if (!wasConnected && isConnected) {
+      context.read<CharacterProvider>().shareActiveCharacter();
+    }
+  }
+
+  @override
+  void dispose() {
+    _syncSubscription?.cancel();
+    _wsService?.removeListener(_onConnectionStatusChanged);
+    _partyRosterService?.dispose();
+    // Evita que un CharacterProvider de vida más larga que este widget (es
+    // app-level) mantenga un callback apuntando a un context ya desmontado.
+    if (_characterProvider?.onRemoteHpChange == _showRemoteHpSnackBar) {
+      _characterProvider?.onRemoteHpChange = null;
+    }
+    super.dispose();
+  }
 
   List<Widget> _buildTabs() {
     return const [
@@ -36,6 +157,7 @@ class _MainHudScreenState extends State<MainHudScreen> {
       InventoryTab(),
       LoreTab(),
       AlliesTab(),
+      PartyTab(),
     ];
   }
 
@@ -52,6 +174,12 @@ class _MainHudScreenState extends State<MainHudScreen> {
     final baseAccent = context.watch<ThemeNotifier>().accentColor;
     final accent = baseAccent;
 
+    // Se crea la primera vez que build() corre (context ya está
+    // montado a estas alturas, a diferencia de initState) y se
+    // reutiliza en los rebuilds siguientes gracias a ??=.
+    final partyRosterService =
+        _partyRosterService ??= PartyRosterService(context.read<WebSocketService>());
+
     return Scaffold(
       backgroundColor: context.appColors.background,
       appBar: AppBar(
@@ -66,6 +194,7 @@ class _MainHudScreenState extends State<MainHudScreen> {
           ),
         ),
         actions: [
+          _SyncButton(accent: accent),
           _CodexButton(accent: accent),
           _RosterButton(accent: accent),
           _RestButton(accent: accent),
@@ -93,9 +222,12 @@ class _MainHudScreenState extends State<MainHudScreen> {
             ),
             Divider(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.06), height: 1),
             Expanded(
-              child: IndexedStack(
-                index: _selectedIndex,
-                children: _buildTabs(),
+              child: ChangeNotifierProvider<PartyRosterService>.value(
+                value: partyRosterService,
+                child: IndexedStack(
+                  index: _selectedIndex,
+                  children: _buildTabs(),
+                ),
               ),
             ),
           ],
@@ -127,6 +259,7 @@ class _MainHudScreenState extends State<MainHudScreen> {
             NavigationDestination(icon: Icon(Icons.inventory_2), label: 'Inventario'),
             NavigationDestination(icon: Icon(Icons.history_edu), label: 'Lore'),
             NavigationDestination(icon: Icon(Icons.group_work), label: 'Aliados'),
+            NavigationDestination(icon: Icon(Icons.groups_2), label: 'Party'),
           ],
         ),
       ),
@@ -187,6 +320,49 @@ class _CodexButton extends StatelessWidget {
       onPressed: () {
         Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => const CodexScreen()),
+        );
+      },
+    );
+  }
+}
+
+class _SyncButton extends StatelessWidget {
+  final Color accent;
+
+  const _SyncButton({required this.accent});
+
+  @override
+  Widget build(BuildContext context) {
+    final status = context.watch<WebSocketService>().status;
+
+    final Color color;
+    final IconData icon;
+    switch (status) {
+      case ConnectionStatus.connected:
+        color = Colors.greenAccent;
+        icon = Icons.wifi_tethering;
+        break;
+      case ConnectionStatus.connecting:
+        color = Colors.orangeAccent;
+        icon = Icons.wifi_tethering_error_rounded;
+        break;
+      case ConnectionStatus.error:
+        color = Colors.redAccent;
+        icon = Icons.wifi_off;
+        break;
+      case ConnectionStatus.disconnected:
+        color = accent;
+        icon = Icons.wifi_off;
+        break;
+    }
+
+    return IconButton(
+      icon: Icon(icon, color: color),
+      tooltip: 'Sincronización de sala (Wi-Fi local)',
+      onPressed: () {
+        showDialog(
+          context: context,
+          builder: (_) => ConnectionDialog(accent: accent),
         );
       },
     );
@@ -951,7 +1127,7 @@ class _RestButton extends StatelessWidget {
   }
 }
 
-enum _RestView { choices, custom }
+enum _RestView { choices, custom, shortRest }
 
 class _RestDialogContent extends StatefulWidget {
   final Color accent;
@@ -971,6 +1147,12 @@ class _RestDialogContentState extends State<_RestDialogContent> {
   bool _restoreSpells = true;
   bool _restoreCharges = true;
 
+  // Descanso Corto — cuántos Dados de Golpe quiere gastar el jugador en
+  // esta tirada. Se recalcula cada vez que se entra a esta vista (ver el
+  // onTap de "Descanso Corto" en _buildChoices), clampeado entre 1 y los
+  // dados realmente disponibles.
+  int _hitDiceToSpend = 1;
+
   void _confirmLongRest() {
     widget.provider.longRest();
     Navigator.of(context).pop();
@@ -980,9 +1162,15 @@ class _RestDialogContentState extends State<_RestDialogContent> {
   }
 
   void _confirmShortRest() {
+    final healed = widget.provider.spendHitDice(_hitDiceToSpend);
+    final diceLabel = _hitDiceToSpend == 1 ? 'Dado' : 'Dados';
     Navigator.of(context).pop();
     widget.messenger.showSnackBar(
-      const SnackBar(content: Text('Reserva de Dados de Golpe en desarrollo.')),
+      SnackBar(
+        content: Text(
+          'Descanso corto: +$healed PG recuperados ($_hitDiceToSpend $diceLabel de Golpe gastado${_hitDiceToSpend == 1 ? '' : 's'}).',
+        ),
+      ),
     );
   }
 
@@ -1014,7 +1202,11 @@ class _RestDialogContentState extends State<_RestDialogContent> {
           BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 14, offset: const Offset(0, 8)),
         ],
       ),
-      child: _view == _RestView.choices ? _buildChoices(context, accent) : _buildCustom(context, accent),
+      child: switch (_view) {
+        _RestView.choices => _buildChoices(context, accent),
+        _RestView.custom => _buildCustom(context, accent),
+        _RestView.shortRest => _buildShortRest(context, accent),
+      },
     );
   }
 
@@ -1047,7 +1239,13 @@ class _RestDialogContentState extends State<_RestDialogContent> {
           title: 'Descanso Corto',
           subtitle: 'Reserva de Dados de Golpe.',
           accent: accent,
-          onTap: _confirmShortRest,
+          onTap: () {
+            final current = widget.provider.character.basicInfo.hitDiceCurrent;
+            setState(() {
+              _hitDiceToSpend = current > 0 ? 1 : 0;
+              _view = _RestView.shortRest;
+            });
+          },
         ),
         const SizedBox(height: 10),
         _RestOptionTile(
@@ -1124,6 +1322,100 @@ class _RestDialogContentState extends State<_RestDialogContent> {
             child: const Text('CONFIRMAR'),
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildShortRest(BuildContext context, Color accent) {
+    final info = widget.provider.character.basicInfo;
+    final current = info.hitDiceCurrent;
+    final dieLabel = 'd${info.hitDieSides}';
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            IconButton(
+              icon: Icon(Icons.arrow_back, color: context.appColors.textSecondary, size: 20),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              onPressed: () => setState(() => _view = _RestView.choices),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              'DESCANSO CORTO',
+              style: GoogleFonts.inter(color: accent, fontWeight: FontWeight.w800, fontSize: 13, letterSpacing: 0.5),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'Dados de Golpe disponibles: $current de ${info.hitDiceMax} ($dieLabel)',
+          style: GoogleFonts.inter(color: context.appColors.textSecondary, fontSize: 12.5),
+        ),
+        const SizedBox(height: 14),
+        if (current <= 0)
+          Text(
+            'No te quedan Dados de Golpe. Se recupera la mitad del máximo con un Descanso Largo.',
+            style: GoogleFonts.inter(
+              color: context.appColors.textSecondary,
+              fontSize: 12.5,
+              fontStyle: FontStyle.italic,
+            ),
+          )
+        else ...[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Dados a gastar',
+                style: GoogleFonts.inter(color: context.appColors.textPrimary, fontSize: 13.5, fontWeight: FontWeight.w600),
+              ),
+              Row(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.remove_circle_outline, color: accent),
+                    onPressed: _hitDiceToSpend > 1 ? () => setState(() => _hitDiceToSpend--) : null,
+                  ),
+                  SizedBox(
+                    width: 24,
+                    child: Text(
+                      '$_hitDiceToSpend',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(color: accent, fontWeight: FontWeight.w800, fontSize: 16),
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.add_circle_outline, color: accent),
+                    onPressed: _hitDiceToSpend < current ? () => setState(() => _hitDiceToSpend++) : null,
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Cada dado gastado tira 1$dieLabel + mod. Constitución (mínimo 1) de curación.',
+            style: GoogleFonts.inter(color: context.appColors.textSecondary, fontSize: 11.5),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _confirmShortRest,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: accent.withOpacity(0.9),
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                textStyle: GoogleFonts.inter(fontWeight: FontWeight.w800, letterSpacing: 0.5),
+              ),
+              child: const Text('GASTAR Y CURAR'),
+            ),
+          ),
+        ],
       ],
     );
   }

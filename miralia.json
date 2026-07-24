@@ -1,0 +1,608 @@
+{
+  "basic_info": {
+    "name": "Miralia",
+    "race": "Dracónido",
+    "characterClass": "Clérigo 6",
+    "hp_max": 60,
+    "ac": 12,
+    "speed": 9,
+    "spell_save_dc": 16
+  },
+  "purse": {
+    "gold": 0,
+    "silver": 0,
+    "copper": 0
+  },
+  "ai_tips": "Miralia es una clériga de apoyo y control: su Sabiduría (20) y su CD de conjuros (16) hacen que casi cualquier salvación enemiga sea difícil de superar. En combate conviene priorizar: 1) proteger al grupo con Bendecir o Faro de esperanza antes de que empiece la pelea, 2) usar Rayo guía o Llama sagrada a distancia para dar ventaja a los golpeadores del grupo, 3) reservar Canalizar Divinidad (Preservar la vida) para emergencias de curación masiva en vez de gastar conjuros de nivel. Su báculo Lumen Dei sirve como arma de último recurso, pero su fuerza real está en la magia. Fuera de combate, Restablecimiento menor y Revivificar la convierten en la red de seguridad del grupo contra enfermedades, venenos y muertes súbitas, así que conviene llevar siempre encima el diamante necesario para Revivificar. Plegaria de curación y Glifo custodio no sirven en mitad de una pelea (tardan 10 minutos y 1 hora respectivamente), así que se preparan antes o después del combate, nunca durante.",
+  "user_tactics": "",
+  "adventure_notes": "",
+  "resources": [
+    {
+      "name": "Canalizar Divinidad",
+      "current": 2,
+      "max": 2
+    },
+    {
+      "name": "Arma de aliento",
+      "current": 1,
+      "max": 1
+    }
+  ],
+  "inventory": {
+    "weapons": [
+      {
+        "id": "weapon-lumen-dei",
+        "name": "Lumen Dei ©JSI-M01",
+        "attack_bonus": 5,
+        "damage": {
+          "base_dice": "1d6+2",
+          "base_type": "contundente"
+        },
+        "conditional_damage": [
+          {
+            "condition": "Ataque a dos manos",
+            "damage_dice": "1d8+2",
+            "damage_type": "contundente"
+          }
+        ],
+        "properties": [
+          "Versátil"
+        ],
+        "homebrew_effect": "Amplifica las curaciones que canalizas a través de él (+1d4). Tiene un compartimento secreto donde Jiseol guarda caramelos 'por si Miralia se pone triste'.",
+        "magic_charges": {
+          "has_charges": false,
+          "max": 0,
+          "current": 0
+        },
+        "success_description": "El báculo golpea con un resplandor cálido, casi reconfortante.",
+        "failure_description": "El golpe se queda corto y el báculo repica contra el suelo.",
+        "lore_description": "Un báculo clerical construido con mithril blanco y madera sagrada, rematado por una gran amatista que actúa como foco divino. Fue un regalo de Jiseol, la artificiera del grupo, pensado tanto para el combate como para reconfortar a Miralia en los malos momentos.",
+        "tactical_summary": "Tiras un d20 y sumas +5; le dices el resultado al máster y él te dice si le has dado | Daño: 1d6+2 Contundente (1d8+2 a dos manos)",
+        "is_unique": true
+      }
+    ],
+    "mundane_items": []
+  },
+  "stats": {
+    "str": {
+      "name": "Fuerza",
+      "value": 15,
+      "mod": 2,
+      "description": "Mide la potencia física y capacidades deportivas"
+    },
+    "dex": {
+      "name": "Destreza",
+      "value": 14,
+      "mod": 2,
+      "description": "Mide la agilidad y los reflejos"
+    },
+    "con": {
+      "name": "Constitución",
+      "value": 17,
+      "mod": 3,
+      "description": "Mide la resistencia y la salud"
+    },
+    "int": {
+      "name": "Inteligencia",
+      "value": 15,
+      "mod": 2,
+      "description": "Mide el razonamiento y la memoria"
+    },
+    "wis": {
+      "name": "Sabiduría",
+      "value": 20,
+      "mod": 5,
+      "description": "Mide la perspicacia e intuición"
+    },
+    "cha": {
+      "name": "Carisma",
+      "value": 19,
+      "mod": 4,
+      "description": "Mide la fuerza de personalidad y la presencia"
+    }
+  },
+  "spell_slots": [
+    {
+      "level": 1,
+      "max": 4,
+      "current": 4
+    },
+    {
+      "level": 2,
+      "max": 3,
+      "current": 3
+    },
+    {
+      "level": 3,
+      "max": 3,
+      "current": 3
+    }
+  ],
+  "skills": [
+    {
+      "name": "Acrobacias",
+      "related_stat": "dex",
+      "modifier": 2
+    },
+    {
+      "name": "Arcanos",
+      "related_stat": "int",
+      "modifier": 2
+    },
+    {
+      "name": "Atletismo",
+      "related_stat": "str",
+      "modifier": 2
+    },
+    {
+      "name": "Engañar",
+      "related_stat": "cha",
+      "modifier": 4
+    },
+    {
+      "name": "Historia",
+      "related_stat": "int",
+      "modifier": 2
+    },
+    {
+      "name": "Interpretación",
+      "related_stat": "cha",
+      "modifier": 4
+    },
+    {
+      "name": "Intimidar",
+      "related_stat": "cha",
+      "modifier": 4
+    },
+    {
+      "name": "Investigación",
+      "related_stat": "int",
+      "modifier": 2
+    },
+    {
+      "name": "Juego de Manos",
+      "related_stat": "dex",
+      "modifier": 2
+    },
+    {
+      "name": "Medicina",
+      "related_stat": "wis",
+      "modifier": 8
+    },
+    {
+      "name": "Naturaleza",
+      "related_stat": "int",
+      "modifier": 2
+    },
+    {
+      "name": "Percepción",
+      "related_stat": "wis",
+      "modifier": 5
+    },
+    {
+      "name": "Perspicacia",
+      "related_stat": "wis",
+      "modifier": 8
+    },
+    {
+      "name": "Persuasión",
+      "related_stat": "cha",
+      "modifier": 4
+    },
+    {
+      "name": "Religión",
+      "related_stat": "int",
+      "modifier": 5
+    },
+    {
+      "name": "Sigilo",
+      "related_stat": "dex",
+      "modifier": 2
+    },
+    {
+      "name": "Supervivencia",
+      "related_stat": "wis",
+      "modifier": 5
+    },
+    {
+      "name": "Trato con Animales",
+      "related_stat": "wis",
+      "modifier": 5
+    }
+  ],
+  "abilities_by_action": {
+    "action": [
+      {
+        "id": "ability-llama-sagrada",
+        "name": "Llama sagrada",
+        "type": "spell",
+        "related_stat": "wis",
+        "attack_type": "save",
+        "success_description": "El enemigo esquiva el destello de fuego sagrado en el último momento.",
+        "failure_description": "Un destello de fuego divino cae sobre el enemigo, quemándolo por dentro.",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "2d8",
+        "scaling_formula": "",
+        "lore_description": "Un destello de fuego sagrado desciende sobre un enemigo a distancia. No hace falta apuntar con precisión: ni escudos ni coberturas le sirven al objetivo para librarse del golpe de luz.",
+        "tactical_summary": "El enemigo tira un d20; si supera tu CD (16), no recibe daño. Si no la supera, recibe todo el daño sin poder cubrirse | Daño: 2d8 Radiante"
+      },
+      {
+        "id": "ability-luz",
+        "name": "Luz",
+        "type": "spell",
+        "related_stat": "wis",
+        "attack_type": "none",
+        "success_description": "El objeto empieza a brillar con una luz cálida y constante.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Haces que un objeto pequeño (una piedra, tu báculo, una moneda) emita luz del color que quieras durante una hora, iluminando una zona amplia a tu alrededor. Útil para explorar cuevas oscuras o marcar un camino sin gastar antorchas.",
+        "tactical_summary": "No tienes que tirar nada, tocas un objeto pequeño y este empieza a brillar solo. Si intentas iluminar algo que lleva encima un enemigo, este puede tirar un d20 contra tu CD (16) para evitarlo."
+      },
+      {
+        "id": "ability-orientacion-divina",
+        "name": "Orientación divina",
+        "type": "spell",
+        "related_stat": "wis",
+        "attack_type": "none",
+        "success_description": "El aliado siente una pequeña chispa de intuición divina.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Concedes una pequeña chispa de intuición divina a un aliado voluntario, que puede usarla una vez para mejorar cualquier prueba de habilidad importante, como forzar una cerradura o recordar un dato clave.",
+        "tactical_summary": "No tienes que tirar nada: tocas a un aliado y, antes de que pase un minuto, esa persona puede tirar 1d4 extra para sumarlo a cualquier prueba de habilidad que haga."
+      },
+      {
+        "id": "ability-resistencia",
+        "name": "Resistencia",
+        "type": "spell",
+        "related_stat": "wis",
+        "attack_type": "none",
+        "success_description": "El aliado siente una capa invisible de protección divina.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Bendices a un compañero con protección divina temporal, dándole la posibilidad de sumar un dado extra la próxima vez que tenga que resistir un peligro, veneno o efecto mágico.",
+        "tactical_summary": "No tienes que tirar nada: tocas a un aliado y, antes de que pase un minuto, esa persona puede tirar 1d4 extra para sumarlo a una tirada de salvación."
+      },
+      {
+        "id": "ability-agarre-quitinoso",
+        "name": "Agarre quitinoso",
+        "type": "spell",
+        "related_stat": "wis",
+        "attack_type": "attack",
+        "success_description": "Tus manos se convierten en mandíbulas quitinosas y atrapan al enemigo.",
+        "failure_description": "El enemigo esquiva tus mandíbulas improvisadas.",
+        "is_scalable": true,
+        "base_level": 1,
+        "damage_dice": "1d4",
+        "scaling_formula": "1d4",
+        "lore_description": "Tus manos se transforman en mandíbulas de insecto gigante para atrapar a un enemigo de tu tamaño o menor. Mientras lo sujetes no podrás hacer nada más con los brazos, y el enemigo puede intentar liberarse en su turno con una prueba de Fuerza o Destreza.",
+        "tactical_summary": "Tiras un d20 y sumas +8; le dices el resultado al máster y él te dice si has agarrado al enemigo. Mientras dure el agarre, recibe el mismo daño cada vez que empiece su turno atrapado | Daño: 1d4 Perforante"
+      },
+      {
+        "id": "ability-bendecir",
+        "name": "Bendecir",
+        "type": "spell",
+        "related_stat": "wis",
+        "attack_type": "none",
+        "success_description": "Tus aliados sienten la guía divina reforzando cada uno de sus movimientos.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 1,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Imbuyes a tus aliados con una guía divina que los ayuda tanto a golpear como a resistir peligros. Ideal para lanzarlo justo antes de que empiece una pelea importante. Es un conjuro de dominio, así que lo tienes siempre disponible sin gastar hueco de preparación.",
+        "tactical_summary": "No tienes que tirar nada: eliges hasta tres aliados, y cada uno de ellos podrá sumar 1d4 extra la próxima vez que ataque o resista algo, mientras dure el conjuro (hasta un minuto)."
+      },
+      {
+        "id": "ability-curar-heridas",
+        "name": "Curar heridas",
+        "type": "spell",
+        "related_stat": "wis",
+        "attack_type": "none",
+        "success_description": "Una luz cálida cierra las heridas del objetivo al instante.",
+        "failure_description": "",
+        "is_scalable": true,
+        "base_level": 1,
+        "damage_dice": "1d8",
+        "scaling_formula": "1d8",
+        "lore_description": "Pones la mano sobre un aliado herido y la energía positiva de tu diosa cierra sus heridas al instante. Gracias a tu don de Discípula de la Vida, el aliado recupera 2 puntos extra por el nivel del conjuro usado, y tú misma recuperas otros 2 gracias a tu don de Sanadora Bendecida. Es un conjuro de dominio, siempre disponible.",
+        "tactical_summary": "No tienes que tirar nada, el objetivo se cura al tocarlo | Curación: 1d8 + Mod"
+      },
+      {
+        "id": "ability-infligir-heridas",
+        "name": "Infligir heridas",
+        "type": "spell",
+        "related_stat": "wis",
+        "attack_type": "attack",
+        "success_description": "Tu mano se llena de energía oscura y golpea con fuerza devastadora.",
+        "failure_description": "El golpe oscuro pasa de largo.",
+        "is_scalable": true,
+        "base_level": 1,
+        "damage_dice": "3d10",
+        "scaling_formula": "1d10",
+        "lore_description": "Tu mano se llena de energía oscura y, si tocas al enemigo, este sufre un daño devastador. Es tu opción más agresiva cuerpo a cuerpo, pensada para rematar a un objetivo concreto.",
+        "tactical_summary": "Tiras un d20 y sumas +8; le dices el resultado al máster y él te dice si le has dado | Daño: 3d10 Necrótico"
+      },
+      {
+        "id": "ability-rayo-guia",
+        "name": "Rayo guía",
+        "type": "spell",
+        "related_stat": "wis",
+        "attack_type": "attack",
+        "success_description": "El haz de luz marca al enemigo, dejándolo brillando débilmente.",
+        "failure_description": "El haz de luz pasa de largo.",
+        "is_scalable": true,
+        "base_level": 1,
+        "damage_dice": "4d6",
+        "scaling_formula": "1d6",
+        "lore_description": "Lanzas un haz de luz que marca al enemigo, dejándolo brillando débilmente y facilitando que tus aliados lo golpeen justo después.",
+        "tactical_summary": "Tiras un d20 y sumas +8; le dices el resultado al máster y él te dice si le has dado. Si aciertas, el próximo compañero que ataque a ese enemigo antes de tu siguiente turno tira dos d20 y se queda con el mejor resultado | Daño: 4d6 Radiante"
+      },
+      {
+        "id": "ability-calmar-emociones",
+        "name": "Calmar emociones",
+        "type": "spell",
+        "related_stat": "wis",
+        "attack_type": "save",
+        "success_description": "Los presentes sienten cómo sus emociones se apaciguan de golpe.",
+        "failure_description": "Los presentes mantienen sus emociones intactas.",
+        "is_scalable": false,
+        "base_level": 2,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Calmas los ánimos de un grupo de gente, apagando emociones descontroladas. Muy útil para frenar una pelea antes de que vaya a mayores, o para que un enemigo furioso deje de atacaros un rato.",
+        "tactical_summary": "Todos los humanoides en una zona de 6 metros de radio donde tú decidas tiran un d20 cada uno; si no superan tu CD (16), puedes elegir: quitarles el miedo o el hechizo que sufran, o hacer que dejen de ser hostiles hacia quien tú digas."
+      },
+      {
+        "id": "ability-inmovilizar-persona",
+        "name": "Inmovilizar persona",
+        "type": "spell",
+        "related_stat": "wis",
+        "attack_type": "save",
+        "success_description": "El humanoide queda completamente paralizado.",
+        "failure_description": "El humanoide resiste el efecto paralizante.",
+        "is_scalable": false,
+        "base_level": 2,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Paralizas a un humanoide con energía mágica, dejándolo indefenso mientras el efecto dure. Usando un espacio de conjuro más alto puedes paralizar a varios humanoides a la vez, siempre que estén cerca entre ellos (a 9 metros o menos).",
+        "tactical_summary": "El enemigo humanoide tira un d20; si no supera tu CD (16), queda paralizado y no puede moverse ni actuar. Al final de cada uno de sus turnos puede volver a tirar para intentar liberarse."
+      },
+      {
+        "id": "ability-restablecimiento-menor",
+        "name": "Restablecimiento menor",
+        "type": "spell",
+        "related_stat": "wis",
+        "attack_type": "none",
+        "success_description": "La enfermedad o condición desaparece al instante.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 2,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Con un simple toque, curas dolencias que ni una poción normal soluciona: quitas enfermedades, venenos persistentes o condiciones que dejan a un aliado inutilizado en combate (ceguera, sordera, parálisis...). Es un conjuro de dominio, siempre disponible.",
+        "tactical_summary": "No tienes que tirar nada: tocas al objetivo y automáticamente se le quita una enfermedad o una condición como ceguera, sordera, parálisis o envenenamiento."
+      },
+      {
+        "id": "ability-espiritus-guardianes",
+        "name": "Espíritus guardianes",
+        "type": "spell",
+        "related_stat": "wis",
+        "attack_type": "save",
+        "success_description": "Los espíritus golpean con fuerza a quien se acerca demasiado.",
+        "failure_description": "El enemigo logra esquivar a los espíritus.",
+        "is_scalable": true,
+        "base_level": 3,
+        "damage_dice": "3d8",
+        "scaling_formula": "1d8",
+        "lore_description": "Convocas espíritus protectores (angelicales, dada tu naturaleza bondadosa) que flotan a tu alrededor durante varios minutos, dañando y ralentizando a cualquier enemigo que se acerque demasiado a ti.",
+        "tactical_summary": "Cualquier enemigo que entre o empiece su turno cerca de ti (radio de 4,5 metros) tira un d20; si no supera tu CD (16) recibe todo el daño, y si la supera recibe la mitad. Su velocidad también se reduce a la mitad mientras esté ahí | Daño: 3d8 Radiante"
+      },
+      {
+        "id": "ability-faro-de-esperanza",
+        "name": "Faro de esperanza",
+        "type": "spell",
+        "related_stat": "wis",
+        "attack_type": "none",
+        "success_description": "Tus aliados sienten una calidez protectora que los llena de esperanza.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 3,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Rodeas a tus aliados de una energía protectora que los mantiene con esperanza incluso en los momentos más duros, asegurando que cualquier curación que reciban sea lo más efectiva posible. Es un conjuro de dominio, siempre disponible.",
+        "tactical_summary": "No tienes que tirar nada: eliges a cualquier número de aliados dentro del alcance. Mientras dure el conjuro, cada vez que se curen recuperan el máximo posible, y tienen más facilidad para resistir efectos de Sabiduría o para no morir cuando están agonizando."
+      },
+      {
+        "id": "ability-plegaria-de-curacion",
+        "name": "Plegaria de curación",
+        "type": "spell",
+        "related_stat": "wis",
+        "attack_type": "none",
+        "success_description": "El grupo entero recupera fuerzas tras la larga plegaria.",
+        "failure_description": "",
+        "is_scalable": true,
+        "base_level": 2,
+        "damage_dice": "2d8",
+        "scaling_formula": "1d8",
+        "lore_description": "OJO: es una plegaria larga y calmada (tarda 10 minutos), no algo que puedas usar en pleno combate. Perfecta para lanzarla justo después de una pelea o durante un descanso corto, para que todo el grupo llegue a la siguiente pelea con más salud.",
+        "tactical_summary": "No se lanza en combate, necesitas 10 minutos tranquilos. No tienes que tirar nada: hasta seis aliados que puedas ver recuperan puntos de golpe | Curación: 2d8 + Mod"
+      },
+      {
+        "id": "ability-revivificar",
+        "name": "Revivificar",
+        "type": "spell",
+        "related_stat": "wis",
+        "attack_type": "none",
+        "success_description": "El compañero caído respira de nuevo.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 3,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Tu conjuro de emergencia contra la muerte: si un compañero acaba de caer (hace como mucho un minuto), puedes traerlo de vuelta antes de que sea demasiado tarde, aunque no cura las heridas que ya tenía ni evita secuelas por haber estado muerto varias veces. Consume un diamante de al menos 300 monedas de oro, que desaparece al lanzarlo. Es un conjuro de dominio, siempre disponible.",
+        "tactical_summary": "No tienes que tirar nada: tocas a una criatura muerta hace como mucho un minuto y esta vuelve a la vida con 1 punto de golpe."
+      },
+      {
+        "id": "ability-glifo-custodio",
+        "name": "Glifo custodio",
+        "type": "spell",
+        "related_stat": "wis",
+        "attack_type": "save",
+        "success_description": "El glifo estalla justo cuando el intruso lo activa.",
+        "failure_description": "El intruso logra esquivar la explosión mágica.",
+        "is_scalable": true,
+        "base_level": 3,
+        "damage_dice": "5d8",
+        "scaling_formula": "1d8",
+        "lore_description": "OJO: no es un conjuro de combate, tardas 1 hora en prepararlo con calma. Inscribes una trampa mágica invisible sobre una puerta, un cofre o el suelo, que solo se activa bajo las condiciones que tú decidas (pisarlo, tocarlo, abrir el objeto...). Ideal para proteger un campamento por la noche o resguardar un tesoro importante.",
+        "tactical_summary": "No se lanza en combate, necesitas 1 hora tranquila para inscribirlo. Una vez activado, cualquiera que esté cerca tira un d20; si no supera tu CD (16) recibe todo el daño, y si la supera recibe la mitad | Daño: 5d8 (eliges el tipo: ácido, frío, fuego, rayo o trueno)"
+      },
+      {
+        "id": "ability-arma-de-aliento",
+        "name": "Arma de aliento",
+        "type": "class_feature",
+        "related_stat": "con",
+        "attack_type": "save",
+        "success_description": "El chorro de ácido corrosivo baña a los enemigos en la línea.",
+        "failure_description": "Los enemigos logran esquivar la mayor parte del chorro ácido.",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "3d6",
+        "scaling_formula": "",
+        "lore_description": "Exhalas un chorro de ácido corrosivo, herencia de tu sangre dracónica. Solo puedes usarlo una vez hasta que descanses, así que resérvalo para el momento en que de verdad haga falta un golpe de área.",
+        "tactical_summary": "Eliges una línea de 9 metros de largo. Todos los que estén dentro tiran un d20; si no superan tu CD (14) reciben todo el daño, y si la superan reciben la mitad | Daño: 3d6 Ácido"
+      },
+      {
+        "id": "ability-expulsar-muertos-vivientes",
+        "name": "Expulsar muertos vivientes",
+        "type": "class_feature",
+        "related_stat": "wis",
+        "attack_type": "save",
+        "success_description": "Los no-muertos huyen despavoridos (o, si son débiles, se desintegran).",
+        "failure_description": "Los no-muertos resisten tu invocación divina.",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Usas una de tus dos cargas diarias de Canalizar Divinidad para ahuyentar (o directamente destruir) a los no-muertos débiles que te rodean. Es tu mejor baza contra zombis, esqueletos y cosas similares.",
+        "tactical_summary": "Presentas tu símbolo sagrado y todos los muertos vivientes que te vean u oigan en un radio de 9 metros tiran un d20; si no superan tu CD (16), pasan un minuto entero intentando alejarse de ti. Si además son muy débiles (VD 1/2 o menos), quedan destruidos directamente."
+      },
+      {
+        "id": "ability-canalizar-preservar-la-vida",
+        "name": "Canalizar: preservar la vida",
+        "type": "class_feature",
+        "related_stat": "wis",
+        "attack_type": "none",
+        "success_description": "Un torrente de energía positiva cierra las heridas de tus aliados.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "+30",
+        "scaling_formula": "",
+        "lore_description": "Tu segunda opción de Canalizar Divinidad: en vez de asustar enemigos, usas esa misma energía para repartir una curación de emergencia entre tus aliados heridos, sin necesidad de lanzar ningún conjuro. No funciona con no-muertos ni constructos, y ninguna criatura puede recuperar más de la mitad de su vida máxima con este efecto.",
+        "tactical_summary": "No tienes que tirar nada: sacas tu símbolo sagrado y repartes 30 puntos de golpe de curación entre las criaturas que quieras dentro de un radio de 9 metros | Curación: +30 (repartidos)"
+      }
+    ],
+    "bonus_action": [
+      {
+        "id": "ability-arma-espiritual",
+        "name": "Arma espiritual",
+        "type": "spell",
+        "related_stat": "wis",
+        "attack_type": "attack",
+        "success_description": "El arma espectral golpea con fuerza divina.",
+        "failure_description": "El arma espectral falla el golpe.",
+        "is_scalable": true,
+        "base_level": 2,
+        "damage_dice": "1d8",
+        "scaling_formula": "1d8",
+        "lore_description": "Creas un arma fantasmal con la forma del símbolo de tu diosa (probablemente un báculo de luz) que flota cerca de ti durante un minuto. Solo sube de daño cada dos niveles de espacio por encima del segundo. Es un conjuro de dominio, siempre disponible.",
+        "tactical_summary": "Como acción adicional en tus próximos turnos puedes mover el arma y hacer que ataque: tiras un d20 y sumas +8; le dices el resultado al máster y él te dice si le has dado | Daño: 1d8 + Mod de Sabiduría"
+      }
+    ],
+    "reaction": [],
+    "passive": [
+      {
+        "id": "ability-resistencia-al-dano",
+        "name": "Resistencia al daño",
+        "type": "trait",
+        "lore_description": "Tu sangre dracónica de linaje negro te protege del ácido, el mismo tipo de daño que tú misma puedes exhalar.",
+        "tactical_summary": "Cualquier daño de tipo Ácido que recibas se reduce a la mitad automáticamente.",
+        "tactical_role": "Defensivo"
+      },
+      {
+        "id": "ability-destruir-muertos-vivientes",
+        "name": "Destruir muertos vivientes",
+        "type": "class_feature",
+        "lore_description": "Cuando expulsas a los no-muertos, los más débiles no solo huyen de ti: se desintegran directamente.",
+        "tactical_summary": "Si un muerto viviente falla la tirada contra tu Expulsar muertos vivientes y su nivel de peligro es 1/2 o menor, queda destruido al instante en vez de solo huir.",
+        "tactical_role": "Ofensivo"
+      },
+      {
+        "id": "ability-discipulo-de-la-vida",
+        "name": "Discípulo de la vida",
+        "type": "class_feature",
+        "lore_description": "Tu conexión con la energía vital hace que tus curaciones lleguen más lejos que las de cualquier otro clérigo, y además te permite llevar armaduras pesadas sin problema.",
+        "tactical_summary": "Cada vez que un conjuro de nivel 1 o superior haga que alguien recupere puntos de golpe, esa persona recupera 2 puntos extra más el nivel del conjuro usado. También tienes competencia con armadura pesada.",
+        "tactical_role": "Defensivo"
+      },
+      {
+        "id": "ability-sanador-bendecido",
+        "name": "Sanador bendecido",
+        "type": "class_feature",
+        "lore_description": "La energía positiva que usas para sanar a otros también te roza a ti, dejándote un poco de vitalidad de vuelta.",
+        "tactical_summary": "Cada vez que cures a otra criatura con un conjuro de nivel 1 o superior, tú también recuperas 2 puntos de golpe más el nivel del conjuro usado.",
+        "tactical_role": "Defensivo"
+      },
+      {
+        "id": "ability-lanzamiento-de-conjuros",
+        "name": "Lanzamiento de conjuros",
+        "type": "class_feature",
+        "lore_description": "Eres capaz de canalizar el poder divino de tu diosa en forma de conjuros de clériga, preparando cada día los que necesites de tu lista.",
+        "tactical_summary": "Define qué conjuros puedes tener disponibles cada día y con qué característica lo haces (Sabiduría en tu caso).",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-mejora-de-caracteristica",
+        "name": "Mejora de característica",
+        "type": "class_feature",
+        "lore_description": "Con la experiencia y el entrenamiento, tus capacidades naturales han ido mejorando poco a poco.",
+        "tactical_summary": "En los niveles 4, 8, 12, 16 y 19 puedes subir una característica en 2 puntos, o dos características en 1 punto cada una (sin superar nunca 20).",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-conjuros-del-dominio-de-vida",
+        "name": "Conjuros del dominio de vida",
+        "type": "class_feature",
+        "lore_description": "Tu diosa te concede automáticamente ciertos conjuros ligados a la vida y la curación, que siempre tienes disponibles sin necesidad de elegirlos cada mañana.",
+        "tactical_summary": "Bendecir, Curar heridas, Restablecimiento menor, Arma espiritual, Faro de esperanza y Revivificar están siempre preparados, sin ocupar hueco de los conjuros que elijas cada día.",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-canalizar-divinidad",
+        "name": "Canalizar divinidad",
+        "type": "class_feature",
+        "lore_description": "Tu vínculo con tu diosa te permite canalizar su poder dos veces entre descansos, ya sea para ahuyentar no-muertos o para curar de emergencia a tus aliados.",
+        "tactical_summary": "Tienes 2 usos de Canalizar Divinidad que se recuperan al completar un descanso corto o largo; puedes elegir entre Expulsar muertos vivientes o Preservar la vida cada vez que lo uses.",
+        "tactical_role": "Utilidad"
+      }
+    ]
+  },
+  "lore_info": {
+    "backstory": "Miralia es una clériga ciega que abandonó el templo para llevar la palabra de su diosa a quienes más lo necesitan, guiada por una fe tan profunda que jamás permite que su ceguera la limite. Viaja junto a Doloria Pussydestroyer, la paladina que juró protegerla desde que se conocieron durante su formación religiosa, y forma parte de las Dragonas Livianas, un grupo de aventureras tan famosas por sus desastres como por sus milagrosos rescates.",
+    "personality_traits": "Nunca permito que mis limitaciones definan quién soy. Siempre intento encontrar algo bueno incluso en las personas más difíciles.",
+    "ideals": "Fe. Mi diosa guía mi camino, incluso cuando yo no puedo verlo.",
+    "bonds": "",
+    "flaws": "Confío demasiado en la bondad de los demás."
+  }
+}
