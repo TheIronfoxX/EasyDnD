@@ -55,25 +55,29 @@ extension CharacterStoreRoster on CharacterStore {
     return result;
   }
 
-  /// Reemplaza la ficha en [index] por la versión corregida que devolvió
-  /// la IA (flujo "pegar el prompt → la IA responde corregido"), en vez
-  /// de duplicarla. Si el índice ya no es válido (el roster cambió
-  /// mientras el wizard estaba abierto), la añade al final.
+  /// Reemplaza la ficha en [index] por [character] — ya validada por la
+  /// UI (el wizard valida en la vista previa y recién commitea al
+  /// confirmar). Si el índice ya no es válido (el roster cambió mientras
+  /// el wizard estaba abierto), la añade al final en vez de fallar.
+  void replaceCharacter(int index, CharacterModel character) {
+    if (index < 0 || index >= roster.length) {
+      addCharacter(character);
+      return;
+    }
+    roster[index] = character;
+    _activeIndex = index;
+    _notifyAndPersist();
+  }
+
+  /// Variante texto de [replaceCharacter] para quien ya tiene crudo lo
+  /// que devolvió la IA (flujo "pegar el prompt → la IA responde
+  /// corregido"): valida y, si pasó, reemplaza sin duplicar la entrada.
   CharacterValidationResult replaceCharacterFromText(
     int index,
     String rawText,
   ) {
     final result = CharacterValidator.parseAndValidate(rawText);
-    if (!result.isOk) return result;
-
-    final imported = result.character!;
-    if (index < 0 || index >= roster.length) {
-      addCharacter(imported);
-    } else {
-      roster[index] = imported;
-      _activeIndex = index;
-      _notifyAndPersist();
-    }
+    if (result.isOk) replaceCharacter(index, result.character!);
     return result;
   }
 
