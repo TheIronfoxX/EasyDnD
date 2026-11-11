@@ -50,9 +50,6 @@ flutter:
     # Ícono de la app (lo usaba la pantalla de bienvenida vieja y lo va a
     # seguir usando la nueva).
     - assets/icon/icon.png
-    # El prompt del wizard de importación. PROVISORIO: en la Etapa 3 se
-    # consolida como constante Dart y esta entrada (y el archivo) desaparecen.
-    - assets/promt.txt
 
 flutter_launcher_icons:
   android: true
