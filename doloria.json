@@ -1,0 +1,448 @@
+{
+  "basic_info": {
+    "name": "Doloria Pussydestroyer",
+    "race": "Dracónido",
+    "characterClass": "Paladín 6",
+    "hp_max": 65,
+    "ac": 13,
+    "speed": 9,
+    "spell_save_dc": 15
+  },
+  "purse": {
+    "gold": 0,
+    "silver": 0,
+    "copper": 0
+  },
+  "ai_tips": "Con Ataque Adicional y su Fuerza 20, Doloria golpea fuerte dos veces por turno; guarda espacios de conjuro para Castigo Divino cuando el golpe cuente de verdad, no en cada ataque. Usa Favor Divino o Escudo de la fe como acción adicional antes de entrar al cuerpo a cuerpo para maximizar el turno. Su Aura de Protección hace que se quede cerca de los aliados que fallan salvaciones a menudo, y Sentido Divino le sirve para detectar emboscadas de no muertos o infernales antes de un combate. Imposición de Manos es su red de seguridad de curación fuera de combate: mejor gastarla toda de una vez en un aliado crítico que repartirla en cantidades pequeñas.",
+  "user_tactics": "",
+  "adventure_notes": "",
+  "resources": [
+    {
+      "name": "Imposición de Manos",
+      "current": 30,
+      "max": 30
+    },
+    {
+      "name": "Canalizar Divinidad",
+      "current": 1,
+      "max": 1
+    },
+    {
+      "name": "Sentido Divino",
+      "current": 5,
+      "max": 5
+    },
+    {
+      "name": "Arma de Aliento",
+      "current": 1,
+      "max": 1
+    }
+  ],
+  "inventory": {
+    "weapons": [
+      {
+        "id": "weapon-penitencia-jsi-l02",
+        "name": "Penitencia ©JSI-L02",
+        "attack_bonus": 8,
+        "damage": {
+          "base_dice": "1d12+5",
+          "base_type": "perforante"
+        },
+        "conditional_damage": [],
+        "properties": [
+          "Alcance",
+          "Especial"
+        ],
+        "homebrew_effect": "Lleva un carrete mecánico interno que permite lanzarla a distancia y recuperarla automáticamente de un tirón, sin necesidad de ir a buscarla ni quedarse nunca sin ella.",
+        "magic_charges": {
+          "has_charges": false,
+          "max": 0,
+          "current": 0
+        },
+        "success_description": "La lanza retráctil se clava certera antes de volver disparada a tu mano.",
+        "failure_description": "El golpe se desvía y el carrete recoge la lanza vacío.",
+        "lore_description": "Una creación artificiera única, fruto del ingenio (y las explosiones) del taller de Jiseol: una lanza que sale disparada y regresa sola gracias a un mecanismo interno de cuerda y engranajes.",
+        "tactical_summary": "Tiras un d20 y sumas +8; le dices el resultado al máster y él te dice si le has dado | Daño: 1d12+5 Perforante",
+        "is_unique": true
+      },
+      {
+        "id": "weapon-aegis-doloris-jsi-p04",
+        "name": "Aegis Doloris ©JSI-P04",
+        "attack_bonus": 8,
+        "damage": {
+          "base_dice": "1d4+5",
+          "base_type": "perforante"
+        },
+        "conditional_damage": [],
+        "properties": [
+          "Escudo",
+          "Especial"
+        ],
+        "homebrew_effect": "Un escudo enorme con mecanismos internos que absorben el impacto de los golpes y que puede desplegar unas púas afiladas para usarlo también como arma ofensiva.",
+        "magic_charges": {
+          "has_charges": false,
+          "max": 0,
+          "current": 0
+        },
+        "success_description": "Las púas del escudo se despliegan de golpe y perforan al enemigo.",
+        "failure_description": "El enemigo esquiva el escudazo antes de que las púas salgan.",
+        "lore_description": "Otro artefacto salido del taller de Jiseol: un escudo descomunal con mecanismos internos que amortiguan los golpes recibidos y esconden un sistema de púas retráctiles para sorprender a quien se confíe.",
+        "tactical_summary": "Tiras un d20 y sumas +8; le dices el resultado al máster y él te dice si le has dado | Daño: 1d4+5 Perforante (con las púas desplegadas)",
+        "is_unique": true
+      }
+    ],
+    "mundane_items": []
+  },
+  "stats": {
+    "str": {
+      "name": "Fuerza",
+      "value": 20,
+      "mod": 5,
+      "description": "Mide la fuerza física y la capacidad atlética."
+    },
+    "dex": {
+      "name": "Destreza",
+      "value": 12,
+      "mod": 1,
+      "description": "Mide la agilidad, los reflejos y la coordinación."
+    },
+    "con": {
+      "name": "Constitución",
+      "value": 15,
+      "mod": 2,
+      "description": "Mide la resistencia física y la salud."
+    },
+    "int": {
+      "name": "Inteligencia",
+      "value": 12,
+      "mod": 1,
+      "description": "Mide el conocimiento y la lógica."
+    },
+    "wis": {
+      "name": "Sabiduría",
+      "value": 13,
+      "mod": 1,
+      "description": "Mide la intuición y la percepción."
+    },
+    "cha": {
+      "name": "Carisma",
+      "value": 19,
+      "mod": 4,
+      "description": "Mide la fuerza de personalidad."
+    }
+  },
+  "spell_slots": [
+    {
+      "level": 1,
+      "max": 4,
+      "current": 4
+    },
+    {
+      "level": 2,
+      "max": 2,
+      "current": 2
+    }
+  ],
+  "skills": [
+    {
+      "name": "Acrobacias",
+      "related_stat": "dex",
+      "modifier": 1
+    },
+    {
+      "name": "Arcanos",
+      "related_stat": "int",
+      "modifier": 1
+    },
+    {
+      "name": "Atletismo",
+      "related_stat": "str",
+      "modifier": 8
+    },
+    {
+      "name": "Engañar",
+      "related_stat": "cha",
+      "modifier": 4
+    },
+    {
+      "name": "Historia",
+      "related_stat": "int",
+      "modifier": 1
+    },
+    {
+      "name": "Interpretación",
+      "related_stat": "cha",
+      "modifier": 4
+    },
+    {
+      "name": "Intimidar",
+      "related_stat": "cha",
+      "modifier": 7
+    },
+    {
+      "name": "Investigación",
+      "related_stat": "int",
+      "modifier": 1
+    },
+    {
+      "name": "Juego de Manos",
+      "related_stat": "dex",
+      "modifier": 1
+    },
+    {
+      "name": "Medicina",
+      "related_stat": "wis",
+      "modifier": 1
+    },
+    {
+      "name": "Naturaleza",
+      "related_stat": "int",
+      "modifier": 1
+    },
+    {
+      "name": "Percepción",
+      "related_stat": "wis",
+      "modifier": 1
+    },
+    {
+      "name": "Perspicacia",
+      "related_stat": "wis",
+      "modifier": 1
+    },
+    {
+      "name": "Persuasión",
+      "related_stat": "cha",
+      "modifier": 7
+    },
+    {
+      "name": "Religión",
+      "related_stat": "int",
+      "modifier": 1
+    },
+    {
+      "name": "Sigilo",
+      "related_stat": "dex",
+      "modifier": 1
+    },
+    {
+      "name": "Supervivencia",
+      "related_stat": "wis",
+      "modifier": 1
+    },
+    {
+      "name": "Trato con Animales",
+      "related_stat": "wis",
+      "modifier": 1
+    }
+  ],
+  "abilities_by_action": {
+    "action": [
+      {
+        "id": "ability-curar-heridas",
+        "name": "Curar Heridas",
+        "type": "spell",
+        "related_stat": "cha",
+        "attack_type": "none",
+        "success_description": "Una luz cálida cierra las heridas del objetivo.",
+        "failure_description": "La magia se disipa sin efecto.",
+        "is_scalable": true,
+        "base_level": 1,
+        "damage_dice": "1d8",
+        "scaling_formula": "1d8",
+        "lore_description": "Tocas a una criatura y esta recupera vitalidad al instante. No funciona sobre no muertos ni constructos. Es tu curación de emergencia por excelencia en pleno combate.",
+        "tactical_summary": "No tienes que tirar nada, el objetivo se cura al tocarlo | Curación: 1d8 + Mod"
+      },
+      {
+        "id": "ability-proteccion-mal-bien",
+        "name": "Protección contra el Mal y el Bien",
+        "type": "spell",
+        "related_stat": "cha",
+        "attack_type": "none",
+        "success_description": "Un velo protector envuelve al aliado tocado.",
+        "failure_description": "El efecto se disipa sin manifestarse.",
+        "is_scalable": false,
+        "base_level": 1,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Tocas a un aliado voluntario y lo blindas frente a aberraciones, celestiales, elementales, fatas, infernales y no muertos: esas criaturas atacan con más dificultad y no pueden hechizarlo, asustarlo ni poseerlo. Ideal antes de entrar a una zona plagada de este tipo de amenazas.",
+        "tactical_summary": "No tienes que tirar nada, el efecto protector se activa directamente al tocar al aliado"
+      }
+    ],
+    "bonus_action": [
+      {
+        "id": "ability-escudo-de-la-fe",
+        "name": "Escudo de la Fe",
+        "type": "spell",
+        "related_stat": "cha",
+        "attack_type": "none",
+        "success_description": "Un campo brillante envuelve al objetivo, endureciendo su defensa.",
+        "failure_description": "El campo se disipa sin cuajar.",
+        "is_scalable": false,
+        "base_level": 1,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Rodeas a una criatura (puedes ser tú misma) con un campo de luz que hace más difícil que le acierten mientras dura el conjuro. Perfecta para reforzar a quien está recibiendo demasiados golpes.",
+        "tactical_summary": "No tienes que tirar nada, el objetivo simplemente es más difícil de golpear mientras dure el efecto"
+      },
+      {
+        "id": "ability-favor-divino",
+        "name": "Favor Divino",
+        "type": "spell",
+        "related_stat": "cha",
+        "attack_type": "none",
+        "success_description": "Un fulgor divino envuelve tu arma con cada golpe.",
+        "failure_description": "El fulgor se apaga sin llegar a manifestarse.",
+        "is_scalable": false,
+        "base_level": 1,
+        "damage_dice": "1d4",
+        "scaling_formula": "",
+        "lore_description": "Invocas una plegaria que envuelve tus siguientes golpes de arma con energía radiante mientras dure el efecto. No es un ataque en sí, sino un potenciador de tus golpes normales durante ese rato.",
+        "tactical_summary": "No tienes que tirar nada, tus ataques de arma añaden daño extra automáticamente mientras dure el efecto | Daño: 1d4 Radiante"
+      },
+      {
+        "id": "ability-herida-de-marca",
+        "name": "Herida de Marca",
+        "type": "spell",
+        "related_stat": "cha",
+        "attack_type": "none",
+        "success_description": "Tu arma resplandece con un brillo astral y marca al enemigo con luz.",
+        "failure_description": "El brillo se apaga sin llegar a golpear a nadie.",
+        "is_scalable": true,
+        "base_level": 2,
+        "damage_dice": "2d6",
+        "scaling_formula": "1d6",
+        "lore_description": "Encantas tu arma para que, en tu próximo golpe antes de que acabe el efecto, estalle en un brillo astral. El objetivo queda iluminado, se vuelve visible si estaba invisible y no puede volver a esconderse mientras dure el conjuro.",
+        "tactical_summary": "No tienes que tirar nada extra, el daño se suma automáticamente la próxima vez que golpees con el arma | Daño: 2d6 Radiante"
+      },
+      {
+        "id": "ability-sellar-alma",
+        "name": "Sellar Alma",
+        "type": "spell",
+        "related_stat": "cha",
+        "attack_type": "none",
+        "success_description": "El arma supura magma abisal y quema el alma del objetivo.",
+        "failure_description": "El efecto se disipa sin llegar a golpear a nadie.",
+        "is_scalable": true,
+        "base_level": 2,
+        "damage_dice": "1d10",
+        "scaling_formula": "1d8",
+        "lore_description": "Encantas tu arma para que, en tu próximo golpe cuerpo a cuerpo antes de que acabe el efecto, queme al objetivo con magma de las profundidades. Además de doler, reduce temporalmente el máximo de puntos de golpe del objetivo hasta su próximo descanso prolongado; si eso lo lleva a 0, su alma es arrebatada por el diablo Varaneth. Es un efecto oscuro, pensado para enemigos muy peligrosos.",
+        "tactical_summary": "No tienes que tirar nada extra, el daño se suma automáticamente la próxima vez que golpees con el arma cuerpo a cuerpo | Daño: 1d10 Fuego"
+      }
+    ],
+    "reaction": [],
+    "passive": [
+      {
+        "id": "ability-ataque-adicional",
+        "name": "Ataque Adicional",
+        "type": "trait",
+        "lore_description": "Tu entrenamiento como paladín te permite golpear más de una vez cuando realizas la acción de atacar en tu turno.",
+        "tactical_summary": "Cuando ataques, hazlo 2 veces en vez de 1.",
+        "tactical_role": "Ofensivo"
+      },
+      {
+        "id": "ability-castigo-divino",
+        "name": "Castigo Divino",
+        "type": "class_feature",
+        "lore_description": "Cuando golpeas a un enemigo con un ataque de arma cuerpo a cuerpo, puedes sacrificar un espacio de conjuro para que el golpe arda con luz divina y haga más daño. Es aún más potente contra no muertos e infernales.",
+        "tactical_summary": "No tienes que tirar nada extra: si acabas de golpear con el arma, puedes gastar un espacio de conjuro para sumar 2d8 de daño Radiante (espacio de nivel 1), +1d8 por cada nivel de espacio adicional (máximo 5d8), y +1d8 más si el enemigo es un no muerto o un infernal.",
+        "tactical_role": "Ofensivo"
+      },
+      {
+        "id": "ability-arma-sagrada",
+        "name": "Arma Sagrada",
+        "type": "class_feature",
+        "lore_description": "Usando tu Canalizar Divinidad, puedes cargar como acción un arma que sostengas con energía positiva. Durante 1 minuto emite luz brillante y tenue a su alrededor, y si no era mágica, pasa a serlo mientras dura el efecto.",
+        "tactical_summary": "Mientras dure el efecto, suma tu modificador de Carisma (mínimo +1) a tus tiradas de ataque con esa arma, además del bonificador normal.",
+        "tactical_role": "Ofensivo"
+      },
+      {
+        "id": "ability-expulsar-muertos-vivientes",
+        "name": "Expulsar Muertos Vivientes",
+        "type": "class_feature",
+        "lore_description": "Usando tu Canalizar Divinidad, alzas tu símbolo sagrado y censuras a los infernales y no muertos cercanos, obligándolos a huir de ti y evitar acercarse durante un rato.",
+        "tactical_summary": "Cada infernal o no muerto a menos de 9 metros que pueda verte u oírte tira un d20; si no supera tu CD (15), pasa 1 minuto (o hasta que reciba daño) intentando alejarse de ti todo lo posible, sin poder acercarse ni hacer reacciones.",
+        "tactical_role": "Ofensivo"
+      },
+      {
+        "id": "ability-imposicion-de-manos",
+        "name": "Imposición de Manos",
+        "type": "class_feature",
+        "lore_description": "Tu toque sagrado puede curar heridas usando tu reserva de poder curativo (el recurso 'Imposición de Manos'), que se recarga al completar un descanso prolongado. También puedes gastar parte de la reserva para curar una enfermedad o neutralizar un veneno en vez de recuperar puntos de golpe. No funciona sobre no muertos ni constructos.",
+        "tactical_summary": "Como acción, tocas a una criatura y gastas los puntos que quieras de tu reserva de Imposición de Manos para que recupere esa cantidad de puntos de golpe (o gasta 5 puntos para curar una enfermedad o neutralizar un veneno).",
+        "tactical_role": "Defensivo"
+      },
+      {
+        "id": "ability-aura-de-proteccion",
+        "name": "Aura de Protección",
+        "type": "class_feature",
+        "lore_description": "Tu sola presencia refuerza la voluntad de quienes luchan a tu lado, ayudándoles a resistir efectos que intentan doblegarlos.",
+        "tactical_summary": "Cuando tú o un aliado a 3 metros o menos hagáis una tirada de salvación, sumáis vuestro modificador de Carisma (mínimo +1) a esa tirada. Necesitas estar consciente para conceder este bonificador.",
+        "tactical_role": "Defensivo"
+      },
+      {
+        "id": "ability-canalizar-divinidad",
+        "name": "Canalizar Divinidad",
+        "type": "class_feature",
+        "lore_description": "Tu juramento te permite canalizar energía divina para activar efectos mágicos concretos (como Arma Sagrada o Expulsar Muertos Vivientes). Debes completar un descanso breve o prolongado para volver a usarlo.",
+        "tactical_summary": "Al usar este recurso eliges una de las opciones de Canalizar Divinidad que tengas disponibles y aplicas su efecto.",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-salud-divina",
+        "name": "Salud Divina",
+        "type": "trait",
+        "lore_description": "La magia divina que fluye por ti te protege de cualquier enfermedad.",
+        "tactical_summary": "No puedes enfermar nunca.",
+        "tactical_role": "Defensivo"
+      },
+      {
+        "id": "ability-sentido-divino",
+        "name": "Sentido Divino",
+        "type": "trait",
+        "lore_description": "Percibes la presencia de un gran mal como un hedor nocivo y la de un bien poderoso como música celestial, lo que te permite detectar criaturas de otro plano o lugares/objetos bendecidos o desacralizados cerca de ti.",
+        "tactical_summary": "Como acción, sabes hasta el final de tu siguiente turno dónde está cualquier celestial, infernal o no muerto a menos de 18 metros que no esté totalmente cubierto (sabes el tipo, no su identidad). Gasta un uso del recurso 'Sentido Divino'.",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-combate-armas-grandes",
+        "name": "Combate con Armas Grandes",
+        "type": "trait",
+        "lore_description": "Tu forma de luchar con armas a dos manos te permite aprovechar mejor tus tiradas de daño más flojas.",
+        "tactical_summary": "Cuando saques un 1 o un 2 en un dado de daño con un arma cuerpo a cuerpo que empuñes a dos manos (o que sea versátil usada así), puedes repetir ese dado, pero debes quedarte con el nuevo resultado aunque también sea bajo.",
+        "tactical_role": "Ofensivo"
+      },
+      {
+        "id": "ability-dogmas-de-devocion",
+        "name": "Dogmas de Devoción",
+        "type": "trait",
+        "lore_description": "Tu juramento se rige por cinco principios: honestidad, valor, compasión, honor y deber. Guían cómo actúas en el mundo, aunque no tienen un efecto mecánico directo en combate.",
+        "tactical_summary": "No tiene efecto mecánico; es una guía de roleo sobre cómo actuarías fiel a tu juramento.",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-arma-de-aliento",
+        "name": "Arma de Aliento",
+        "type": "trait",
+        "lore_description": "Exhalas una ráfaga de energía destructiva propia de tu ascendencia dracónica (en tu caso, veneno). Todas las criaturas atrapadas en el área quedan expuestas a ella por igual. Necesitas un descanso breve o prolongado para volver a usarla.",
+        "tactical_summary": "Como acción, todas las criaturas en el área de tu aliento tiran un d20; si no superan tu CD (8 + tu modificador de Constitución + tu bonificador de competencia = 15), reciben todo el daño, y si la superan, solo la mitad | Daño: 3d6 Veneno",
+        "tactical_role": "Ofensivo"
+      },
+      {
+        "id": "ability-resistencia-al-dano",
+        "name": "Resistencia al Daño",
+        "type": "trait",
+        "lore_description": "Tu ascendencia dracónica te protege parcialmente del mismo tipo de daño que produce tu Arma de Aliento.",
+        "tactical_summary": "Recibes la mitad del daño de tipo Veneno (redondeando hacia abajo).",
+        "tactical_role": "Defensivo"
+      }
+    ]
+  },
+  "lore_info": {
+    "backstory": "Doloria se formó desde joven en un templo religioso, donde conoció a Miralia, una clériga ciega cuya fe inquebrantable le enseñó que la fuerza solo tiene sentido cuando protege a los demás. Desde entonces juró dedicar su vida a proteger a Miralia y nunca volvieron a separarse. Juntas se unieron a un grupo variopinto de aventureras (conocidas después como las Dragonas Livianas) tras un encuentro caótico durante el ataque a una caravana, y desde entonces recorre el continente combinando su devoción religiosa con una enorme disposición a resolver los problemas a base de fuerza bruta y armamento artificiero de fabricación casera.",
+    "personality_traits": "Nunca abandono a un compañero. Prefiero actuar antes que quedarme observando.",
+    "ideals": "Protección. La fuerza solo tiene sentido cuando sirve para proteger a otros.",
+    "bonds": "Juré que Miralia jamás volvería a sufrir daño mientras yo respirara.",
+    "flaws": "Me cuesta confiar en desconocidos y suelo resolver demasiados problemas con fuerza."
+  }
+}

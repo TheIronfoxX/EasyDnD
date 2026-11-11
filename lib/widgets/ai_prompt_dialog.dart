@@ -10,19 +10,20 @@ import '../utils/nivel20_extractor.dart';
 
 // ============================================================================
 // Integración Nivel20 — Diálogo compartido para generar (con copia al
-// portapapeles) el prompt listo para pegar en cualquier IA de texto. Tiene
-// dos orígenes de datos posibles:
-//   - un enlace de Nivel20 guardado (modo clásico, la IA visita el enlace)
-//   - un JSON crudo ya pegado por el jugador y limpiado con
-//     Nivel20Extractor.cleanRawJsonString() (la IA no visita nada, el texto
-//     ya va incluido en el prompt)
+// portapapeles) el prompt listo para pegar en cualquier IA de texto.
+//
+// El jugador pega aquí el JSON crudo exportado de Nivel20 (o de donde sea);
+// se limpia con Nivel20Extractor.cleanRawJsonString() y ese texto ya
+// limpio se incrusta en el prompt. La IA nunca visita ningún enlace: todo
+// lo que necesita ya va incluido como texto.
+//
 // Actúa sobre el personaje activo del roster, así que se usa tanto desde el
 // HUD como desde la pantalla de selección de personaje.
 // ============================================================================
 
-/// Abre el diálogo de importación/actualización con IA vía Nivel20 para el
-/// personaje activo del [CharacterProvider], en modo "enlace": el jugador
-/// pega/edita la URL de su ficha y la IA la visita.
+/// Abre el diálogo de generación de prompt con IA para el personaje activo
+/// del [CharacterProvider]. El jugador pega el JSON crudo dentro del propio
+/// diálogo; no hay campo de enlace ni visita de la IA a ninguna URL.
 void showAIPromptDialog(BuildContext context, {required Color accent}) {
   final provider = context.read<CharacterProvider>();
   final messenger = ScaffoldMessenger.of(context);
@@ -42,95 +43,70 @@ void showAIPromptDialog(BuildContext context, {required Color accent}) {
   );
 }
 
-/// Abre el mismo diálogo pero en modo "JSON crudo": [rawJson] es el export
-/// tal cual pegado por el jugador (sin pasar por ninguna IA todavía). Se
-/// limpia con `Nivel20Extractor.cleanRawJsonString()` y ese texto limpio se
-/// incrusta directamente en el prompt, sin campo de enlace que editar.
-void showAIPromptDialogFromRawJson(
-  BuildContext context, {
-  required Color accent,
-  required String rawJson,
-}) {
-  final provider = context.read<CharacterProvider>();
-  final messenger = ScaffoldMessenger.of(context);
-  final cleanedText = Nivel20Extractor.cleanRawJsonString(rawJson);
-
-  showDialog<void>(
-    context: context,
-    barrierColor: Colors.black.withOpacity(0.65),
-    builder: (_) => Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
-      child: AIPromptDialogContent(
-        accent: accent,
-        provider: provider,
-        messenger: messenger,
-        rawSourceText: cleanedText,
-      ),
-    ),
-  );
-}
-
 class AIPromptDialogContent extends StatefulWidget {
   final Color accent;
   final CharacterProvider provider;
   final ScaffoldMessengerState messenger;
-
-  /// Si no es null, el diálogo entra en modo "JSON crudo": oculta el campo
-  /// de enlace y genera el prompt a partir de este texto ya limpio en vez
-  /// de pedirle a la IA que visite ninguna URL.
-  final String? rawSourceText;
 
   const AIPromptDialogContent({
     super.key,
     required this.accent,
     required this.provider,
     required this.messenger,
-    this.rawSourceText,
   });
-
-  bool get isRawTextMode => rawSourceText != null;
 
   @override
   State<AIPromptDialogContent> createState() => _AIPromptDialogContentState();
 }
 
 class _AIPromptDialogContentState extends State<AIPromptDialogContent> {
-  late final TextEditingController _linkController;
-  late String _prompt;
+  final TextEditingController _jsonController = TextEditingController();
 
-  @override
-  void initState() {
-    super.initState();
-    _linkController = TextEditingController(
-      text: widget.provider.activeCharacter.basicInfo.nivel20Link ?? '',
-    );
-    _prompt = widget.provider.generateAIPrompt(
-      rawSourceText: widget.rawSourceText,
-    );
-  }
+  /// Prompt ya generado a partir del JSON pegado. Null hasta que el
+  /// jugador pulsa "Generar prompt" con éxito.
+  String? _prompt;
+  String? _error;
 
   @override
   void dispose() {
-    _linkController.dispose();
+    _jsonController.dispose();
     super.dispose();
   }
 
-  void _saveLinkAndRegenerate() {
-    // En modo JSON crudo no hay enlace que guardar: el prompt ya se generó
-    // una vez a partir del texto limpio y no depende de este campo.
-    if (widget.isRawTextMode) return;
-    widget.provider.updateNivel20Link(_linkController.text.trim());
-    setState(() => _prompt = widget.provider.generateAIPrompt());
+  /// Limpia el JSON pegado y genera el prompt a partir de él. Cualquier
+  /// edición posterior del campo invalida el prompt ya generado, para no
+  /// copiar por error un prompt que no corresponde al texto visible.
+  void _generatePrompt() {
+    final raw = _jsonController.text.trim();
+    if (raw.isEmpty) {
+      setState(() {
+        _error = 'Pega primero el JSON exportado de tu ficha.';
+        _prompt = null;
+      });
+      return;
+    }
+
+    try {
+      final cleaned = Nivel20Extractor.cleanRawJsonString(raw);
+      final prompt = widget.provider.generateAIPrompt(rawSourceText: cleaned);
+      setState(() {
+        _prompt = prompt;
+        _error = null;
+      });
+    } catch (e) {
+      setState(() {
+        _prompt = null;
+        _error = 'JSON inválido — revisa que lo hayas copiado completo.';
+      });
+    }
   }
 
   Future<void> _copyPrompt() async {
-    // Nos aseguramos de que el prompt refleja el último enlace guardado
-    // antes de copiarlo, por si el jugador editó el campo y pulsó
-    // "Copiar" directamente sin perder el foco antes. En modo JSON crudo
-    // esto es un no-op (ver arriba).
-    _saveLinkAndRegenerate();
-    await Clipboard.setData(ClipboardData(text: _prompt));
+    if (_prompt == null) {
+      _generatePrompt();
+      if (_prompt == null) return;
+    }
+    await Clipboard.setData(ClipboardData(text: _prompt!));
     if (!mounted) return;
     widget.messenger.showSnackBar(
       const SnackBar(content: Text('Prompt copiado al portapapeles.')),
@@ -142,7 +118,7 @@ class _AIPromptDialogContentState extends State<AIPromptDialogContent> {
     final accent = widget.accent;
 
     return Container(
-      constraints: const BoxConstraints(maxWidth: 420, maxHeight: 560),
+      constraints: const BoxConstraints(maxWidth: 420, maxHeight: 620),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Color.alphaBlend(accent.withOpacity(0.05), AppColors.surface),
@@ -181,75 +157,9 @@ class _AIPromptDialogContentState extends State<AIPromptDialogContent> {
             ],
           ),
           const SizedBox(height: 16),
-          if (widget.isRawTextMode) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: accent.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: accent.withOpacity(0.2)),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.check_circle_outline, color: accent, size: 16),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Usando el JSON que has pegado, ya limpio. No hace '
-                      'falta ningún enlace: la IA trabajará directamente '
-                      'con ese texto.',
-                      style: GoogleFonts.inter(
-                        color: AppColors.textSecondary,
-                        fontSize: 12,
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ] else ...[
-            Text(
-              'Enlace de Nivel20',
-              style: GoogleFonts.inter(
-                color: AppColors.textSecondary,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.8,
-              ),
-            ),
-            const SizedBox(height: 6),
-            TextField(
-              controller: _linkController,
-              autocorrect: false,
-              keyboardType: TextInputType.url,
-              style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 13.5),
-              decoration: InputDecoration(
-                hintText: 'https://nivel20.com/characters/...',
-                hintStyle: GoogleFonts.inter(color: AppColors.textSecondary.withOpacity(0.6)),
-                filled: true,
-                fillColor: Colors.white.withOpacity(0.03),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.white.withOpacity(0.06)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.white.withOpacity(0.06)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: accent),
-                ),
-              ),
-              onChanged: (_) => _saveLinkAndRegenerate(),
-            ),
-          ],
-          const SizedBox(height: 18),
+
           Text(
-            'Prompt generado',
+            'JSON exportado de tu ficha',
             style: GoogleFonts.inter(
               color: AppColors.textSecondary,
               fontSize: 11,
@@ -258,27 +168,116 @@ class _AIPromptDialogContentState extends State<AIPromptDialogContent> {
             ),
           ),
           const SizedBox(height: 6),
-          Flexible(
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.35),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white.withOpacity(0.05)),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.03),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: _error != null
+                    ? AppColors.danger.withOpacity(0.6)
+                    : Colors.white.withOpacity(0.06),
               ),
-              child: SingleChildScrollView(
-                child: Text(
-                  _prompt,
-                  style: GoogleFonts.inter(
-                    color: AppColors.textPrimary.withOpacity(0.85),
-                    fontSize: 12,
-                    height: 1.5,
-                  ),
+            ),
+            child: TextField(
+              controller: _jsonController,
+              maxLines: 6,
+              minLines: 4,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12.5,
+                fontFamily: 'monospace',
+              ),
+              cursorColor: accent,
+              decoration: InputDecoration(
+                contentPadding: const EdgeInsets.all(12),
+                border: InputBorder.none,
+                hintText: '{ "basic_info": { ... }, ... }',
+                hintStyle: GoogleFonts.inter(color: Colors.white.withOpacity(0.25)),
+              ),
+              // Cualquier edición del JSON invalida el prompt ya generado,
+              // para no dejar copiar un prompt desactualizado respecto al
+              // texto visible en el campo.
+              onChanged: (_) => setState(() {
+                _prompt = null;
+                _error = null;
+              }),
+            ),
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              _error!,
+              style: GoogleFonts.inter(color: AppColors.danger, fontSize: 12.5),
+            ),
+          ],
+          const SizedBox(height: 14),
+
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _generatePrompt,
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                side: BorderSide(
+                  color: _prompt != null
+                      ? Colors.greenAccent.withOpacity(0.5)
+                      : Colors.white.withOpacity(0.15),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              icon: Icon(
+                _prompt != null ? Icons.check_rounded : Icons.auto_fix_high_rounded,
+                color: _prompt != null ? Colors.greenAccent : Colors.white70,
+                size: 18,
+              ),
+              label: Text(
+                _prompt != null ? 'Prompt generado' : 'Generar prompt',
+                style: GoogleFonts.inter(
+                  color: _prompt != null ? Colors.greenAccent : Colors.white70,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
                 ),
               ),
             ),
           ),
+
+          if (_prompt != null) ...[
+            const SizedBox(height: 18),
+            Text(
+              'Prompt generado',
+              style: GoogleFonts.inter(
+                color: AppColors.textSecondary,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.8,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Flexible(
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.35),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.withOpacity(0.05)),
+                ),
+                child: SingleChildScrollView(
+                  child: Text(
+                    _prompt!,
+                    style: GoogleFonts.inter(
+                      color: AppColors.textPrimary.withOpacity(0.85),
+                      fontSize: 12,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+
           const SizedBox(height: 18),
           SizedBox(
             width: double.infinity,

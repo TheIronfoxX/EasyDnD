@@ -190,6 +190,98 @@ int _modForStatKey(StatsBlock stats, String key) {
   }
 }
 
+/// Tokens de diseño compartidos por toda la pestaña, para que el rework
+/// estético quede consistente en vez de números mágicos repetidos en cada
+/// widget. Solo afecta a geometría/espaciado — la paleta de color sigue
+/// viniendo siempre de `accent` / `context.appColors`, nunca de aquí.
+class _Gaps {
+  static const double xs = 4;
+  static const double sm = 8;
+  static const double md = 12;
+  static const double lg = 20;
+  static const double xl = 28;
+}
+
+class _Corners {
+  static const double card = 14.0;
+  static const double header = 12.0;
+  static const double chip = 12.0;
+}
+
+/// Cabecera de sección ("DESPLIEGUE TÁCTICO", "RANURAS DE MAGIA"...).
+///
+/// Refactor estético: sustituye el `Container` con borde-izquierdo plano
+/// que se repetía (con ligeras variaciones de copy-paste) delante de cada
+/// sección por una única pieza reutilizable. Visualmente añade un icono
+/// dentro de una pastilla circular con relleno de acento, un degradado
+/// horizontal muy sutil (en vez de un color plano) que se desvanece hacia
+/// la derecha como una "franja de mapa táctico", y una sombra suave que
+/// separa la cabecera del fondo. El acento de borde izquierdo se conserva
+/// porque es parte reconocible del lenguaje visual de la app.
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Color accent;
+  final Widget? trailing;
+
+  const _SectionHeader({
+    required this.title,
+    required this.icon,
+    required this.accent,
+    this.trailing,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(10, 8, 12, 8),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [accent.withOpacity(0.20), accent.withOpacity(0.05)],
+        ),
+        borderRadius: BorderRadius.circular(_Corners.header),
+        border: Border(left: BorderSide(color: accent, width: 3)),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withOpacity(0.15),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 26,
+            height: 26,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: accent.withOpacity(0.22),
+            ),
+            child: Icon(icon, size: 14, color: accent),
+          ),
+          const SizedBox(width: _Gaps.sm),
+          Expanded(
+            child: Text(
+              title.toUpperCase(),
+              style: TextStyle(
+                color: accent,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.1,
+                fontFamily: 'serif',
+                fontSize: 13,
+              ),
+            ),
+          ),
+          if (trailing != null) trailing!,
+        ],
+      ),
+    );
+  }
+}
+
 class TurnTab extends StatelessWidget {
   const TurnTab({super.key});
 
@@ -234,32 +326,57 @@ class TurnTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'DESPLIEGUE TÁCTICO',
-                    style: TextStyle(color: accent, fontWeight: FontWeight.bold, letterSpacing: 1.2, fontFamily: 'serif'),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Todo lo que puedes hacer con tu turno, de un vistazo.',
-                    style: TextStyle(color: context.appColors.textSecondary, fontSize: 12, fontFamily: 'serif'),
-                  ),
-                ],
-              ),
+        Container(
+          padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [accent.withOpacity(0.16), accent.withOpacity(0.03)],
             ),
-            // Alta de habilidades: abre un formulario simple (nombre +
-            // descripción + categoría) en un modal. El alta en sí vive en
-            // CharacterProvider.addAbility(), aquí solo se recogen los datos.
-            _AddAbilityButton(accent: accent),
-          ],
+            borderRadius: BorderRadius.circular(_Corners.card),
+            border: Border.all(color: accent.withOpacity(0.25), width: 1),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'DESPLIEGUE TÁCTICO',
+                      style: TextStyle(
+                        color: accent,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.6,
+                        fontFamily: 'serif',
+                        fontSize: 18,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Todo lo que puedes hacer con tu turno, de un vistazo.',
+                      style: TextStyle(
+                        color: context.appColors.textSecondary,
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                        fontFamily: 'serif',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: _Gaps.sm),
+              // Alta de habilidades: abre un formulario simple (nombre +
+              // descripción + categoría) en un modal. El alta en sí vive en
+              // CharacterProvider.addAbility(), aquí solo se recogen los
+              // datos.
+              _AddAbilityButton(accent: accent),
+            ],
+          ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: _Gaps.lg),
         // Action Economy Tracker: los recursos de acción del turno en
         // curso (Acción, Adicional, Movimiento), arriba del todo — es lo
         // primero que hace falta consultar/marcar al empezar a resolver
@@ -404,24 +521,7 @@ class _ResourcesSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: accent.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(8),
-              border: Border(left: BorderSide(color: accent, width: 3)),
-            ),
-            child: Text(
-              'RECURSOS ACTIVOS',
-              style: TextStyle(
-                color: accent,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.1,
-                fontFamily: 'serif',
-                fontSize: 13,
-              ),
-            ),
-          ),
+          _SectionHeader(title: 'Recursos Activos', icon: Icons.hexagon_outlined, accent: accent),
           const SizedBox(height: 10),
           ...resources.map(
             (resource) => Padding(
@@ -456,7 +556,15 @@ class _ResourceCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: Row(
         children: [
-          Icon(Icons.hexagon_outlined, color: accent, size: 20),
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(colors: [accent.withOpacity(0.28), accent.withOpacity(0.08)]),
+            ),
+            child: Icon(Icons.hexagon_outlined, color: accent, size: 18),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -603,24 +711,7 @@ class _TurnStatusSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: accent.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(8),
-              border: Border(left: BorderSide(color: accent, width: 3)),
-            ),
-            child: Text(
-              'ECONOMÍA DE TURNO',
-              style: TextStyle(
-                color: accent,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.1,
-                fontFamily: 'serif',
-                fontSize: 13,
-              ),
-            ),
-          ),
+          _SectionHeader(title: 'Economía de Turno', icon: Icons.hourglass_bottom, accent: accent),
           const SizedBox(height: 10),
           Row(
             children: [
@@ -690,45 +781,53 @@ class _MovementTile extends StatelessWidget {
     final used = current <= 0;
     final color = used ? context.appColors.textSecondary : accent;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: ThemedCard(
-          accentColor: color,
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                used ? Icons.check_circle_outline : Icons.directions_run,
-                color: color,
-                size: 22,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'MOVIMIENTO',
-                textAlign: TextAlign.center,
-                style: TextStyle(
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(_Corners.header),
+        boxShadow: used
+            ? null
+            : [BoxShadow(color: accent.withOpacity(0.20), blurRadius: 10, offset: const Offset(0, 3))],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: ThemedCard(
+            accentColor: color,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  used ? Icons.check_circle_outline : Icons.directions_run,
                   color: color,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 10.5,
-                  letterSpacing: 0.6,
-                  fontFamily: 'serif',
+                  size: 22,
                 ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                used ? 'Gastado' : '$maxSpeed ft libres',
-                style: TextStyle(
-                  color: color.withOpacity(0.8),
-                  fontSize: 10,
-                  fontStyle: FontStyle.italic,
-                  fontFamily: 'serif',
+                const SizedBox(height: 6),
+                Text(
+                  'MOVIMIENTO',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 10.5,
+                    letterSpacing: 0.6,
+                    fontFamily: 'serif',
+                  ),
                 ),
-              ),
-            ],
+                  const SizedBox(height: 3),
+                Text(
+                  used ? 'Gastado' : '$maxSpeed ft libres',
+                  style: TextStyle(
+                    color: color.withOpacity(0.8),
+                    fontSize: 10,
+                    fontStyle: FontStyle.italic,
+                    fontFamily: 'serif',
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -760,22 +859,29 @@ class _ActionToggleTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = used ? context.appColors.textSecondary : accent;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: ThemedCard(
-          accentColor: color,
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                used ? Icons.check_circle_outline : icon,
-                color: color,
-                size: 22,
-              ),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(_Corners.header),
+        boxShadow: used
+            ? null
+            : [BoxShadow(color: accent.withOpacity(0.20), blurRadius: 10, offset: const Offset(0, 3))],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: ThemedCard(
+            accentColor: color,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  used ? Icons.check_circle_outline : icon,
+                  color: color,
+                  size: 22,
+                ),
               const SizedBox(height: 6),
               Text(
                 label,
@@ -788,17 +894,18 @@ class _ActionToggleTile extends StatelessWidget {
                   fontFamily: 'serif',
                 ),
               ),
-              const SizedBox(height: 3),
-              Text(
-                used ? 'Gastada' : 'Libre',
-                style: TextStyle(
-                  color: color.withOpacity(0.8),
-                  fontSize: 10,
-                  fontStyle: FontStyle.italic,
-                  fontFamily: 'serif',
+                const SizedBox(height: 3),
+                Text(
+                  used ? 'Gastada' : 'Libre',
+                  style: TextStyle(
+                    color: color.withOpacity(0.8),
+                    fontSize: 10,
+                    fontStyle: FontStyle.italic,
+                    fontFamily: 'serif',
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -817,23 +924,29 @@ class _EndTurnButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return Container(
       width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(_Corners.chip),
+        boxShadow: [
+          BoxShadow(color: accent.withOpacity(0.25), blurRadius: 14, offset: const Offset(0, 4)),
+        ],
+      ),
       child: ElevatedButton.icon(
         onPressed: () => context.read<CharacterProvider>().resetTurn(),
         icon: const Icon(Icons.replay_rounded, size: 18),
         label: const Text(
           'FIN DE TURNO',
-          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.0, fontFamily: 'serif'),
+          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2, fontFamily: 'serif'),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: accent.withOpacity(0.18),
+          backgroundColor: accent.withOpacity(0.20),
           foregroundColor: accent,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          padding: const EdgeInsets.symmetric(vertical: 15),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: accent.withOpacity(0.5)),
+            borderRadius: BorderRadius.circular(_Corners.chip),
+            side: BorderSide(color: accent.withOpacity(0.55), width: 1.2),
           ),
         ),
       ),
@@ -858,6 +971,21 @@ class _TacticalSection extends StatelessWidget {
     this.useSubcategories = true,
   });
 
+  /// Icono representativo según el tipo de acción, solo para la cabecera
+  /// — puramente cosmético, no afecta a la lógica de la sección.
+  IconData get _sectionIcon {
+    switch (title) {
+      case 'Acción Principal':
+        return Icons.sports_martial_arts;
+      case 'Acción Adicional':
+        return Icons.bolt;
+      case 'Reacción':
+        return Icons.shield_outlined;
+      default:
+        return Icons.flash_on;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (weaponEntries.isEmpty && abilityEntries.isEmpty) return const SizedBox.shrink();
@@ -869,24 +997,7 @@ class _TacticalSection extends StatelessWidget {
         children: [
           // Cabecera llamativa con el color de acento, como el encabezado
           // de una sección en un mapa de batalla.
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: accent.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(8),
-              border: Border(left: BorderSide(color: accent, width: 3)),
-            ),
-            child: Text(
-              title.toUpperCase(),
-              style: TextStyle(
-                color: accent,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.1,
-                fontFamily: 'serif',
-                fontSize: 13,
-              ),
-            ),
-          ),
+          _SectionHeader(title: title, icon: _sectionIcon, accent: accent),
           const SizedBox(height: 10),
           if (useSubcategories) ...[
             if (weaponEntries.isNotEmpty) ..._buildGroup(context, 'ARMAS', weaponEntries),
@@ -958,8 +1069,19 @@ class _TacticalSection extends StatelessWidget {
 
     return [
       Padding(
-        padding: const EdgeInsets.only(bottom: 6, left: 2),
-        child: Text(label.toUpperCase(), style: headerStyle),
+        padding: const EdgeInsets.only(bottom: 8, left: 2, top: 2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 5,
+              height: 5,
+              margin: const EdgeInsets.only(right: 6),
+              decoration: BoxDecoration(shape: BoxShape.circle, color: accent.withOpacity(0.7)),
+            ),
+            Text(label.toUpperCase(), style: headerStyle),
+          ],
+        ),
       ),
       ...entries.map(
         (entry) => Padding(
@@ -1030,29 +1152,23 @@ class _PassivesSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: accent.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(8),
-              border: Border(left: BorderSide(color: accent, width: 3)),
-            ),
-            child: Text(
-              'PASIVAS (SIEMPRE ACTIVAS)',
-              style: TextStyle(
-                color: accent,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.1,
-                fontFamily: 'serif',
-                fontSize: 13,
-              ),
-            ),
-          ),
+          _SectionHeader(title: 'Pasivas (siempre activas)', icon: Icons.shield_moon, accent: accent),
           const SizedBox(height: 10),
           for (final label in orderedLabels) ...[
             Padding(
-              padding: const EdgeInsets.only(bottom: 6, left: 2),
-              child: Text(label.toUpperCase(), style: groupHeaderStyle),
+              padding: const EdgeInsets.only(bottom: 8, left: 2, top: 2),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 5,
+                    height: 5,
+                    margin: const EdgeInsets.only(right: 6),
+                    decoration: BoxDecoration(shape: BoxShape.circle, color: accent.withOpacity(0.7)),
+                  ),
+                  Text(label.toUpperCase(), style: groupHeaderStyle),
+                ],
+              ),
             ),
             ...grouped[label]!.map(
               (entry) => Padding(
@@ -1077,7 +1193,17 @@ class _TacticalCard extends StatelessWidget {
   Widget _buildHeaderRow(BuildContext context) {
     return Row(
       children: [
-        Icon(entry.icon, color: accent, size: 20),
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: RadialGradient(
+              colors: [accent.withOpacity(0.28), accent.withOpacity(0.08)],
+            ),
+          ),
+          child: Icon(entry.icon, color: accent, size: 18),
+        ),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -1115,7 +1241,16 @@ class _TacticalCard extends StatelessWidget {
           const SizedBox(width: 8),
         ],
         if (entry.tappable)
-          Icon(Icons.casino_outlined, color: accent.withOpacity(0.6), size: 18),
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: accent.withOpacity(0.12),
+              border: Border.all(color: accent.withOpacity(0.35), width: 1),
+            ),
+            child: Icon(Icons.casino_outlined, color: accent.withOpacity(0.85), size: 15),
+          ),
       ],
     );
   }
@@ -1144,7 +1279,17 @@ class _TacticalCard extends StatelessWidget {
             collapsedIconColor: accent.withOpacity(0.6),
             title: Row(
               children: [
-                Icon(entry.icon, color: accent, size: 20),
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [accent.withOpacity(0.28), accent.withOpacity(0.08)],
+                    ),
+                  ),
+                  child: Icon(entry.icon, color: accent, size: 18),
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -1303,14 +1448,15 @@ class _AddAbilityButton extends StatelessWidget {
           builder: (_) => const _AddAbilitySheet(),
         ),
         child: Container(
-          width: 34,
-          height: 34,
+          width: 36,
+          height: 36,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: accent.withOpacity(0.15),
+            color: accent.withOpacity(0.16),
             border: Border.all(color: accent.withOpacity(0.5), width: 1),
+            boxShadow: [BoxShadow(color: accent.withOpacity(0.25), blurRadius: 8, offset: const Offset(0, 2))],
           ),
-          child: Icon(Icons.add, color: accent, size: 18),
+          child: Icon(Icons.add, color: accent, size: 19),
         ),
       ),
     );
@@ -1872,6 +2018,7 @@ class _ChargeBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.withOpacity(0.15),
         borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.35), width: 1),
       ),
       child: Text(
         '[$current/$max]',
@@ -1907,24 +2054,7 @@ class _SpellSlotsBar extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: accent.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(8),
-              border: Border(left: BorderSide(color: accent, width: 3)),
-            ),
-            child: Text(
-              'RANURAS DE MAGIA',
-              style: TextStyle(
-                color: accent,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.1,
-                fontFamily: 'serif',
-                fontSize: 13,
-              ),
-            ),
-          ),
+          _SectionHeader(title: 'Ranuras de Magia', icon: Icons.auto_awesome, accent: accent),
           const SizedBox(height: 10),
           // Hotfix (Objetivo 1): el SizedBox(height: 88) fijo + scroll
           // horizontal podía desbordar verticalmente si un nivel tenía
@@ -2003,7 +2133,12 @@ class _SlotPip extends StatelessWidget {
           height: 15,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: filled ? accent.withOpacity(0.85) : Colors.white.withOpacity(0.06),
+            gradient: filled
+                ? RadialGradient(
+                    colors: [accent, accent.withOpacity(0.75)],
+                  )
+                : null,
+            color: filled ? null : Colors.white.withOpacity(0.06),
             border: Border.all(color: filled ? accent : context.appColors.border, width: 1),
             boxShadow: filled
                 ? [BoxShadow(color: accent.withOpacity(0.5), blurRadius: 8, spreadRadius: -1)]

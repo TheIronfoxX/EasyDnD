@@ -1,0 +1,456 @@
+{
+  "basic_info": {
+    "name": "Mo",
+    "race": "Dracónido",
+    "characterClass": "Monje 6",
+    "hp_max": 62,
+    "ac": 19,
+    "speed": 45,
+    "spell_save_dc": 0
+  },
+  "purse": {
+    "gold": 0,
+    "silver": 0,
+    "copper": 0
+  },
+  "ai_tips": "Mo es una controladora cuerpo a cuerpo pura basada en golpes desarmados. Su plan de turno ideal: Ataque (2 golpes por Ataque Adicional) + Ráfaga de Golpes como acción adicional (gastando 1 Ki) para sumar 2 golpes más, buscando repartir 4 impactos por turno. Con Golpe Aturdidor puede intentar anular a un enemigo peligroso gastando 1 Ki tras impactar. Guarda 2 puntos de Ki para activar Técnica del Dedo Fantasma si necesita alcance extra o rodear coberturas. Fuera de combate, Dedeo del Placer permite curación de emergencia barata. Arma de Aliento es un buen recurso de área una vez por descanso si hay varios enemigos agrupados.",
+  "user_tactics": "",
+  "adventure_notes": "",
+  "resources": [
+    {
+      "name": "Ki",
+      "current": 6,
+      "max": 6
+    }
+  ],
+  "inventory": {
+    "weapons": [
+      {
+        "id": "weapon-punos-de-mo",
+        "name": "Puños de Mo (Golpe Desarmado)",
+        "attack_bonus": 8,
+        "damage": {
+          "base_dice": "1d6+5",
+          "base_type": "contundente"
+        },
+        "conditional_damage": [],
+        "properties": [
+          "Desarmado",
+          "Arma de monje"
+        ],
+        "homebrew_effect": "Gracias a su técnica del Camino del Dedeo, narrativamente sus golpes se reducen a un único dedo: puede romper puertas, mesas, rocas o cráneos con un simple toque, aunque mecánicamente sigue siendo un golpe desarmado normal.",
+        "magic_charges": {
+          "has_charges": false,
+          "max": 0,
+          "current": 0
+        },
+        "success_description": "El golpe conecta con precisión quirúrgica.",
+        "failure_description": "El golpe pasa rozando sin causar daño.",
+        "lore_description": "Tras años de entrenamiento silencioso, Mo perfeccionó una única técnica hasta el extremo: golpear con un solo dedo. No lleva arma alguna porque no la necesita.",
+        "tactical_summary": "Tiras un d20 y sumas +8; le dices el resultado al máster y él te dice si le has dado | Daño: 1d6+5 Contundente",
+        "is_unique": false
+      }
+    ],
+    "mundane_items": []
+  },
+  "stats": {
+    "str": {
+      "name": "Fuerza",
+      "value": 20,
+      "mod": 5,
+      "description": "Mide la potencia física y capacidades deportivas."
+    },
+    "dex": {
+      "name": "Destreza",
+      "value": 20,
+      "mod": 5,
+      "description": "Mide la agilidad y los reflejos."
+    },
+    "con": {
+      "name": "Constitución",
+      "value": 17,
+      "mod": 3,
+      "description": "Mide la resistencia y la salud."
+    },
+    "int": {
+      "name": "Inteligencia",
+      "value": 10,
+      "mod": 0,
+      "description": "Mide el razonamiento y la memoria."
+    },
+    "wis": {
+      "name": "Sabiduría",
+      "value": 18,
+      "mod": 4,
+      "description": "Mide la perspicacia e intuición."
+    },
+    "cha": {
+      "name": "Carisma",
+      "value": 19,
+      "mod": 4,
+      "description": "Mide la fuerza de personalidad y la presencia."
+    }
+  },
+  "spell_slots": [],
+  "skills": [
+    {
+      "name": "Acrobacias",
+      "related_stat": "dex",
+      "modifier": 8
+    },
+    {
+      "name": "Arcanos",
+      "related_stat": "int",
+      "modifier": 0
+    },
+    {
+      "name": "Atletismo",
+      "related_stat": "str",
+      "modifier": 5
+    },
+    {
+      "name": "Engañar",
+      "related_stat": "cha",
+      "modifier": 4
+    },
+    {
+      "name": "Historia",
+      "related_stat": "int",
+      "modifier": 3
+    },
+    {
+      "name": "Interpretación",
+      "related_stat": "cha",
+      "modifier": 4
+    },
+    {
+      "name": "Intimidar",
+      "related_stat": "cha",
+      "modifier": 4
+    },
+    {
+      "name": "Investigación",
+      "related_stat": "int",
+      "modifier": 0
+    },
+    {
+      "name": "Juego de Manos",
+      "related_stat": "dex",
+      "modifier": 5
+    },
+    {
+      "name": "Medicina",
+      "related_stat": "wis",
+      "modifier": 4
+    },
+    {
+      "name": "Naturaleza",
+      "related_stat": "int",
+      "modifier": 0
+    },
+    {
+      "name": "Percepción",
+      "related_stat": "wis",
+      "modifier": 4
+    },
+    {
+      "name": "Perspicacia",
+      "related_stat": "wis",
+      "modifier": 7
+    },
+    {
+      "name": "Persuasión",
+      "related_stat": "cha",
+      "modifier": 4
+    },
+    {
+      "name": "Religión",
+      "related_stat": "int",
+      "modifier": 0
+    },
+    {
+      "name": "Sigilo",
+      "related_stat": "dex",
+      "modifier": 8
+    },
+    {
+      "name": "Supervivencia",
+      "related_stat": "wis",
+      "modifier": 4
+    },
+    {
+      "name": "Trato con Animales",
+      "related_stat": "wis",
+      "modifier": 4
+    }
+  ],
+  "abilities_by_action": {
+    "action": [
+      {
+        "id": "ability-golpe-desarmado",
+        "name": "Golpe Desarmado",
+        "type": "attack",
+        "related_stat": "dex",
+        "attack_type": "attack",
+        "success_description": "El puño de Mo impacta limpiamente.",
+        "failure_description": "El golpe no llega a conectar.",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "1d6+5",
+        "scaling_formula": "",
+        "lore_description": "El ataque básico de Mo: un golpe con la mano o el pie desnudos, perfeccionado a través de años de disciplina marcial. El dado de daño desarmado crece a medida que sube de nivel de monje.",
+        "tactical_summary": "Tiras un d20 y sumas +8; le dices el resultado al máster y él te dice si le has dado | Daño: 1d6+5 Contundente | Gasta: Acción"
+      },
+      {
+        "id": "ability-arma-de-aliento",
+        "name": "Arma de Aliento",
+        "type": "racial_trait",
+        "related_stat": "con",
+        "attack_type": "save",
+        "success_description": "Los enemigos alcanzados por el aliento de fuego reciben la mitad del daño.",
+        "failure_description": "Los enemigos alcanzados reciben todo el daño de la exhalación.",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "3d6",
+        "scaling_formula": "",
+        "lore_description": "Mo exhala una ráfaga de fuego heredada de su ascendencia dracónica, abrasando a todos los que estén en el área. Este daño ha ido creciendo con sus niveles de personaje y volverá a subir en niveles posteriores. Solo puede usarlo de nuevo tras un descanso corto o largo.",
+        "tactical_summary": "Los enemigos en el área tiran un d20; si superan tu CD (14) reciben solo la mitad del daño, si no la superan reciben todo el daño | Daño: 3d6 Fuego | Gasta: Acción. Requiere descanso corto o largo para volver a usarse."
+      },
+      {
+        "id": "ability-golpe-aturdidor",
+        "name": "Golpe Aturdidor",
+        "type": "class_feature",
+        "related_stat": "con",
+        "attack_type": "save",
+        "success_description": "El enemigo resiste la interferencia en su flujo de ki y actúa con normalidad.",
+        "failure_description": "El flujo de ki del enemigo queda bloqueado y se tambalea, aturdido.",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Justo después de golpear a un enemigo con un ataque cuerpo a cuerpo, Mo puede interferir en su flujo interno de energía. No es un ataque en sí mismo, sino un efecto extra sobre un golpe que ya ha conectado.",
+        "tactical_summary": "No gasta una acción aparte: se activa nada más golpear con un ataque cuerpo a cuerpo, gastando 1 punto de Ki. El enemigo tira un d20; si no supera tu CD (15), queda aturdido hasta el final de tu siguiente turno | Gasta: 1 punto de Ki (sin acción adicional, se dispara tras impactar)."
+      },
+      {
+        "id": "ability-tecnica-dedo-fantasma",
+        "name": "Técnica del Dedo Fantasma",
+        "type": "class_feature",
+        "related_stat": "",
+        "attack_type": "none",
+        "success_description": "El dedo espiritual de Mo se extiende, listo para golpear desde más lejos.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Mo canaliza su ki a través de un único dedo, que parece extenderse mágicamente frente al enemigo. Durante el efecto puede golpear desde más lejos, ignorar coberturas parciales y alcanzar objetivos detrás de esquinas.",
+        "tactical_summary": "No tienes que tirar nada ni gastar tu acción para activarlo: gastando 2 puntos de Ki, durante 1 minuto tu alcance desarmado aumenta 10 pies, ignoras media cobertura y puedes golpear rodeando esquinas | Gasta: 2 puntos de Ki (el texto no especifica coste de acción)."
+      },
+      {
+        "id": "ability-dedeo-del-placer",
+        "name": "Dedeo del Placer",
+        "type": "class_feature",
+        "related_stat": "",
+        "attack_type": "none",
+        "success_description": "El toque de Mo cierra las heridas del objetivo.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "1d6",
+        "scaling_formula": "",
+        "lore_description": "Con un simple toque de su dedo, Mo puede transmitir energía curativa a una criatura, incluida ella misma. Es un pequeño alivio rápido, no una curación masiva.",
+        "tactical_summary": "No tienes que tirar nada ni gastar tu acción para activarlo: con solo tocar a una criatura (o a sí misma) y gastar 1 punto de Ki | Curación: 1d6 | Gasta: 1 punto de Ki (el texto no especifica coste de acción)."
+      }
+    ],
+    "bonus_action": [
+      {
+        "id": "ability-defensa-paciente",
+        "name": "Defensa Paciente",
+        "type": "class_feature",
+        "related_stat": "",
+        "attack_type": "none",
+        "success_description": "Mo se vuelve mucho más difícil de golpear durante el turno.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Gastando ki, Mo puede esquivar con una agilidad casi sobrenatural, dedicando el turno a evitar golpes en lugar de atacar.",
+        "tactical_summary": "No tienes que tirar nada, Mo esquiva automáticamente este turno, haciendo más difícil que los enemigos le den | Gasta: Acción adicional + 1 punto de Ki"
+      },
+      {
+        "id": "ability-paso-del-viento",
+        "name": "Paso del Viento",
+        "type": "class_feature",
+        "related_stat": "",
+        "attack_type": "none",
+        "success_description": "Mo se mueve con una velocidad sobrenatural.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Gastando ki, Mo puede retirarse del combate o esprintar a gran velocidad, además de saltar el doble de lejos ese turno.",
+        "tactical_summary": "No tienes que tirar nada, te retiras o corres a máxima velocidad y tu distancia de salto se dobla este turno | Gasta: Acción adicional + 1 punto de Ki"
+      },
+      {
+        "id": "ability-rafaga-de-golpes",
+        "name": "Ráfaga de Golpes",
+        "type": "class_feature",
+        "related_stat": "dex",
+        "attack_type": "attack",
+        "success_description": "Ambos golpes desarmados adicionales conectan.",
+        "failure_description": "Los golpes adicionales fallan.",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "1d6+5",
+        "scaling_formula": "",
+        "lore_description": "Justo después de atacar, Mo puede desatar dos golpes desarmados adicionales, encadenando su ataque principal con una ráfaga extra de puñetazos.",
+        "tactical_summary": "Tiras un d20 y sumas +8 por cada uno de los dos golpes; le dices el resultado al máster y él te dice si le has dado a cada uno | Daño: 1d6+5 Contundente (por golpe) | Gasta: Acción adicional + 1 punto de Ki"
+      },
+      {
+        "id": "ability-dedazo-de-la-verguenza",
+        "name": "Dedazo de la Vergüenza",
+        "type": "class_feature",
+        "related_stat": "dex",
+        "attack_type": "attack",
+        "success_description": "El golpe conecta y además humilla al objetivo frente a los demás.",
+        "failure_description": "El golpe falla y no hay efecto adicional.",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "1d6+5",
+        "scaling_formula": "",
+        "lore_description": "En vez de uno de los golpes de su Ráfaga de Golpes, Mo puede señalar el punto débil del orgullo de un enemigo. Además del golpe físico normal, el objetivo puede quedar tan avergonzado que se bloquea momentáneamente.",
+        "tactical_summary": "Tiras un d20 y sumas +8; le dices el resultado al máster y él te dice si le has dado | Daño: 1d6+5 Contundente. Además, si impactas, el enemigo tira un d20 y si no supera tu CD (15) queda incapaz de hacer Reacciones y con desventaja en Carisma hasta el final de su siguiente turno | Gasta: Sustituye uno de los golpes de Ráfaga de Golpes (mismo coste: Acción adicional + 1 punto de Ki)"
+      }
+    ],
+    "reaction": [
+      {
+        "id": "ability-caida-lenta",
+        "name": "Caída Lenta",
+        "type": "class_feature",
+        "related_stat": "",
+        "attack_type": "none",
+        "success_description": "Mo amortigua la caída reduciendo el daño recibido.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Mo puede usar su reacción cuando está a punto de sufrir daño por una caída, moderando el impacto gracias a su control corporal.",
+        "tactical_summary": "No tienes que tirar nada, el daño que recibirías por la caída se reduce en una cantidad fija ligada a tu nivel de monje | Gasta: Reacción"
+      },
+      {
+        "id": "ability-desviar-proyectiles",
+        "name": "Desviar Proyectiles",
+        "type": "class_feature",
+        "related_stat": "",
+        "attack_type": "none",
+        "success_description": "Mo reduce el daño del proyectil y, si lo anula por completo, puede atraparlo.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Cuando un ataque a distancia impacta a Mo, puede desviarlo o atraparlo en el aire. Si logra anular el daño por completo y tiene una mano libre, puede gastar ki para devolver el proyectil contra otro objetivo.",
+        "tactical_summary": "No tienes que tirar nada, el daño del proyectil se reduce automáticamente; si queda en 0, puedes atrapar el proyectil y gastar 1 punto de Ki para lanzarlo de vuelta como un ataque | Gasta: Reacción (+1 punto de Ki si decides devolver el proyectil)"
+      },
+      {
+        "id": "ability-dedeo-nervioso",
+        "name": "Dedeo Nervioso",
+        "type": "class_feature",
+        "related_stat": "con",
+        "attack_type": "save",
+        "success_description": "El enemigo resiste el toque y mantiene su velocidad y reacciones con normalidad.",
+        "failure_description": "El enemigo queda ralentizado y sin poder reaccionar hasta su siguiente turno.",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Cuando un enemigo falla un ataque contra Mo, ella puede darle un pequeño toque con su dedo, alterando su equilibrio interno de energía.",
+        "tactical_summary": "El enemigo tira un d20; si no supera tu CD (15), su velocidad se reduce y no puede hacer Reacciones hasta el final de su siguiente turno | Gasta: Reacción + 1 punto de Ki"
+      }
+    ],
+    "passive": [
+      {
+        "id": "ability-resistencia-al-fuego",
+        "name": "Resistencia al Daño (Fuego)",
+        "type": "racial_trait",
+        "lore_description": "Como dracónida de ascendencia ígnea, Mo soporta mucho mejor las llamas que la mayoría de las criaturas.",
+        "tactical_summary": "Cuando recibas daño de fuego, dile al máster que tienes resistencia: el daño se reduce a la mitad.",
+        "tactical_role": "Defensivo"
+      },
+      {
+        "id": "ability-artes-marciales",
+        "name": "Artes Marciales",
+        "type": "class_feature",
+        "lore_description": "Mo domina un estilo de combate cuerpo a cuerpo que combina golpes desarmados y armas ligeras, permitiéndole pelear con una agilidad y precisión superiores a las de un guerrero convencional.",
+        "tactical_summary": "Puedes usar Destreza en lugar de Fuerza para golpear y hacer daño desarmada, y tu dado de daño desarmado ha aumentado a 1d6. Además, tras atacar puedes hacer un golpe desarmado extra como acción adicional (si no la has usado ya).",
+        "tactical_role": "Ofensivo"
+      },
+      {
+        "id": "ability-ataque-adicional",
+        "name": "Ataque Adicional",
+        "type": "class_feature",
+        "lore_description": "El entrenamiento de Mo le permite encadenar más de un golpe en el mismo turno.",
+        "tactical_summary": "Cuando ataques con tu acción, hazlo 2 veces en vez de 1.",
+        "tactical_role": "Ofensivo"
+      },
+      {
+        "id": "ability-defensa-sin-armadura",
+        "name": "Defensa sin Armadura",
+        "type": "class_feature",
+        "lore_description": "Al no llevar armadura ni escudo, el propio cuerpo entrenado de Mo actúa como su protección.",
+        "tactical_summary": "Mientras no lleves armadura ni escudo, tu Clase de Armadura ya incluye tus modificadores de Destreza y Sabiduría.",
+        "tactical_role": "Defensivo"
+      },
+      {
+        "id": "ability-movimiento-sin-armadura",
+        "name": "Movimiento sin Armadura",
+        "type": "class_feature",
+        "lore_description": "Sin el peso de una armadura, Mo se mueve con una agilidad notablemente mayor que la de otros combatientes.",
+        "tactical_summary": "Tu velocidad de movimiento ya incluye este bonus mientras no lleves armadura ni escudo (reflejado en tu campo de velocidad).",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-impactos-de-ki",
+        "name": "Impactos de Ki",
+        "type": "class_feature",
+        "lore_description": "La energía de ki que fluye por los golpes de Mo les da una naturaleza casi mágica.",
+        "tactical_summary": "Tus golpes desarmados cuentan como mágicos a la hora de superar resistencias o inmunidades de enemigos al daño no mágico.",
+        "tactical_role": "Ofensivo"
+      },
+      {
+        "id": "ability-ki-recurso",
+        "name": "Ki",
+        "type": "class_feature",
+        "lore_description": "El ki es la energía interna que Mo canaliza para alimentar sus técnicas especiales de combate y movimiento.",
+        "tactical_summary": "Tienes una reserva de puntos de Ki (ver el recurso 'Ki' en tu ficha) que gastas para activar tus técnicas especiales. Se recuperan al completar un descanso corto o largo.",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-dedo-demoledor",
+        "name": "Dedo Demoledor",
+        "type": "class_feature",
+        "lore_description": "Mo ha llevado su técnica hasta tal extremo que, narrativamente, todos sus golpes desarmados se reducen a un solo dedo, capaz de destrozar puertas, rocas o cráneos con un simple toque.",
+        "tactical_summary": "No cambia nada mecánicamente: sigue siendo un golpe desarmado normal, pero narrativamente puedes describirlo como un toque de un solo dedo con resultados devastadores.",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-dedo-acusador",
+        "name": "Dedo Acusador",
+        "type": "class_feature",
+        "lore_description": "Al golpear a un enemigo, Mo puede señalarlo con el dedo, marcándolo de forma que dude a la hora de atacar a nadie que no sea ella.",
+        "tactical_summary": "Cuando impactes con un Golpe Desarmado, puedes señalar al enemigo: hasta el inicio de tu siguiente turno tiene desventaja en su siguiente ataque contra cualquiera que no seas tú. Si en su lugar te ataca a ti, recibe daño psíquico igual a tu modificador de Sabiduría.",
+        "tactical_role": "Ofensivo"
+      }
+    ]
+  },
+  "lore_info": {
+    "backstory": "Mo apareció ante las Dragonas Livianas en unas ruinas antiguas, sentada en silencio frente a una gran estatua de piedra, absorta en meditación. No respondió a ninguna pregunta ni pronunció palabra alguna; simplemente se levantó, señaló un relieve oculto en la pared y lo presionó, activando un mecanismo que llevaba siglos sellado. Cuando el grupo continuó su viaje, Mo se levantó y comenzó a caminar tras ellas sin explicación. Con el tiempo, sus compañeras aprendieron a entender perfectamente cada uno de sus gestos, aunque para cualquier otra persona siga siendo un misterio casi total. Durante años entrenó una única técnica marcial hasta la perfección absoluta: mientras otros monjes dominaban cientos de movimientos, ella concentró todo su ki en sus dedos, convirtiendo el toque más simple en un arma devastadora o en un acto de curación. Su fe silenciosa y su calma casi inquebrantable la convirtieron en el ancla serena de un grupo famoso por el caos que dejaba a su paso allá donde iba.",
+    "personality_traits": "Observo durante mucho tiempo antes de actuar. Mantengo la calma incluso en las situaciones más caóticas.",
+    "ideals": "Equilibrio. Todo ocurre cuando debe ocurrir.",
+    "bonds": "No sé por qué sigo a las Dragonas Livianas... pero sé que ese es mi camino.",
+    "flaws": "Me cuesta expresar lo que siento con palabras."
+  }
+}

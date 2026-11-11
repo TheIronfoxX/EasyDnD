@@ -48,6 +48,13 @@ class WebSocketService extends ChangeNotifier with WidgetsBindingObserver {
   String? _lastHost;
   String? get lastHost => _lastHost;
 
+  /// Si es `true`, la conexión se hace en modo remoto: `wss://$host/ws`
+  /// (por ejemplo a través de un Tailscale Funnel), sin puerto explícito.
+  /// Si es `false` (por defecto), se conecta en modo LAN clásico:
+  /// `ws://$host:$_port`.
+  bool _remote = false;
+  bool get isRemote => _remote;
+
   String? _lastError;
   String? get lastError => _lastError;
 
@@ -120,12 +127,20 @@ class WebSocketService extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  /// Conecta a `ws://<host>:8080`. Si ya había una conexión previa, la
-  /// cierra primero. Guarda `host` para poder reintentar si la conexión
-  /// se cae más adelante.
-  Future<void> connect(String host) async {
+  /// Conecta al servidor. Si `remote` es `false` (por defecto), se
+  /// conecta en modo LAN a `ws://<host>:8080`, como hasta ahora (host
+  /// típicamente una IP local, ej. `192.168.1.34`). Si `remote` es
+  /// `true`, se conecta en modo remoto a `wss://<host>/ws`, sin puerto
+  /// explícito (pensado para un host publicado vía Tailscale Funnel,
+  /// ej. `portatilpedro-1.tail179c26.ts.net`).
+  ///
+  /// Si ya había una conexión previa, la cierra primero. Guarda `host`
+  /// y `remote` para poder reintentar si la conexión se cae más
+  /// adelante (ver `_scheduleReconnect` / `didChangeAppLifecycleState`).
+  Future<void> connect(String host, {bool remote = false}) async {
     _manuallyDisconnected = false;
     _lastHost = host;
+    _remote = remote;
     _reconnectAttempts = 0;
     await _ensurePlayerId();
     await _closeChannel();
@@ -140,7 +155,9 @@ class WebSocketService extends ChangeNotifier with WidgetsBindingObserver {
 
     try {
       final id = await _ensurePlayerId();
-      final uri = Uri.parse('ws://$host:$_port');
+      final uri = _remote
+          ? Uri.parse('wss://$host/ws')
+          : Uri.parse('ws://$host:$_port');
       final channel = WebSocketChannel.connect(uri);
       // `ready` completa cuando el handshake termina, o lanza si falla
       // (IP incorrecta, servidor no arrancado, fuera de la red, etc.).

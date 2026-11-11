@@ -394,16 +394,16 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                   child: TextButton(
                     onPressed: _goToPromptScreen,
                     style: TextButton.styleFrom(
-                      foregroundColor: Colors.white.withOpacity(0.45),
+                      foregroundColor: accent,
                       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                     ),
                     child: Text(
-                      'Ensamblaje Manual (Método antiguo)',
+                      'Importar JSON ya hecho',
                       style: GoogleFonts.inter(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
                         letterSpacing: 0.2,
-                        color: Colors.white.withOpacity(0.45),
+                        color: accent,
                       ),
                     ),
                   ),

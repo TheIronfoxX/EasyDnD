@@ -1,0 +1,437 @@
+{
+  "basic_info": {
+    "name": "Eggchan",
+    "race": "Humano",
+    "characterClass": "Bardo 6",
+    "hp_max": 58,
+    "ac": 14,
+    "speed": 30,
+    "spell_save_dc": 16
+  },
+  "purse": {
+    "gold": 0,
+    "silver": 0,
+    "copper": 0
+  },
+  "ai_tips": "Eggchan brilla en interacción social: Persuasión (+11) es su arma principal fuera de combate. En combate es de apoyo, no de línea de frente: usa Inspiración Bárdica y sus encantamientos homebrew para potenciar aliados o desestabilizar enemigos antes de arriesgarse con su Hozzz. Guarda 'Metáfora Literal' para momentos clave (inmovilizar a un enemigo peligroso o salvar a un aliado de una caída), ya que solo tiene 2 usos por descanso largo. Palabras Hirientes es su mejor reacción defensiva: úsala para arruinar un ataque crítico o una tirada de salvación enemiga clave.",
+  "user_tactics": "",
+  "adventure_notes": "",
+  "resources": [
+    {
+      "name": "Inspiración Bárdica",
+      "current": 5,
+      "max": 5
+    },
+    {
+      "name": "\"NO TEMÁIS... ¡Ah, perdón, que soy humano!\"",
+      "current": 1,
+      "max": 1
+    },
+    {
+      "name": "Metáfora Literal",
+      "current": 2,
+      "max": 2
+    }
+  ],
+  "inventory": {
+    "weapons": [
+      {
+        "id": "weapon-hozzz",
+        "name": "Hozzz",
+        "attack_bonus": 7,
+        "damage": {
+          "base_dice": "1d4+8",
+          "base_type": "cortante"
+        },
+        "conditional_damage": [],
+        "properties": [
+          "Ligera"
+        ],
+        "homebrew_effect": "Esta hoz duplica el modificador de Destreza al calcular el daño en vez de sumarlo una sola vez, por eso pega mucho más fuerte de lo normal para su tamaño.",
+        "magic_charges": {
+          "has_charges": false,
+          "max": 0,
+          "current": 0
+        },
+        "success_description": "La pequeña hoz encuentra un hueco en la guardia del enemigo y corta con más fuerza de la que parece posible.",
+        "failure_description": "El golpe se queda corto y la hoz solo roza el aire.",
+        "lore_description": "Un arma sencilla y algo absurda: dos hoces gemelas que costaron un capricho de cuatro diamantes a saber quién. Nadie sabe muy bien por qué existen, pero en manos de Eggchan cortan bastante mejor de lo que deberían.",
+        "tactical_summary": "Tiras un d20 y sumas +7; le dices el resultado al máster y él te dice si le has dado | Daño: 1d4+8 Cortante",
+        "is_unique": true
+      }
+    ],
+    "mundane_items": []
+  },
+  "stats": {
+    "str": {
+      "name": "Fuerza",
+      "value": 10,
+      "mod": 0,
+      "description": "Mide la potencia física y capacidades deportivas"
+    },
+    "dex": {
+      "name": "Destreza",
+      "value": 18,
+      "mod": 4,
+      "description": "Mide la agilidad y los reflejos"
+    },
+    "con": {
+      "name": "Constitución",
+      "value": 14,
+      "mod": 2,
+      "description": "Mide la resistencia y la salud"
+    },
+    "int": {
+      "name": "Inteligencia",
+      "value": 14,
+      "mod": 2,
+      "description": "Mide el razonamiento y la memoria"
+    },
+    "wis": {
+      "name": "Sabiduría",
+      "value": 12,
+      "mod": 1,
+      "description": "Mide la perspicacia e intuición."
+    },
+    "cha": {
+      "name": "Carisma",
+      "value": 20,
+      "mod": 5,
+      "description": "Mide la fuerza de personalidad y la presencia"
+    }
+  },
+  "spell_slots": [
+    {
+      "level": 1,
+      "max": 4,
+      "current": 4
+    },
+    {
+      "level": 2,
+      "max": 3,
+      "current": 3
+    },
+    {
+      "level": 3,
+      "max": 3,
+      "current": 3
+    }
+  ],
+  "skills": [
+    {
+      "name": "Acrobacias",
+      "related_stat": "dex",
+      "modifier": 5
+    },
+    {
+      "name": "Arcanos",
+      "related_stat": "int",
+      "modifier": 3
+    },
+    {
+      "name": "Atletismo",
+      "related_stat": "str",
+      "modifier": 1
+    },
+    {
+      "name": "Engañar",
+      "related_stat": "cha",
+      "modifier": 6
+    },
+    {
+      "name": "Historia",
+      "related_stat": "int",
+      "modifier": 3
+    },
+    {
+      "name": "Interpretación",
+      "related_stat": "cha",
+      "modifier": 6
+    },
+    {
+      "name": "Intimidar",
+      "related_stat": "cha",
+      "modifier": 8
+    },
+    {
+      "name": "Investigación",
+      "related_stat": "int",
+      "modifier": 5
+    },
+    {
+      "name": "Juego de Manos",
+      "related_stat": "dex",
+      "modifier": 5
+    },
+    {
+      "name": "Medicina",
+      "related_stat": "wis",
+      "modifier": 2
+    },
+    {
+      "name": "Naturaleza",
+      "related_stat": "int",
+      "modifier": 3
+    },
+    {
+      "name": "Percepción",
+      "related_stat": "wis",
+      "modifier": 7
+    },
+    {
+      "name": "Perspicacia",
+      "related_stat": "wis",
+      "modifier": 2
+    },
+    {
+      "name": "Persuasión",
+      "related_stat": "cha",
+      "modifier": 11
+    },
+    {
+      "name": "Religión",
+      "related_stat": "int",
+      "modifier": 3
+    },
+    {
+      "name": "Sigilo",
+      "related_stat": "dex",
+      "modifier": 5
+    },
+    {
+      "name": "Supervivencia",
+      "related_stat": "wis",
+      "modifier": 2
+    },
+    {
+      "name": "Trato con Animales",
+      "related_stat": "wis",
+      "modifier": 2
+    }
+  ],
+  "abilities_by_action": {
+    "action": [
+      {
+        "id": "ability-no-temais",
+        "name": "\"NO TEMÁIS... ¡Ah, perdón, que soy humano!\"",
+        "type": "trait",
+        "related_stat": "wis",
+        "attack_type": "save",
+        "success_description": "Todos aguantan el tipo pese al destello de ruedas doradas y el trueno en su voz.",
+        "failure_description": "Quien lo ve queda paralizado de miedo o de pura confusión hasta su próximo turno.",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Por un instante, Eggchan deja entrever su verdadera naturaleza celestial: ruedas doradas con ojos parpadean a su alrededor y su voz suena como un trueno. Es un farol brutal para un personaje que normalmente pasa por un humano despistado. Solo puede hacerlo una vez por descanso corto, así que conviene guardarlo para un momento de verdadero apuro.",
+        "tactical_summary": "Cada enemigo que pueda verte tira un d20; si no supera tu CD (13), queda asustado o completamente confundido hasta el final de tu siguiente turno. Gasta una acción completa."
+      },
+      {
+        "id": "ability-guino-cegador",
+        "name": "Guiño Cegador",
+        "type": "spell",
+        "related_stat": "cha",
+        "attack_type": "save",
+        "success_description": "El enemigo entrecierra los ojos pero se recupera enseguida del destello.",
+        "failure_description": "El enemigo queda medio encandilado por el brillo repentino del ojo gigante de Eggchan.",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Como su cabeza es literalmente un ojo enorme, no necesita antorcha: hace un guiño exagerado y su iris brilla como un faro de coche. Sirve para iluminar el camino del grupo, pero si se lo acerca demasiado a la cara de un enemigo, puede dejarlo momentáneamente deslumbrado.",
+        "tactical_summary": "Iluminas la zona a tu alrededor; si acercas el guiño a la cara de un enemigo, este tira un d20 y si no supera tu CD (16) queda medio encandilado. Gasta una acción completa."
+      },
+      {
+        "id": "ability-poema-verguenza-ajena",
+        "name": "Poema de Vergüenza Ajena",
+        "type": "spell",
+        "related_stat": "cha",
+        "attack_type": "none",
+        "success_description": "El universo entero parece incomodarse con la rima fallida y castiga físicamente al objetivo.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "1d4",
+        "scaling_formula": "",
+        "lore_description": "Intentas recitar un poema elegante, pero te trabas o metes una rima espantosa. El efecto es automático: no hay manera de esquivarlo, el objetivo simplemente sufre el golpe psíquico de la vergüenza ajena y queda tan descolocado que su próximo ataque sale peor de lo normal.",
+        "tactical_summary": "No tienes que tirar nada, el daño y el efecto ocurren automáticamente al recitar el poema | Daño: 1d4 Psíquico. Además, el objetivo tiene desventaja en su próximo ataque. Gasta una acción completa."
+      },
+      {
+        "id": "ability-contrahechizo",
+        "name": "Contrahechizo",
+        "type": "class_feature",
+        "related_stat": "cha",
+        "attack_type": "none",
+        "success_description": "La actuación de Eggchan protege a todo el grupo de la manipulación mental.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Empiezas una actuación (música o palabras) que dura hasta el final de tu siguiente turno. Mientras suena, tú y cualquier aliado que pueda oírte tenéis mucha más facilidad para resistiros a la magia que intenta asustaros o hechizaros. Se corta si te quedas sin poder actuar o si te callan.",
+        "tactical_summary": "No tienes que tirar nada: mientras dure la actuación, tú y los aliados a 9 metros que puedan oírte tenéis ventaja al resistir intentos de asustaros o hechizaros. Gasta una acción completa."
+      }
+    ],
+    "bonus_action": [
+      {
+        "id": "ability-inspiracion-bardica",
+        "name": "Inspiración de Bardo",
+        "type": "class_feature",
+        "related_stat": "cha",
+        "attack_type": "none",
+        "success_description": "El aliado inspirado añade el dado justo cuando más lo necesita.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Diriges unas palabras o música emotiva a un aliado a 18 metros. Ese aliado puede guardarse el impulso durante los siguientes diez minutos y usarlo justo cuando lo necesite, antes de saber si su tirada tuvo éxito o no.",
+        "tactical_summary": "No tienes que tirar nada: el aliado elegido guarda un dado que puede sumar a una tirada de ataque, prueba de característica o salvación en los próximos diez minutos | Bono: 1d8. Gasta una acción adicional y un uso de Inspiración Bárdica."
+      },
+      {
+        "id": "ability-pestaneo-de-animo",
+        "name": "Pestañeo de Ánimo",
+        "type": "spell",
+        "related_stat": "cha",
+        "attack_type": "none",
+        "success_description": "El aliado se siente extrañamente motivado por la mirada fija del ojo gigante.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "1d4",
+        "scaling_formula": "",
+        "lore_description": "Te quedas mirando fijamente a un aliado mientras las mini-alitas de tu cabeza aletean rapidísimo, como un ventilador diminuto. El aliado no sabe muy bien si se siente inspirado o simplemente incómodo, pero el subidón de confianza es real.",
+        "tactical_summary": "No tienes que tirar nada, el bono se aplica directo a la próxima prueba de habilidad del aliado | Bono: 1d4. Gasta una acción adicional."
+      },
+      {
+        "id": "ability-ojo-al-parche",
+        "name": "\"¡Ojo al parche!\"",
+        "type": "spell",
+        "related_stat": "cha",
+        "attack_type": "none",
+        "success_description": "El aliado se cura solo por la pura simpatía del despiste de Eggchan.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "1d4",
+        "scaling_formula": "",
+        "lore_description": "Gritas un consejo obvio en mitad del combate, tipo \"¡cuidado con esa espada que pincha!\" o \"¡recuerda respirar!\". Por alguna razón que ni Eggchan entiende, el aliado se cura con el gesto.",
+        "tactical_summary": "No tienes que tirar nada, el aliado a distancia se cura automáticamente | Curación: 1d4 + Mod. Gasta una acción adicional."
+      }
+    ],
+    "reaction": [
+      {
+        "id": "ability-palabras-hirientes",
+        "name": "Palabras Hirientes",
+        "type": "class_feature",
+        "related_stat": "cha",
+        "attack_type": "none",
+        "success_description": "El comentario mordaz de Eggchan hace tambalearse la confianza del enemigo justo a tiempo.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "lore_description": "Cuando ves a un enemigo cercano a punto de atacar, hacer una prueba o tirar daño, puedes soltarle un comentario que le distrae o le hace dudar de sí mismo, empeorando su resultado. No funciona si no puede oírte o si es inmune a ser hechizado.",
+        "tactical_summary": "No tienes que tirar nada: gastas un uso de Inspiración Bárdica y restas el resultado de ese dado al número que ha sacado el enemigo en su tirada de ataque, prueba o daño | Resta: 1d8. Se hace como reacción, sin gastar tu acción del turno."
+      }
+    ],
+    "passive": [
+      {
+        "id": "ability-aprendiz-de-todo",
+        "name": "Aprendiz de Todo",
+        "type": "class_feature",
+        "lore_description": "Eggchan es un manitas de todo un poco: aunque no sea un experto en algo concreto, siempre tiene una pequeña ventaja gracias a su formación variada de bardo.",
+        "tactical_summary": "Si haces una prueba de característica en la que normalmente no sumarías ningún bono de competencia, suma +1 igualmente.",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-cancion-de-descanso",
+        "name": "Canción de Descanso",
+        "type": "class_feature",
+        "lore_description": "Durante un descanso corto, Eggchan toca música o hace un recital relajante para ayudar a curar a sus compañeros heridos mientras se recuperan.",
+        "tactical_summary": "Si tú o un aliado que pueda oírte gasta dados de golpe al final de un descanso corto para curarse, recupera 1d6 puntos de golpe extra por cada dado gastado.",
+        "tactical_role": "Defensivo"
+      },
+      {
+        "id": "ability-fuente-de-inspiracion",
+        "name": "Fuente de Inspiración",
+        "type": "class_feature",
+        "lore_description": "Eggchan ya no depende solo de un descanso largo para recargar su capacidad de motivar a los demás.",
+        "tactical_summary": "Recuperas todos los usos gastados de Inspiración Bárdica al terminar un descanso corto, no solo uno largo.",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-lanzamiento-de-conjuros",
+        "name": "Lanzamiento de Conjuros",
+        "type": "class_feature",
+        "lore_description": "Eggchan ha aprendido a tejer la realidad y la música juntas para producir efectos mágicos, aunque de momento su repertorio concreto de conjuros está por definir.",
+        "tactical_summary": "Es la base que le permite tener espacios de conjuro y aprender hechizos de bardo.",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-pericia",
+        "name": "Pericia",
+        "type": "class_feature",
+        "lore_description": "Eggchan es especialmente bueno en Percepción y Persuasión, hasta el punto de que su entrenamiento en ellas vale el doble que en el resto de sus habilidades.",
+        "tactical_summary": "Tu bono de competencia se duplica en las pruebas de Percepción y Persuasión (ya incluido en sus modificadores de habilidad).",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-secretos-magicos-adicionales",
+        "name": "Secretos Mágicos Adicionales",
+        "type": "class_feature",
+        "lore_description": "A partir de nivel 6, Eggchan puede aprender un par de conjuros o trucos de cualquier otra clase, que pasan a formar parte de su repertorio de bardo sin ocupar hueco de los que ya conoce.",
+        "tactical_summary": "Amplía el repertorio de conjuros conocidos de Eggchan sin gastar espacios de sus conjuros habituales de bardo.",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-vision-periferica-extrema",
+        "name": "Visión Periférica Extrema (Los Mil Ojos)",
+        "type": "trait",
+        "lore_description": "Aunque ahora solo tiene un ojo en la cara, a veces se le abren \"ojos espirituales\" invisibles por el cuerpo, aunque a veces se distrae porque ha visto \"un mosquito precioso\" en algún lado.",
+        "tactical_summary": "Tienes ventaja en las pruebas de Percepción para evitar que te sorprendan.",
+        "tactical_role": "Defensivo"
+      },
+      {
+        "id": "ability-poesia-incomprendida",
+        "name": "Poesía Incomprendida",
+        "type": "trait",
+        "lore_description": "La mente de Eggchan opera en un plano poético tan elevado (o tan disperso) que los insultos y ataques mentales corrientes no le hacen mucha mella. Si alguien intenta leerle la mente, solo oirá estática y a Eggchan tarareando una canción sobre un panadero.",
+        "tactical_summary": "Tienes resistencia al daño psíquico (recibes la mitad) y ventaja en las tiradas de salvación para resistirte a quedar hechizado o asustado.",
+        "tactical_role": "Defensivo"
+      },
+      {
+        "id": "ability-rasgos-colegio-del-poeta",
+        "name": "Rasgos de Clase: Colegio del Poeta",
+        "type": "class_feature",
+        "lore_description": "Cuando Eggchan reparte Inspiración Bárdica, no suelta un poema heroico: suelta un haiku terrible o una rima sin sentido que descoloca al enemigo y motiva raramente al aliado a demostrar que él lo hace mejor.",
+        "tactical_summary": "Si un aliado usa tu dado de Inspiración Bárdica y consigue un éxito con él, el enemigo más cercano sufre daño psíquico igual al número que salió en ese dado, solo por intentar entender la rima de Eggchan.",
+        "tactical_role": "Ofensivo"
+      },
+      {
+        "id": "ability-metafora-literal",
+        "name": "Metáfora Literal",
+        "type": "trait",
+        "lore_description": "Eggchan se toma la poesía tan en serio que sus palabras alteran la física a su alrededor por pura confusión celestial. Puede decir \"tus pies son de plomo\" para que un enemigo sienta sus botas pesadísimas, o \"eres más ligero que el viento\" para que un aliado (o él mismo) flote y se mueva por el aire durante un turno.",
+        "tactical_summary": "No tienes que tirar nada: eliges el efecto (reducir la velocidad de un enemigo a 0, o hacer flotar hasta 3 metros de altura a un aliado o a ti mismo) y ocurre automáticamente durante ese turno. Solo 2 usos por descanso largo. Gasta una acción completa.",
+        "tactical_role": "Utilidad"
+      },
+      {
+        "id": "ability-director-de-las-tierras-lejanas",
+        "name": "Director de las Tierras Lejanas",
+        "type": "background_feature",
+        "lore_description": "Un resto de sus orígenes en las Tierras del Límite: Eggchan conserva la capacidad de levitar y flotar a voluntad, un rasgo de su trasfondo más que una habilidad de combate.",
+        "tactical_summary": "Puedes levitar y flotar cuando quieras, sin necesidad de tirar nada.",
+        "tactical_role": "Utilidad"
+      }
+    ]
+  },
+  "lore_info": {
+    "backstory": "Eggchan creció en las Tierras del Límite, un paraje donde la realidad se fragmenta en acantilados geométricos y horizontes imposibles. Su vida tranquila se rompió cuando un ejército de conquistadores llegó buscando \"purificar\" las anomalías del mundo, y él, un bardo aasimar con alas de merengue y halo de huevo frito, era una de ellas. Su mejor amigo Wemmbu, un guerrero de verdad, se sacrificó plantando cara al ejército en un puente para que Eggchan escapara, jurándole que se reencontrarían. Huyendo a ciegas, Eggchan atravesó por accidente una grieta en la realidad, vagó por un laberinto de pasillos amarillentos y acabó saliendo, sin comerlo ni beberlo, del baño de una cantina llena de neones y hombres de cuero, donde ahora busca a Wemmbu convencido de que le han preparado el festival de bienvenida más bonito de su vida.",
+    "personality_traits": "Eggchan es buena gente y amigable, bastante buen estratega aunque el combate no es lo suyo. Es un poco despistado y le gusta hacer reír a los demás.",
+    "ideals": "Cree que lo que hace es lo correcto y busca el bien para los demás, aunque suele ser maquiavélico en su proceder.",
+    "bonds": "Proviene de unas tierras muy lejanas que dejó atrás buscando a su amigo Wemmbu, a quien le debe no solo la vida, sino todo lo que tiene en este mundo.",
+    "flaws": "No es un guerrero, sino un poeta: su arma es la palabra y las ideas. Suele ser una persona algo patosa y con mala suerte."
+  }
+}
