@@ -22,9 +22,10 @@ void main() {
     await tester.pumpWidget(EasyDnDApp(store: store));
 
     expect(find.text('EasyDnD'), findsOneWidget);
-    expect(find.textContaining('Etapa 3/7'), findsOneWidget);
-    // El roster arranca vacío: sin ficha activa, sin botón de corrección.
+    expect(find.textContaining('Etapa 4/7'), findsOneWidget);
+    // El roster arranca vacío: sin ficha activa, sin botones de edición.
     expect(find.textContaining('Ficha activa'), findsNothing);
     expect(find.text('Importar ficha con IA'), findsOneWidget);
+    expect(find.text('Crear ficha a mano'), findsOneWidget);
   });
 }

@@ -12,6 +12,7 @@
 // HP, cargas, ranuras y condiciones en pleno combate y confía en que
 // el store notifique y persista después de cada cambio.
 
+import 'dart:convert';
 import 'dart:math';
 
 import '../../core/dnd_rules.dart';
@@ -84,6 +85,25 @@ class BasicInfo {
 
   /// Bonificador de competencia según nivel (ver DndRules).
   int get proficiencyBonus => DndRules.proficiencyBonusFor(level);
+
+  /// Cambia el máximo de PG manteniendo la coherencia del estado de
+  /// combate: la vida actual se recorta si queda por encima del nuevo
+  /// tope, pero nunca se "cura" sola al subirlo (eso lo hace el
+  /// jugador desde el HUD si le corresponde).
+  void setHpMax(int value) {
+    hpMax = value;
+    if (currentHp > value) currentHp = value;
+  }
+
+  /// Cambia el nivel manteniendo coherentes los dados de golpe: si el
+  /// total era exactamente el nivel viejo (el caso normal: un dado por
+  /// nivel), acompaña al nuevo; los gastados se recortan si quedan por
+  /// encima del total. Si el total era custom (homebrew), se respeta.
+  void setLevel(int value) {
+    if (hitDiceMax == level) hitDiceMax = value;
+    if (hitDiceCurrent > hitDiceMax) hitDiceCurrent = hitDiceMax;
+    level = value;
+  }
 
   factory BasicInfo.fromJson(Map<String, dynamic> json) {
     final hpMax = ((json['hp_max'] as num?) ?? 1).toInt();
@@ -536,6 +556,72 @@ class CharacterModel {
     final random = Random().nextInt(0x7FFFFFFF);
     return 'char_${timestamp}_$random';
   }
+
+  /// Cambia la velocidad base manteniendo coherente el movimiento del
+  /// turno en curso: si quedaba más movimiento que la nueva velocidad,
+  /// se recorta (nunca se "regala" movimiento al subirla a mitad de
+  /// turno).
+  void setSpeed(int value) {
+    basicInfo.speed = value;
+    if (turnStatus.movementRemaining > value) {
+      turnStatus.movementRemaining = value;
+    }
+  }
+
+  /// Copia profunda e INDEPENDIENTE de la ficha. La usa el editor
+  /// manual (Etapa 4): edita una copia y recién al confirmar la
+  /// commitea al roster, así cerrar el editor a mitad de cambios no
+  /// corrompe la ficha guardada.
+  ///
+  /// Va por roundtrip JSON a propósito: pasa por la MISMA
+  /// deserialización que el guardado/carga, así la copia queda
+  /// normalizada exactamente igual que la ficha que va a reemplazar
+  /// (mismos fallbacks, mismo orden de claves).
+  CharacterModel copy() => CharacterModel.fromJson(
+        (jsonDecode(jsonEncode(toJson())) as Map).cast<String, dynamic>(),
+      );
+
+  /// Ficha en blanco para el alta manual (Etapa 4): lo mínimo jugable
+  /// — PG 10, CA 10, velocidad humana, atributos 10/+0, todo lo demás
+  /// vacío — con nombre placeholder. Pasa la validación sin ningún
+  /// aviso (ver test): es una ficha "válida pero por llenar".
+  factory CharacterModel.blank() => CharacterModel(
+        basicInfo: BasicInfo(
+          name: 'Aventurero sin nombre',
+          race: '',
+          characterClass: '',
+          hpMax: 10,
+          currentHp: 10,
+          ac: 10,
+        ),
+        inventory: Inventory(weapons: [], mundaneItems: []),
+        abilitiesByAction: AbilitiesByAction(
+          action: [],
+          bonusAction: [],
+          reaction: [],
+          passive: [],
+        ),
+        stats: StatsBlock(
+          str: _blankScore('Fuerza'),
+          dex: _blankScore('Destreza'),
+          con: _blankScore('Constitución'),
+          intelligence: _blankScore('Inteligencia'),
+          wis: _blankScore('Sabiduría'),
+          cha: _blankScore('Carisma'),
+        ),
+        spellSlots: SpellSlots(slots: []),
+        skills: [],
+        loreInfo: LoreInfo(
+          backstory: '',
+          personalityTraits: '',
+          ideals: '',
+          bonds: '',
+          flaws: '',
+        ),
+      );
+
+  static AbilityScore _blankScore(String name) =>
+      AbilityScore(name: name, value: 10, mod: 0, description: '');
 
   factory CharacterModel.fromJson(Map<String, dynamic> json) {
     final rawSkills = (json['skills'] as List<dynamic>?) ?? [];

@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../state/character_store.dart';
+import '../features/editor/character_editor_screen.dart';
 import '../features/import/import_wizard_screen.dart';
 
 /// Pantalla provisoria de las etapas 1-4 del rework.
 ///
 /// Existe para que la app compile, corra y los tests de humo tengan algo
 /// que verificar mientras se construyen las capas siguientes. Desde la
-/// Etapa 3 también da entrada manual al wizard de importación (para
-/// probarlo en dispositivo sin esperar el HUD).
+/// Etapa 3 da entrada al wizard de importación y desde la 4 al editor
+/// manual (para probarlos en dispositivo sin esperar el HUD).
 ///
 /// La reemplaza la StartupGate en la Etapa 5 (HUD); borrar este archivo
 /// es parte del checklist de esa etapa.
@@ -32,7 +33,7 @@ class PlaceholderHome extends StatelessWidget {
               Text('EasyDnD', style: theme.textTheme.displaySmall),
               const SizedBox(height: 8),
               Text(
-                'Rework en curso · Etapa 3/7 — importación IA',
+                'Rework en curso · Etapa 4/7 — editor manual',
                 style: theme.textTheme.bodyMedium,
               ),
               if (active != null) ...[
@@ -53,22 +54,43 @@ class PlaceholderHome extends StatelessWidget {
                 icon: const Icon(Icons.auto_awesome_rounded),
                 label: const Text('Importar ficha con IA'),
               ),
-              if (active != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: OutlinedButton.icon(
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => ImportWizardScreen(
-                          replaceIndex: store.activeIndex,
-                        ),
-                      ),
-                    ),
-                    icon: const Icon(Icons.published_with_changes_rounded),
-                    label: Text(
-                        'Corregir a ${active.basicInfo.name} con IA'),
+              const SizedBox(height: 8),
+              FilledButton.tonalIcon(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const CharacterEditorScreen(),
                   ),
                 ),
+                icon: const Icon(Icons.person_add_rounded),
+                label: const Text('Crear ficha a mano'),
+              ),
+              if (active != null) ...[
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => CharacterEditorScreen(
+                        character: active,
+                      ),
+                    ),
+                  ),
+                  icon: const Icon(Icons.edit_rounded),
+                  label: Text('Editar a ${active.basicInfo.name} a mano'),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => ImportWizardScreen(
+                        replaceIndex: store.activeIndex,
+                      ),
+                    ),
+                  ),
+                  icon: const Icon(Icons.published_with_changes_rounded),
+                  label: Text(
+                      'Corregir a ${active.basicInfo.name} con IA'),
+                ),
+              ],
             ],
           ),
         ),
