@@ -117,6 +117,25 @@ void main() {
       expect(store.roster, hasLength(1));
       expect(store.activeCharacter!.basicInfo.name, 'Corregido');
     });
+
+    test('replaceCharacter (modelo directo, la vía del wizard) sustituye; índice vencido añade',
+        () async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'a', name: 'Original'));
+
+      // El wizard valida en la vista previa y commitea el modelo ya
+      // construido: mismo resultado que la variante texto.
+      store.replaceCharacter(0, buildCharacter(id: 'b', name: 'Nuevo'));
+      expect(store.roster, hasLength(1));
+      expect(store.activeCharacter!.basicInfo.name, 'Nuevo');
+      expect(store.activeIndex, 0);
+
+      // Índice fuera de rango (el roster cambió con el wizard abierto):
+      // añade al final en vez de fallar en silencio.
+      store.replaceCharacter(9, buildCharacter(id: 'c', name: 'Extra'));
+      expect(store.roster, hasLength(2));
+      expect(store.activeCharacter!.basicInfo.name, 'Extra');
+    });
   });
 
   group('vida y dados de golpe', () {
