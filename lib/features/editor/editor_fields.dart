@@ -14,6 +14,18 @@ import 'package:flutter/services.dart';
 
 import '../../core/dice.dart';
 
+/// Labels en español de los seis atributos, indexados por la clave del
+/// shape. Lo comparten las secciones que muestran o preguntan por un
+/// stat relacionado (atributos, competencias, habilidades).
+const Map<String, String> kStatLabels = {
+  'str': 'Fuerza',
+  'dex': 'Destreza',
+  'con': 'Constitución',
+  'int': 'Inteligencia',
+  'wis': 'Sabiduría',
+  'cha': 'Carisma',
+};
+
 /// Campo de texto simple (nombre, raza, descripciones...).
 class EditorTextField extends StatelessWidget {
   const EditorTextField({
@@ -77,6 +89,7 @@ class EditorIntField extends StatelessWidget {
     this.hint,
     this.allowEmpty = false,
     this.allowNegative = false,
+    this.validator,
   });
 
   final String label;
@@ -94,6 +107,12 @@ class EditorIntField extends StatelessWidget {
   /// True = acepta un "-" (mods. negativos, bonos de ataque...).
   final bool allowNegative;
 
+  /// Validación que corre al confirmar el Form contenedor (la usan
+  /// los diálogos de ítem, ej. ranuras: disponibles no puede superar
+  /// el máximo). Las páginas sueltas no la necesitan: el validador
+  /// del guardado es su red de seguridad.
+  final FormFieldValidator<String>? validator;
+
   final String? hint;
 
   @override
@@ -106,6 +125,7 @@ class EditorIntField extends StatelessWidget {
           RegExp(allowNegative ? r'^-?\d*$' : r'^\d*$'),
         ),
       ],
+      validator: validator,
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
@@ -195,6 +215,8 @@ class EditorSectionScaffold extends StatelessWidget {
     required this.title,
     required this.children,
     this.help,
+    this.onAdd,
+    this.addLabel,
   });
 
   final String title;
@@ -205,14 +227,29 @@ class EditorSectionScaffold extends StatelessWidget {
 
   final List<Widget> children;
 
+  /// Si no es null, la sección muestra un FAB extended para agregar
+  /// ítems (competencias, ranuras, recursos, armas...).
+  final VoidCallback? onAdd;
+
+  /// Qué agrega el FAB (cada sección lo dice con sus palabras).
+  final String? addLabel;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: Text(title)),
+      floatingActionButton: onAdd == null
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: onAdd,
+              icon: const Icon(Icons.add_rounded),
+              label: Text(addLabel ?? 'Agregar'),
+            ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          // Con FAB el último ítem necesita lugar para no quedar tapado.
+          padding: EdgeInsets.fromLTRB(16, 16, 16, onAdd == null ? 32 : 96),
           children: [
             if (help != null) ...[
               Text(
@@ -229,6 +266,29 @@ class EditorSectionScaffold extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Estado vacío de las secciones de lista: una línea gris que explica
+/// que todavía no hay nada, sin botones (el FAB ya es el llamado a
+/// acción).
+class EditorEmptyHint extends StatelessWidget {
+  const EditorEmptyHint(this.text, {super.key});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.outline,
+            ),
       ),
     );
   }

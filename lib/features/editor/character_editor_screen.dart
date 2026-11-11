@@ -27,6 +27,9 @@ import '../../domain/character_validator.dart';
 import '../../domain/models/character.dart';
 import '../../state/character_store.dart';
 import 'editor_section_basic_info.dart';
+import 'editor_section_skills.dart';
+import 'editor_section_slots.dart';
+import 'editor_section_stats.dart';
 
 class CharacterEditorScreen extends StatefulWidget {
   const CharacterEditorScreen({super.key, this.character});
@@ -70,7 +73,24 @@ class _CharacterEditorScreenState extends State<CharacterEditorScreen> {
       subtitle: _basicInfoSubtitle,
       page: (draft) => EditorSectionBasicInfo(draft: draft),
     ),
-    // 4b: atributos, competencias y ranuras.
+    _SectionSpec(
+      icon: Icons.fitness_center_rounded,
+      title: 'Atributos',
+      subtitle: _statsSubtitle,
+      page: (draft) => EditorSectionStats(draft: draft),
+    ),
+    _SectionSpec(
+      icon: Icons.workspace_premium_rounded,
+      title: 'Competencias',
+      subtitle: _skillsSubtitle,
+      page: (draft) => EditorSectionSkills(draft: draft),
+    ),
+    _SectionSpec(
+      icon: Icons.layers_rounded,
+      title: 'Ranuras de conjuro',
+      subtitle: _slotsSubtitle,
+      page: (draft) => EditorSectionSlots(draft: draft),
+    ),
     // 4c: habilidades por economía de acciones.
     // 4d: recursos, inventario, lore y compañeros.
   ];
@@ -80,6 +100,30 @@ class _CharacterEditorScreenState extends State<CharacterEditorScreen> {
     final clase =
         basic.characterClass.isEmpty ? 'sin clase' : basic.characterClass;
     return 'Nivel ${basic.level} · ${basic.hpMax} PG · CA ${basic.ac} · $clase';
+  }
+
+  /// "STR 16 · DEX 12 · ..." — las siglas del shape tal cual las lee
+  /// la gente de D&D; los valores sin mods para que quepa en un tile.
+  static String _statsSubtitle(CharacterModel draft) {
+    const keys = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'];
+    final scores = draft.stats.asList;
+    return [
+      for (var i = 0; i < keys.length; i++) '${keys[i]} ${scores[i].value}',
+    ].join(' · ');
+  }
+
+  static String _skillsSubtitle(CharacterModel draft) {
+    final count = draft.skills.length;
+    if (count == 0) return 'sin competencias';
+    return count == 1 ? '1 competencia' : '$count competencias';
+  }
+
+  static String _slotsSubtitle(CharacterModel draft) {
+    final slots = draft.spellSlots.slots;
+    if (slots.isEmpty) return 'no lanza conjuros';
+    return [
+      for (final slot in slots) '${slot.max} de nivel ${slot.level}',
+    ].join(' · ');
   }
 
   @override
