@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/theme/app_theme.dart';
+import '../features/hud/startup_gate.dart';
 import '../state/character_store.dart';
-import 'placeholder_home.dart';
 
 /// Raíz del árbol de widgets de EasyDnD.
 ///
@@ -13,10 +13,12 @@ import 'placeholder_home.dart';
 /// sola vez, antes de pintar, y así las pantallas que lo miran con
 /// context.watch se re-renderizan cuando el roster cambia.
 ///
-/// Las etapas siguientes agregan acá:
-///   - Etapa 5: la StartupGate que decide entre onboarding y HUD según
-///     si el roster migrado tiene fichas (y borra PlaceholderHome).
-///   - Etapa 6: el SkinController y el sistema de tokens de diseño.
+/// Desde la Etapa 5 el home es la StartupGate: decide entre bienvenida
+/// (roster vacío) y HUD de combate (con fichas), y el estado "cargando"
+/// para cuando el store todavía no terminó init().
+///
+/// La Etapa 6 agrega acá el SkinController y el sistema de tokens de
+/// diseño.
 class EasyDnDApp extends StatelessWidget {
   const EasyDnDApp({super.key, required this.store});
 
@@ -34,7 +36,7 @@ class EasyDnDApp extends StatelessWidget {
         // La app siempre arrancó en oscuro: lo dejamos explícito hasta que
         // exista la preferencia persistida de tema (Etapa 6).
         themeMode: ThemeMode.dark,
-        home: const PlaceholderHome(),
+        home: const StartupGate(),
       ),
     );
   }
