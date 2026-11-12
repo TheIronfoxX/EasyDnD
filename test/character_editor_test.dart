@@ -1166,4 +1166,154 @@ void main() {
       expect(companion.hasHp, isTrue);
     });
   });
+
+  group('cierre del editor — estado de combate y descarte', () {
+    testWidgets('una edición cosmética conserva TODO el estado de combate',
+        (tester) async {
+      final store = await boot();
+      final ficha = buildCharacter(
+        id: 'char_rook',
+        name: 'Rook',
+        hpCurrent: 7,
+        weaponChargesCurrent: 1,
+        abilityChargesCurrent: 1,
+      );
+      // Combate en curso: recurso gastado, compañero herido, movimiento
+      // consumido y una condición activa.
+      ficha.resources.single.current = 2;
+      ficha.companions.single.currentHp = 5;
+      ficha.turnStatus.movementRemaining = 4;
+      ficha.activeConditions.add('Envenenado');
+      store.addCharacter(ficha);
+
+      await pumpHome(tester, store, edit: store.activeCharacter);
+      await tester.tap(find.text('editar-ficha'));
+      await tester.pumpAndSettle();
+
+      // El único cambio es el nombre: nada de combate debería moverse.
+      await tester.tap(find.text('Datos básicos'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Nombre'),
+        'Rook el Intacto',
+      );
+      await tester.pump();
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
+      await saveWithWarning(tester);
+
+      final guardada = store.activeCharacter!;
+      expect(guardada.id, 'char_rook');
+      expect(guardada.basicInfo.name, 'Rook el Intacto');
+      expect(guardada.basicInfo.currentHp, 7);
+      expect(guardada.inventory.weapons.single.magicCharges.current, 1);
+      expect(
+        guardada.abilitiesByAction.action.single.magicCharges.current,
+        1,
+      );
+      expect(guardada.resources.single.current, 2);
+      expect(guardada.resources.single.max, 3);
+      expect(guardada.companions.single.currentHp, 5);
+      expect(guardada.companions.single.maxHp, 10);
+      expect(guardada.turnStatus.movementRemaining, 4);
+      expect(guardada.activeConditions, ['Envenenado']);
+    });
+
+    testWidgets('compañero sin PG: apoyo invulnerable que persiste',
+        (tester) async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await pumpHome(tester, store, edit: store.activeCharacter);
+      await tester.tap(find.text('editar-ficha'));
+      await tester.pumpAndSettle();
+
+      await tester.scrollUntilVisible(
+        find.text('Compañeros'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text('Compañeros'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Nombre'),
+        'Cuervo',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Tipo (opcional)'),
+        'familiar',
+      );
+      await tester.tap(find.text('Tiene PG'));
+      await tester.pumpAndSettle();
+
+      // Sin PG los campos de vida desaparecen, pero la CA sigue.
+      expect(find.widgetWithText(TextFormField, 'PG máximos'), findsNothing);
+      expect(find.widgetWithText(TextFormField, 'CA'), findsOneWidget);
+
+      await tester.tap(find.text('Guardar'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('familiar · invulnerable · CA 10'), findsOneWidget);
+
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await saveWithWarning(tester);
+
+      final cuervo = store.activeCharacter!.companions
+          .firstWhere((companion) => companion.name == 'Cuervo');
+      expect(cuervo.type, 'familiar');
+      expect(cuervo.hasHp, isFalse);
+    });
+
+    testWidgets('borrar un arma y descartar el editor no toca la ficha',
+        (tester) async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await pumpHome(tester, store, edit: store.activeCharacter);
+      await tester.tap(find.text('editar-ficha'));
+      await tester.pumpAndSettle();
+
+      await tester.scrollUntilVisible(
+        find.text('Armas'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      // El tile queda justo sobre el borde del bottom bar (Guardar):
+      // scrollear un poco más para que el tap no lo agarre el botón.
+      await tester.drag(
+        find.byType(Scrollable).first,
+        const Offset(0, -80),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Armas'));
+      await tester.pumpAndSettle();
+
+      // Borrado directo en el borrador: la lista queda vacía...
+      await tester.tap(find.byIcon(Icons.delete_outline_rounded));
+      await tester.pumpAndSettle();
+      expect(find.text('La ficha no trae armas todavía.'), findsOneWidget);
+
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.text('sin armas'), findsOneWidget);
+
+      // ...pero salir del editor sin guardar descarta el borrador: el
+      // roster sigue con el arma original.
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.text('¿Descartar los cambios?'), findsOneWidget);
+      await tester.tap(find.text('Descartar'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CharacterEditorScreen), findsNothing);
+      expect(store.activeCharacter!.inventory.weapons, hasLength(1));
+      expect(
+        store.activeCharacter!.inventory.weapons.single.name,
+        'Espada Larga',
+      );
+    });
+  });
 }
