@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/dice.dart';
+import '../../domain/models/weapon.dart';
 
 /// Labels en español de los seis atributos, indexados por la clave del
 /// shape. Lo comparten las secciones que muestran o preguntan por un
@@ -211,6 +212,109 @@ class _EditorDiceFieldState extends State<EditorDiceField> {
             fontFamily: 'monospace',
           ),
       onChanged: _handleChanged,
+    );
+  }
+}
+
+/// Bloque "usos limitados por descanso" que comparten habilidades y
+/// armas mágicas (el shape de MagicCharges es el mismo a propósito).
+/// Muta las cargas en el lugar y mantiene la coherencia de siempre:
+/// prender el switch sin tope arranca 1/1; bajar el tope recorta los
+/// usos restantes; subirlo no regala usos (si estaba gastado, sigue
+/// gastado).
+class EditorMagicCharges extends StatefulWidget {
+  const EditorMagicCharges({
+    super.key,
+    required this.charges,
+    this.subtitle = 'Ej.: Furia, 2 usos por descanso largo',
+  });
+
+  /// Las cargas del ítem editado, mutadas en el lugar.
+  final MagicCharges charges;
+
+  final String subtitle;
+
+  @override
+  State<EditorMagicCharges> createState() => _EditorMagicChargesState();
+}
+
+class _EditorMagicChargesState extends State<EditorMagicCharges> {
+  /// El tope puede arrastrar/recortar el current: el campo visible va
+  /// con controller porque initialValue no se refresca solo.
+  late final TextEditingController _current;
+
+  @override
+  void initState() {
+    super.initState();
+    _current = TextEditingController(text: widget.charges.current.toString());
+  }
+
+  @override
+  void dispose() {
+    _current.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final charges = widget.charges;
+    return Column(
+      children: [
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Usos limitados por descanso'),
+          subtitle: Text(widget.subtitle),
+          value: charges.hasCharges,
+          onChanged: (value) => setState(() {
+            // Recién prendido sin tope configurado: arranca con un uso.
+            if (value && charges.max == 0) {
+              charges.max = 1;
+              charges.current = 1;
+              _current.text = '1';
+            }
+            charges.hasCharges = value;
+          }),
+        ),
+        if (charges.hasCharges)
+          Padding(
+            padding: const EdgeInsets.only(left: 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: EditorIntField(
+                    label: 'Tope de usos',
+                    value: charges.max,
+                    onChanged: (value) {
+                      if (value == null) return;
+                      // Misma semántica que setHpMax: si estaba lleno,
+                      // sigue lleno; si estaba gastado, se respeta —
+                      // salvo que quede por encima del tope nuevo.
+                      final wasFull = charges.current >= charges.max;
+                      charges.max = value;
+                      if (wasFull || charges.current > value) {
+                        charges.current = value;
+                        _current.text = '$value';
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: EditorIntField(
+                    label: 'Usos restantes',
+                    value: charges.current,
+                    controller: _current,
+                    hint: 'estado de combate',
+                    onChanged: (value) {
+                      if (value != null) charges.current = value;
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }

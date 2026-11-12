@@ -74,25 +74,6 @@ class EditorAbilityPage extends StatefulWidget {
 class _EditorAbilityPageState extends State<EditorAbilityPage> {
   late String _category = widget.category;
 
-  /// Controller de "Usos restantes": cuando cambia el tope, el modelo
-  /// puede arrastrar/recortar el current y el campo visible tiene que
-  /// reflejarlo (TextFormField con initialValue no se refresca solo).
-  late final TextEditingController _chargesCurrent;
-
-  @override
-  void initState() {
-    super.initState();
-    _chargesCurrent = TextEditingController(
-      text: widget.ability.magicCharges.current.toString(),
-    );
-  }
-
-  @override
-  void dispose() {
-    _chargesCurrent.dispose();
-    super.dispose();
-  }
-
   void _changeCategory(String? newCategory) {
     if (newCategory == null || newCategory == _category) return;
     setState(() {
@@ -241,61 +222,7 @@ class _EditorAbilityPageState extends State<EditorAbilityPage> {
           onChanged: (value) => ability.tacticalSummary =
               value.trim().isEmpty ? null : value.trim(),
         ),
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          title: const Text('Usos limitados por descanso'),
-          subtitle: const Text('Ej.: Furia, 2 usos por descanso largo'),
-          value: charges.hasCharges,
-          onChanged: (value) => setState(() {
-            // Recién prendido sin tope configurado: arranca con un uso.
-            if (value && charges.max == 0) {
-              charges.max = 1;
-              charges.current = 1;
-              _chargesCurrent.text = '1';
-            }
-            charges.hasCharges = value;
-          }),
-        ),
-        if (charges.hasCharges)
-          Padding(
-            padding: const EdgeInsets.only(left: 12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: EditorIntField(
-                    label: 'Tope de usos',
-                    value: charges.max,
-                    onChanged: (value) {
-                      if (value == null) return;
-                      // Coherencia (misma lógica que setHpMax/setLevel):
-                      // si estaba lleno, sigue lleno; si estaba gastado,
-                      // el current se respeta — salvo que quede por
-                      // encima del tope nuevo, ahí se recorta.
-                      final wasFull = charges.current >= charges.max;
-                      charges.max = value;
-                      if (wasFull || charges.current > value) {
-                        charges.current = value;
-                        _chargesCurrent.text = '$value';
-                      }
-                    },
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: EditorIntField(
-                    label: 'Usos restantes',
-                    value: charges.current,
-                    controller: _chargesCurrent,
-                    hint: 'estado de combate',
-                    onChanged: (value) {
-                      if (value != null) charges.current = value;
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
+        EditorMagicCharges(charges: charges),
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
           title: const Text('Escala con el nivel'),

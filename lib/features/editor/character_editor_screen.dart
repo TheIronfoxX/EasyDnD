@@ -28,9 +28,14 @@ import '../../domain/models/character.dart';
 import '../../state/character_store.dart';
 import 'editor_section_abilities.dart';
 import 'editor_section_basic_info.dart';
+import 'editor_section_companions.dart';
+import 'editor_section_items.dart';
+import 'editor_section_lore.dart';
+import 'editor_section_resources.dart';
 import 'editor_section_skills.dart';
 import 'editor_section_slots.dart';
 import 'editor_section_stats.dart';
+import 'editor_section_weapons.dart';
 
 class CharacterEditorScreen extends StatefulWidget {
   const CharacterEditorScreen({super.key, this.character});
@@ -98,7 +103,36 @@ class _CharacterEditorScreenState extends State<CharacterEditorScreen> {
       subtitle: _abilitiesSubtitle,
       page: (draft) => EditorSectionAbilities(draft: draft),
     ),
-    // 4d: recursos, inventario, lore y compañeros.
+    _SectionSpec(
+      icon: Icons.toll_rounded,
+      title: 'Recursos',
+      subtitle: _resourcesSubtitle,
+      page: (draft) => EditorSectionResources(draft: draft),
+    ),
+    _SectionSpec(
+      icon: Icons.gavel_rounded,
+      title: 'Armas',
+      subtitle: _weaponsSubtitle,
+      page: (draft) => EditorSectionWeapons(draft: draft),
+    ),
+    _SectionSpec(
+      icon: Icons.backpack_rounded,
+      title: 'Objetos y monedas',
+      subtitle: _itemsSubtitle,
+      page: (draft) => EditorSectionItems(draft: draft),
+    ),
+    _SectionSpec(
+      icon: Icons.auto_stories_rounded,
+      title: 'Historia y personalidad',
+      subtitle: _loreSubtitle,
+      page: (draft) => EditorSectionLore(draft: draft),
+    ),
+    _SectionSpec(
+      icon: Icons.pets_rounded,
+      title: 'Compañeros',
+      subtitle: _companionsSubtitle,
+      page: (draft) => EditorSectionCompanions(draft: draft),
+    ),
   ];
 
   static String _basicInfoSubtitle(CharacterModel draft) {
@@ -146,6 +180,58 @@ class _CharacterEditorScreenState extends State<CharacterEditorScreen> {
     ];
     if (parts.isEmpty) return 'sin habilidades';
     return parts.join(' · ');
+  }
+
+  static String _resourcesSubtitle(CharacterModel draft) {
+    final resources = draft.resources;
+    if (resources.isEmpty) return 'sin recursos';
+    return [
+      for (final resource in resources)
+        '${resource.name} ${resource.current}/${resource.max}',
+    ].join(' · ');
+  }
+
+  static String _weaponsSubtitle(CharacterModel draft) {
+    final weapons = draft.inventory.weapons;
+    if (weapons.isEmpty) return 'sin armas';
+    return _count(weapons.length, 'arma', 'armas');
+  }
+
+  static String _itemsSubtitle(CharacterModel draft) {
+    final items = draft.inventory.mundaneItems;
+    final purse = draft.purse;
+    final coins = [
+      if (purse.gold != 0) '${purse.gold} po',
+      if (purse.silver != 0) '${purse.silver} pp',
+      if (purse.copper != 0) '${purse.copper} pc',
+    ];
+    final parts = <String>[
+      if (items.isEmpty)
+        'sin objetos'
+      else
+        _count(items.length, 'objeto', 'objetos'),
+      ...coins,
+    ];
+    return parts.join(' · ');
+  }
+
+  static String _loreSubtitle(CharacterModel draft) {
+    final lore = draft.loreInfo;
+    final filled = [
+      lore.backstory,
+      lore.personalityTraits,
+      lore.ideals,
+      lore.bonds,
+      lore.flaws,
+    ].where((text) => text.trim().isNotEmpty).length;
+    if (filled == 0) return 'sin completar';
+    return '$filled de 5 campos';
+  }
+
+  static String _companionsSubtitle(CharacterModel draft) {
+    final companions = draft.companions;
+    if (companions.isEmpty) return 'sin compañeros';
+    return _count(companions.length, 'compañero', 'compañeros');
   }
 
   static String _count(int n, String one, String many) =>
