@@ -88,6 +88,7 @@ void main() {
     test('roundtrip conserva id y todo el estado de combate', () {
       final model = buildCharacter(hpCurrent: 10, slotCurrent: 2);
       model.turnStatus.actionUsed = true;
+      model.turnStatus.reactionUsed = true;
       model.turnStatus.movementRemaining = 4;
       model.activeConditions.add('Envenenado');
 
@@ -98,6 +99,7 @@ void main() {
       expect(revived.spellSlots.slots.single.current, 2);
       expect(revived.spellSlots.maxLevel, 1);
       expect(revived.turnStatus.actionUsed, isTrue);
+      expect(revived.turnStatus.reactionUsed, isTrue);
       expect(revived.turnStatus.movementRemaining, 4);
       expect(revived.activeConditions, ['Envenenado']);
       expect(revived.purse.gold, 10);
@@ -139,6 +141,14 @@ void main() {
       final json = buildFichaJson(speed: 12)..remove('turn_status');
       final model = CharacterModel.fromJson(json);
       expect(model.turnStatus.movementRemaining, 12);
+    });
+
+    test('turn_status viejo sin reactionUsed arranca con la reacción libre',
+        () {
+      final json = buildFichaJson();
+      (json['turn_status'] as Map<String, dynamic>).remove('reactionUsed');
+      final model = CharacterModel.fromJson(json);
+      expect(model.turnStatus.reactionUsed, isFalse);
     });
 
     test('SpellSlot sin current arranca lleno', () {

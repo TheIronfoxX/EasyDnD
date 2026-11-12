@@ -163,6 +163,17 @@ extension CharacterStoreCombat on CharacterStore {
     _notifyAndPersist();
   }
 
+  /// Recupera UNA ranura del nivel indicado (el espejo de
+  /// [consumeSpellSlot]). No-op si el nivel no existe o ya está lleno.
+  /// Lo usa el ajuste fino del HUD cuando el jugador deshace un gasto;
+  /// [restoreAllSpellSlots] sigue siendo el botón de recarga total.
+  void restoreSpellSlot(int level) {
+    final slot = activeCharacter?.spellSlots.forLevel(level);
+    if (slot == null || slot.current >= slot.max) return;
+    slot.current += 1;
+    _notifyAndPersist();
+  }
+
   /// Alias con el nombre que usa la sección "RANURAS DE MAGIA" del HUD.
   void spendSpellSlot(int level) => consumeSpellSlot(level);
 
@@ -246,8 +257,9 @@ extension CharacterStoreCombat on CharacterStore {
   // Economía de acción del turno.
   // -------------------------------------------------------------------
 
-  /// Invierte el estado de uso de la acción ('action') o la acción
-  /// adicional ('bonus'); cualquier otro valor no hace nada.
+  /// Invierte el estado de uso de la acción ('action'), la acción
+  /// adicional ('bonus') o la reacción ('reaction'); cualquier otro
+  /// valor no hace nada.
   void toggleAction(String type) {
     final status = activeCharacter?.turnStatus;
     if (status == null) return;
@@ -257,6 +269,9 @@ extension CharacterStoreCombat on CharacterStore {
         break;
       case 'bonus':
         status.bonusActionUsed = !status.bonusActionUsed;
+        break;
+      case 'reaction':
+        status.reactionUsed = !status.reactionUsed;
         break;
       default:
         return;
@@ -275,14 +290,15 @@ extension CharacterStoreCombat on CharacterStore {
     _notifyAndPersist();
   }
 
-  /// "Fin de turno": acción y adicional disponibles de nuevo, movimiento
-  /// recargado a tope según la velocidad del personaje.
+  /// "Fin de turno": acción, adicional y reacción disponibles de nuevo,
+  /// movimiento recargado a tope según la velocidad del personaje.
   void resetTurn() {
     final character = activeCharacter;
     if (character == null) return;
     final status = character.turnStatus;
     status.actionUsed = false;
     status.bonusActionUsed = false;
+    status.reactionUsed = false;
     status.movementRemaining = character.basicInfo.speed;
     _notifyAndPersist();
   }

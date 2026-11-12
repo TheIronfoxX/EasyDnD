@@ -151,14 +151,20 @@ class BasicInfo {
 /// true al gastarse y vuelven con resetTurn(). El movimiento no es
 /// binario: es una cantidad que se va consumiendo a lo largo del
 /// turno, con máximo siempre en BasicInfo.speed del personaje.
+///
+/// `reactionUsed` es aditivo respecto de la app vieja (que solo tenía
+/// acción y adicional): la reacción también se recupera al inicio del
+/// turno, así que el HUD la muestra y la resetea junto con las otras.
 class TurnStatus {
   bool actionUsed;
   bool bonusActionUsed;
+  bool reactionUsed;
   int movementRemaining;
 
   TurnStatus({
     this.actionUsed = false,
     this.bonusActionUsed = false,
+    this.reactionUsed = false,
     this.movementRemaining = 9,
   });
 
@@ -169,6 +175,8 @@ class TurnStatus {
     return TurnStatus(
       actionUsed: json['actionUsed'] ?? false,
       bonusActionUsed: json['bonusActionUsed'] ?? false,
+      // Fichas viejas sin la clave: la reacción arranca disponible.
+      reactionUsed: json['reactionUsed'] ?? false,
       movementRemaining: (json['movementRemaining'] as num?)?.toInt() ?? maxSpeed,
     );
   }
@@ -177,6 +185,7 @@ class TurnStatus {
     return {
       'actionUsed': actionUsed,
       'bonusActionUsed': bonusActionUsed,
+      'reactionUsed': reactionUsed,
       'movementRemaining': movementRemaining,
     };
   }

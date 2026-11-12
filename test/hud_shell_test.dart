@@ -70,13 +70,14 @@ void main() {
       expect(find.text('Ficha'), findsOneWidget);
       expect(find.text('Inventario'), findsOneWidget);
 
-      // Tab inicial: combate.
-      expect(find.text('Tablero de combate'), findsOneWidget);
+      // Tab inicial: el tablero de combate (5b).
+      expect(find.text('Vida'), findsOneWidget);
+      expect(find.text('Turno'), findsOneWidget);
 
       await tester.tap(find.text('Ficha'));
       await tester.pumpAndSettle();
       expect(find.text('Hoja de personaje'), findsOneWidget);
-      expect(find.text('Tablero de combate'), findsNothing);
+      expect(find.text('Vida'), findsNothing);
 
       await tester.tap(find.text('Inventario'));
       await tester.pumpAndSettle();

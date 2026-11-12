@@ -20,6 +20,7 @@ import '../../domain/models/character.dart';
 import '../../state/character_store.dart';
 import '../editor/character_editor_screen.dart';
 import '../import/import_wizard_screen.dart';
+import 'hud_combat_tab.dart';
 import 'welcome_screen.dart';
 
 /// Acciones del menú de mantenimiento de la AppBar.
@@ -168,22 +169,16 @@ class _HudScreenState extends State<HudScreen> {
       ),
       body: IndexedStack(
         index: _tabIndex,
-        children: const [
-          _HudSectionPlaceholder(
-            icon: Icons.shield_rounded,
-            title: 'Tablero de combate',
-            description:
-                'Acá va la hoja viva: PG, CA, velocidad, '
-                'economía de turno y condiciones.',
-          ),
-          _HudSectionPlaceholder(
+        children: [
+          HudCombatTab(character: character),
+          const _HudSectionPlaceholder(
             icon: Icons.badge_outlined,
             title: 'Hoja de personaje',
             description:
                 'Atributos, competencias, historia y códice '
                 'de la ficha activa.',
           ),
-          _HudSectionPlaceholder(
+          const _HudSectionPlaceholder(
             icon: Icons.backpack_rounded,
             title: 'Inventario y compañeros',
             description: 'Armas, objetos, bolsa y aliados del personaje.',

@@ -276,6 +276,21 @@ void main() {
       expect(store.activeCharacter!.spellSlots.slots.single.current, 4);
     });
 
+    test('restoreSpellSlot recupera de a una y se protege', () async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(slotCurrent: 1));
+
+      store.restoreSpellSlot(1);
+      expect(store.activeCharacter!.spellSlots.slots.single.current, 2);
+      store.restoreSpellSlot(1);
+      store.restoreSpellSlot(1);
+      store.restoreSpellSlot(1); // ya lleno: no-op
+      expect(store.activeCharacter!.spellSlots.slots.single.current, 4);
+
+      store.restoreSpellSlot(9); // nivel inexistente: no-op
+      expect(store.activeCharacter!.spellSlots.slots.single.current, 4);
+    });
+
     test('cargas de armas por id, con guards', () async {
       final store = await boot();
       store.addCharacter(buildCharacter(weaponChargesCurrent: 3));
@@ -331,6 +346,9 @@ void main() {
       store.toggleAction('reaccion'); // tipo desconocido: no-op
       expect(store.activeCharacter!.turnStatus.actionUsed, isFalse);
 
+      store.toggleAction('reaction');
+      expect(store.activeCharacter!.turnStatus.reactionUsed, isTrue);
+
       store.setMovementRemaining(99);
       expect(store.activeCharacter!.turnStatus.movementRemaining, 9);
       store.setMovementRemaining(-4);
@@ -342,6 +360,7 @@ void main() {
       final status = store.activeCharacter!.turnStatus;
       expect(status.actionUsed, isFalse);
       expect(status.bonusActionUsed, isFalse);
+      expect(status.reactionUsed, isFalse);
       expect(status.movementRemaining, 9);
     });
   });
