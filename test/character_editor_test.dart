@@ -534,4 +534,189 @@ void main() {
       expect(find.text('Nuevo nivel de ranura'), findsNothing);
     });
   });
+
+  group('secciones 4c — habilidades', () {
+    testWidgets('alta completa desde el FAB y persistencia',
+        (tester) async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await pumpHome(tester, store, edit: store.activeCharacter);
+      await tester.tap(find.text('editar-ficha'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('1 acción'), findsOneWidget);
+
+      await tester.tap(find.text('Habilidades'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('ACCIÓN · 1'), findsOneWidget);
+      expect(find.text('Golpe Devastador'), findsOneWidget);
+
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Nueva habilidad'), findsOneWidget);
+      expect(find.text('Habilidad sin nombre'), findsOneWidget);
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Nombre'),
+        'Bola de Fuego',
+      );
+      await tester.pump();
+
+      // Tipo de tirada: salvación.
+      await tester.tap(find.byKey(const ValueKey('ability-attack-type')));
+      await tester.pumpAndSettle();
+      await tester
+          .tap(find.text('Salvación — el objetivo tira contra tu CD'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Dados de daño'),
+        '8d6',
+      );
+      await tester.pump();
+
+      // El switch de cargas vive abajo de la página: el ListView es
+      // lazy, hay que scrollear hasta él. Ojo: cada TextField tiene su
+      // propio Scrollable interno — el primero del árbol es el ListView.
+      await tester.scrollUntilVisible(
+        find.text('Usos limitados por descanso'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Usos limitados por descanso'));
+      await tester.pump();
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Tope de usos'),
+        '3',
+      );
+      await tester.pump();
+
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
+      expect(find.text('ACCIÓN · 2'), findsOneWidget);
+      expect(find.text('Bola de Fuego'), findsOneWidget);
+      expect(find.text('Salvación · 8d6 · 3/3 usos'), findsOneWidget);
+
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.text('2 acciones'), findsOneWidget);
+
+      await tester.tap(find.text('Guardar cambios'));
+      await tester.pumpAndSettle();
+      expect(find.text('Hay 1 avisos'), findsOneWidget);
+      await tester.tap(find.text('Guardar igual'));
+      await tester.pumpAndSettle();
+
+      final bola = store.activeCharacter!.abilitiesByAction.action
+          .firstWhere((a) => a.name == 'Bola de Fuego');
+      expect(bola.attackType, 'save');
+      expect(bola.damageDice, '8d6');
+      expect(bola.magicCharges.hasCharges, isTrue);
+      expect(bola.magicCharges.max, 3);
+      expect(bola.magicCharges.current, 3);
+    });
+
+    testWidgets('mover de categoría conserva la identidad (id)',
+        (tester) async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await pumpHome(tester, store, edit: store.activeCharacter);
+      await tester.tap(find.text('editar-ficha'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Habilidades'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Golpe Devastador'));
+      await tester.pumpAndSettle();
+      expect(find.text('Editar habilidad'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('ability-category')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Reacción'));
+      await tester.pumpAndSettle();
+
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
+      expect(find.text('ACCIÓN · 1'), findsNothing);
+      expect(find.text('REACCIÓN · 1'), findsOneWidget);
+
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.text('1 reacción'), findsOneWidget);
+
+      await tester.tap(find.text('Guardar cambios'));
+      await tester.pumpAndSettle();
+      expect(find.text('Hay 1 avisos'), findsOneWidget);
+      await tester.tap(find.text('Guardar igual'));
+      await tester.pumpAndSettle();
+
+      final abilities = store.activeCharacter!.abilitiesByAction;
+      expect(abilities.action, isEmpty);
+      expect(abilities.reaction, hasLength(1));
+      // La identidad no cambia al mover: el HUD cuelga las cargas
+      // de este id.
+      expect(abilities.reaction.single.id, 'a1');
+      expect(abilities.reaction.single.name, 'Golpe Devastador');
+    });
+
+    testWidgets('borrar la única habilidad avisa al guardar (2 avisos)',
+        (tester) async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await pumpHome(tester, store, edit: store.activeCharacter);
+      await tester.tap(find.text('editar-ficha'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Habilidades'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.delete_outline_rounded));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Golpe Devastador'), findsNothing);
+      expect(find.text('La ficha no trae habilidades todavía.'),
+          findsOneWidget);
+
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.text('sin habilidades'), findsOneWidget);
+
+      await tester.tap(find.text('Guardar cambios'));
+      await tester.pumpAndSettle();
+      // El aviso de "no trae habilidades" se SUMA al de ranuras sin CD.
+      expect(find.text('Hay 2 avisos'), findsOneWidget);
+      await tester.tap(find.text('Guardar igual'));
+      await tester.pumpAndSettle();
+
+      expect(store.activeCharacter!.abilitiesByAction.all, isEmpty);
+    });
+
+    testWidgets('notación de dados inválida avisada en vivo',
+        (tester) async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await pumpHome(tester, store, edit: store.activeCharacter);
+      await tester.tap(find.text('editar-ficha'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Habilidades'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Golpe Devastador'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Dados de daño'),
+        'banana',
+      );
+      await tester.pump();
+
+      expect(find.textContaining('Notación de dado inválida'),
+          findsOneWidget);
+    });
+  });
 }

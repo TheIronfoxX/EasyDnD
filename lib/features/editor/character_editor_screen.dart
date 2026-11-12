@@ -26,6 +26,7 @@ import 'package:provider/provider.dart';
 import '../../domain/character_validator.dart';
 import '../../domain/models/character.dart';
 import '../../state/character_store.dart';
+import 'editor_section_abilities.dart';
 import 'editor_section_basic_info.dart';
 import 'editor_section_skills.dart';
 import 'editor_section_slots.dart';
@@ -91,7 +92,12 @@ class _CharacterEditorScreenState extends State<CharacterEditorScreen> {
       subtitle: _slotsSubtitle,
       page: (draft) => EditorSectionSlots(draft: draft),
     ),
-    // 4c: habilidades por economía de acciones.
+    _SectionSpec(
+      icon: Icons.bolt_rounded,
+      title: 'Habilidades',
+      subtitle: _abilitiesSubtitle,
+      page: (draft) => EditorSectionAbilities(draft: draft),
+    ),
     // 4d: recursos, inventario, lore y compañeros.
   ];
 
@@ -125,6 +131,25 @@ class _CharacterEditorScreenState extends State<CharacterEditorScreen> {
       for (final slot in slots) '${slot.max} de nivel ${slot.level}',
     ].join(' · ');
   }
+
+  static String _abilitiesSubtitle(CharacterModel draft) {
+    final abilities = draft.abilitiesByAction;
+    final parts = <String>[
+      if (abilities.action.isNotEmpty)
+        _count(abilities.action.length, 'acción', 'acciones'),
+      if (abilities.bonusAction.isNotEmpty)
+        _count(abilities.bonusAction.length, 'adicional', 'adicionales'),
+      if (abilities.reaction.isNotEmpty)
+        _count(abilities.reaction.length, 'reacción', 'reacciones'),
+      if (abilities.passive.isNotEmpty)
+        _count(abilities.passive.length, 'pasiva', 'pasivas'),
+    ];
+    if (parts.isEmpty) return 'sin habilidades';
+    return parts.join(' · ');
+  }
+
+  static String _count(int n, String one, String many) =>
+      n == 1 ? '$n $one' : '$n $many';
 
   @override
   void initState() {

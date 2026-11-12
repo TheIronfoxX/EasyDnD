@@ -90,12 +90,19 @@ class EditorIntField extends StatelessWidget {
     this.allowEmpty = false,
     this.allowNegative = false,
     this.validator,
+    this.controller,
   });
 
   final String label;
 
-  /// Valor actual del borrador; solo alimenta el initialValue.
+  /// Valor actual del borrador; solo alimenta el initialValue cuando
+  /// no hay [controller].
   final int? value;
+
+  /// Controller opcional para casos en los que el programa tiene que
+  /// pisar el texto visible (ej. tope de cargas que arrastra los usos
+  /// restantes). Con controller, [value] es solo documentación.
+  final TextEditingController? controller;
 
   /// Si es null mientras se tipea basura, el borrador no se toca.
   final ValueChanged<int?> onChanged;
@@ -118,7 +125,10 @@ class EditorIntField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TextFormField(
-      initialValue: value?.toString() ?? '',
+      controller: controller,
+      // initialValue y controller son mutuamente excluyentes en el
+      // TextFormField: con controller manda el controller.
+      initialValue: controller == null ? value?.toString() ?? '' : null,
       keyboardType: TextInputType.number,
       inputFormatters: [
         FilteringTextInputFormatter.allow(
