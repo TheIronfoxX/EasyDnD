@@ -60,14 +60,19 @@ void main() {
 
       expect(revivedA.inventory.weapons.single.quantity, 2);
       expect(revivedB.inventory.weapons.single.quantity, 7);
-      expect(revivedA.inventory.weapons.single.id,
-          revivedB.inventory.weapons.single.id); // mismo arma, distinta cantidad
+      expect(
+        revivedA.inventory.weapons.single.id,
+        revivedB.inventory.weapons.single.id,
+      ); // mismo arma, distinta cantidad
     });
 
     test('is_unique fuerza quantity 1 al leer y al escribir', () {
       final model = buildCharacter(weaponIsUnique: true, weaponQuantity: 7);
       expect(model.inventory.weapons.single.quantity, 1); // al leer
-      expect(model.toJson()['inventory']['weapons'][0]['quantity'], 1); // al escribir
+      expect(
+        model.toJson()['inventory']['weapons'][0]['quantity'],
+        1,
+      ); // al escribir
     });
 
     test('arma sin id genera uno a partir del nombre', () {
@@ -143,13 +148,15 @@ void main() {
       expect(model.turnStatus.movementRemaining, 12);
     });
 
-    test('turn_status viejo sin reactionUsed arranca con la reacción libre',
-        () {
-      final json = buildFichaJson();
-      (json['turn_status'] as Map<String, dynamic>).remove('reactionUsed');
-      final model = CharacterModel.fromJson(json);
-      expect(model.turnStatus.reactionUsed, isFalse);
-    });
+    test(
+      'turn_status viejo sin reactionUsed arranca con la reacción libre',
+      () {
+        final json = buildFichaJson();
+        (json['turn_status'] as Map<String, dynamic>).remove('reactionUsed');
+        final model = CharacterModel.fromJson(json);
+        expect(model.turnStatus.reactionUsed, isFalse);
+      },
+    );
 
     test('SpellSlot sin current arranca lleno', () {
       final slot = SpellSlot.fromJson({'level': 1, 'max': 4});
@@ -160,10 +167,12 @@ void main() {
   group('AbilitiesByAction', () {
     test('all aplanal las cuatro categorías', () {
       final model = buildCharacter();
-      model.abilitiesByAction.bonusAction
-          .add(Ability.fromJson({'id': 'a2', 'name': 'B'}));
-      model.abilitiesByAction.passive
-          .add(Ability.fromJson({'id': 'a3', 'name': 'P'}));
+      model.abilitiesByAction.bonusAction.add(
+        Ability.fromJson({'id': 'a2', 'name': 'B'}),
+      );
+      model.abilitiesByAction.passive.add(
+        Ability.fromJson({'id': 'a3', 'name': 'P'}),
+      );
       expect(model.abilitiesByAction.all.map((a) => a.id), ['a1', 'a2', 'a3']);
     });
 
@@ -179,14 +188,36 @@ void main() {
 
   group('MagicCharges', () {
     test('consume no baja de 0 y restoreAll recarga', () {
-      final charges = Weapon.fromJson(buildFichaJson()['inventory']['weapons'][0])
-          .magicCharges;
+      final charges = Weapon.fromJson(
+        buildFichaJson()['inventory']['weapons'][0],
+      ).magicCharges;
       charges.current = 1;
       charges.consumeCharge();
       charges.consumeCharge(); // ya en 0, no baja más
       expect(charges.current, 0);
       charges.restoreAll();
       expect(charges.current, 3);
+    });
+  });
+
+  group('StatsBlock.modFor', () {
+    test('resuelve las seis claves de característica', () {
+      final stats = buildCharacter(conMod: 2).stats;
+
+      expect(stats.modFor('str'), 3);
+      expect(stats.modFor('dex'), 1);
+      expect(stats.modFor('con'), 2);
+      expect(stats.modFor('int'), 0);
+      expect(stats.modFor('wis'), 0);
+      expect(stats.modFor('cha'), 0);
+    });
+
+    test('una clave vacía o desconocida vale 0 en vez de reventar', () {
+      final stats = buildCharacter().stats;
+
+      expect(stats.modFor(''), 0);
+      expect(stats.modFor('luck'), 0);
+      expect(stats.modFor('intelligence'), 0); // el JSON usa 'int'
     });
   });
 

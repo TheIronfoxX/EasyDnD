@@ -15,6 +15,7 @@ import 'package:provider/provider.dart';
 import '../../core/dnd_rules.dart';
 import '../../domain/models/character.dart';
 import '../../state/character_store.dart';
+import 'hud_actions_section.dart';
 import 'hud_dialogs.dart';
 import 'hud_widgets.dart';
 
@@ -30,6 +31,7 @@ class HudCombatTab extends StatelessWidget {
       children: [
         _HealthSection(character: character),
         _TurnSection(character: character),
+        HudActionsSection(character: character),
         _ConditionsSection(character: character),
         if (character.resources.isNotEmpty)
           _ResourcesSection(character: character),

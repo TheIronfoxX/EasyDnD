@@ -1,0 +1,431 @@
+// Acciones del turno (Etapa 5c): armas, acción, acción adicional,
+// reacción y pasivas de la ficha activa.
+//
+// Cada lista es una tarjeta con sus entradas. Tocar una acción tirable
+// abre la hoja de resolución (hud_resolution_sheet.dart) con los valores
+// YA resueltos: modificador (mod. de característica + competencia), CD de
+// salvación de la ficha, ranuras disponibles y cargas restantes. La hoja
+// avisa por callback cuándo gastar una ranura o una carga; esta sección
+// traduce esos avisos a los métodos del store.
+//
+// Lo que se muestra es la semántica heredada de la app vieja:
+// - Arma: +attackBonus al ataque y damage.baseDice tal cual (ya trae sus
+//   bonificadores embebidos, ej. "1d8+3").
+// - Conjuro/rasgo de ataque: mod. de relatedStat + competencia.
+// - Conjuro de salvación: la CD es basicInfo.spellSaveDc ya resuelta, no
+//   se recalcula por habilidad.
+// - Truco (baseLevel 0): nunca gasta ranura.
+
+import 'dart:math';
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../domain/models/ability.dart';
+import '../../domain/models/character.dart';
+import '../../domain/models/stats.dart';
+import '../../domain/models/weapon.dart';
+import '../../state/character_store.dart';
+import 'hud_resolution_sheet.dart';
+import 'hud_widgets.dart';
+
+class HudActionsSection extends StatelessWidget {
+  const HudActionsSection({super.key, required this.character, this.random});
+
+  final CharacterModel character;
+
+  /// Inyectable para tests determinísticos. En la app queda null y la
+  /// hoja usa Random().
+  final Random? random;
+
+  void _open(BuildContext context, RollAction action) {
+    showResolutionSheet(context, action, random: random);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.read<CharacterStore>();
+    final stats = character.stats;
+    final proficiency = character.basicInfo.proficiencyBonus;
+    final saveDc = character.basicInfo.spellSaveDc;
+    final abilities = character.abilitiesByAction;
+    final weapons = character.inventory.weapons;
+
+    return Column(
+      children: [
+        if (weapons.isNotEmpty)
+          HudSectionCard(
+            icon: Icons.gavel_rounded,
+            title: 'Armas',
+            child: Column(
+              children: [
+                for (final action in [
+                  for (final weapon in weapons) _weaponAction(weapon, store),
+                ])
+                  _ActionTile(
+                    action: action,
+                    onTap: () => _open(context, action),
+                  ),
+              ],
+            ),
+          ),
+        if (abilities.action.isNotEmpty)
+          _abilityCard(
+            context,
+            title: 'Acción',
+            icon: Icons.bolt_rounded,
+            abilities: abilities.action,
+            stats: stats,
+            proficiency: proficiency,
+            saveDc: saveDc,
+            store: store,
+          ),
+        if (abilities.bonusAction.isNotEmpty)
+          _abilityCard(
+            context,
+            title: 'Acción adicional',
+            icon: Icons.fast_forward_rounded,
+            abilities: abilities.bonusAction,
+            stats: stats,
+            proficiency: proficiency,
+            saveDc: saveDc,
+            store: store,
+          ),
+        if (abilities.reaction.isNotEmpty)
+          _abilityCard(
+            context,
+            title: 'Reacción',
+            icon: Icons.reply_rounded,
+            abilities: abilities.reaction,
+            stats: stats,
+            proficiency: proficiency,
+            saveDc: saveDc,
+            store: store,
+          ),
+        if (abilities.passive.isNotEmpty)
+          HudSectionCard(
+            icon: Icons.auto_stories_rounded,
+            title: 'Pasivas',
+            child: Column(
+              children: [
+                for (final ability in abilities.passive)
+                  _PassiveTile(ability: ability),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _abilityCard(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required List<Ability> abilities,
+    required StatsBlock stats,
+    required int proficiency,
+    required int? saveDc,
+    required CharacterStore store,
+  }) {
+    return HudSectionCard(
+      icon: icon,
+      title: title,
+      child: Column(
+        children: [
+          for (final action in [
+            for (final ability in abilities)
+              _abilityAction(
+                ability,
+                stats: stats,
+                proficiency: proficiency,
+                saveDc: saveDc,
+                store: store,
+              ),
+          ])
+            _ActionTile(action: action, onTap: () => _open(context, action)),
+        ],
+      ),
+    );
+  }
+
+  RollAction _weaponAction(Weapon weapon, CharacterStore store) {
+    return RollAction(
+      name: weapon.name,
+      kindLabel: 'Arma',
+      icon: Icons.gavel_rounded,
+      modifier: weapon.attackBonus,
+      damageDice: weapon.damage.baseDice,
+      damageType: weapon.damage.baseType,
+      successDescription: weapon.successDescription,
+      failureDescription: weapon.failureDescription,
+      loreDescription: weapon.loreDescription,
+      tacticalSummary: weapon.tacticalSummary,
+      charges: weapon.magicCharges.hasCharges
+          ? RollCharges(
+              current: weapon.magicCharges.current,
+              max: weapon.magicCharges.max,
+            )
+          : null,
+      onConsumeCharge: () => store.consumeWeaponCharge(weapon.id),
+    );
+  }
+
+  RollAction _abilityAction(
+    Ability ability, {
+    required StatsBlock stats,
+    required int proficiency,
+    required int? saveDc,
+    required CharacterStore store,
+  }) {
+    final isSpell = ability.type == 'spell';
+    final usesSpellSlot = ability.baseLevel >= 1;
+
+    return RollAction(
+      name: ability.name,
+      kindLabel: isSpell ? 'Conjuro' : 'Rasgo',
+      icon: isSpell ? Icons.auto_awesome_rounded : Icons.shield_rounded,
+      modifier: stats.modFor(ability.relatedStat) + proficiency,
+      attackType: ability.attackType,
+      damageDice: ability.damageDice,
+      successDescription: ability.successDescription,
+      failureDescription: ability.failureDescription,
+      loreDescription: ability.loreDescription,
+      tacticalSummary: ability.tacticalSummary,
+      isScalable: ability.isScalable,
+      baseLevel: ability.baseLevel,
+      scalingFormula: ability.scalingFormula,
+      saveDc: ability.isSavingThrowType ? saveDc : null,
+      charges: ability.magicCharges.hasCharges
+          ? RollCharges(
+              current: ability.magicCharges.current,
+              max: ability.magicCharges.max,
+            )
+          : null,
+      slotOptions: usesSpellSlot
+          ? [
+              for (final slot in character.spellSlots.slots)
+                RollSlotOption(
+                  level: slot.level,
+                  current: slot.current,
+                  max: slot.max,
+                ),
+            ]
+          : const [],
+      onConsumeCharge: ability.magicCharges.hasCharges
+          ? () => store.consumeAbilityCharge(ability.id)
+          : null,
+      onConsumeSlot: usesSpellSlot
+          ? (level) => store.consumeSpellSlot(level)
+          : null,
+    );
+  }
+}
+
+/// Fila de una acción tirable: nombre, resumen mecánico, cargas restantes
+/// e ícono de dados. Es tappable en toda la fila.
+class _ActionTile extends StatelessWidget {
+  const _ActionTile({required this.action, required this.onTap});
+
+  final RollAction action;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final subtitle = _subtitle();
+    final noCharges = action.hasCharges && action.charges!.current <= 0;
+
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      leading: CircleAvatar(
+        radius: 18,
+        backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(
+          alpha: 0.6,
+        ),
+        foregroundColor: noCharges
+            ? theme.colorScheme.outline
+            : theme.colorScheme.primary,
+        child: Icon(action.icon, size: 18),
+      ),
+      title: Text(
+        action.name,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: noCharges ? theme.colorScheme.outline : null,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (action.hasCharges) ...[
+            _ChargeBadge(
+              current: action.charges!.current,
+              max: action.charges!.max,
+            ),
+            const SizedBox(width: 8),
+          ],
+          Icon(
+            Icons.casino_rounded,
+            size: 20,
+            color: noCharges
+                ? theme.colorScheme.outline
+                : theme.colorScheme.primary,
+          ),
+        ],
+      ),
+      onTap: onTap,
+    );
+  }
+
+  String _subtitle() {
+    final dice = action.damageDice?.trim();
+    final hasDice = dice != null && dice.isNotEmpty;
+    final type = action.damageType?.trim();
+    final typeSuffix = (type != null && type.isNotEmpty) ? ' $type' : '';
+
+    if (action.isSavingThrow) {
+      final dc = action.saveDc != null ? 'CD ${action.saveDc}' : 'CD —';
+      return [
+        action.kindLabel,
+        dc,
+        if (hasDice) '$dice$typeSuffix',
+      ].join(' · ');
+    }
+    if (action.isPlainUse) {
+      return [action.kindLabel, 'Efecto', if (hasDice) dice].join(' · ');
+    }
+
+    final mod = action.modifier >= 0
+        ? '+${action.modifier}'
+        : '${action.modifier}';
+    return [
+      action.kindLabel,
+      'Ataque $mod',
+      if (hasDice) '$dice$typeSuffix',
+    ].join(' · ');
+  }
+}
+
+/// Pasiva: no se tira. Si trae lore o resumen táctico se despliega al
+/// tocar; si no, es una fila informativa y nada más.
+class _PassiveTile extends StatelessWidget {
+  const _PassiveTile({required this.ability});
+
+  final Ability ability;
+
+  bool get _hasInfo =>
+      (ability.loreDescription?.trim().isNotEmpty ?? false) ||
+      (ability.tacticalSummary?.trim().isNotEmpty ?? false);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final subtitle = ability.tacticalRole?.trim();
+
+    if (!_hasInfo) {
+      return ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+        leading: CircleAvatar(
+          radius: 18,
+          backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(
+            alpha: 0.6,
+          ),
+          foregroundColor: theme.colorScheme.onSurfaceVariant,
+          child: const Icon(Icons.auto_stories_rounded, size: 18),
+        ),
+        title: Text(ability.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+        subtitle: subtitle == null || subtitle.isEmpty
+            ? const Text('Rasgo pasivo')
+            : Text(subtitle),
+      );
+    }
+
+    return Theme(
+      data: theme.copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        tilePadding: const EdgeInsets.symmetric(horizontal: 4),
+        childrenPadding: const EdgeInsets.fromLTRB(4, 0, 4, 12),
+        leading: CircleAvatar(
+          radius: 18,
+          backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(
+            alpha: 0.6,
+          ),
+          foregroundColor: theme.colorScheme.onSurfaceVariant,
+          child: const Icon(Icons.auto_stories_rounded, size: 18),
+        ),
+        title: Text(ability.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+        subtitle: Text(
+          subtitle == null || subtitle.isEmpty ? 'Rasgo pasivo' : subtitle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        children: [
+          if (ability.loreDescription?.trim().isNotEmpty ?? false)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                ability.loreDescription!,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontStyle: FontStyle.italic,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          if (ability.tacticalSummary?.trim().isNotEmpty ?? false) ...[
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                ability.tacticalSummary!,
+                style: theme.textTheme.bodySmall,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ChargeBadge extends StatelessWidget {
+  const _ChargeBadge({required this.current, required this.max});
+
+  final int current;
+  final int max;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final depleted = current <= 0;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: depleted
+            ? theme.colorScheme.errorContainer
+            : theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        '$current/$max',
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: depleted
+              ? theme.colorScheme.onErrorContainer
+              : theme.colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}

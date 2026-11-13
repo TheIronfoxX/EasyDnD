@@ -86,6 +86,29 @@ class StatsBlock {
 
   /// Orden estándar para pintar la cuadrícula de la pestaña Stats.
   List<AbilityScore> get asList => [str, dex, con, intelligence, wis, cha];
+
+  /// Modificador real de una clave de característica ('str', 'dex',
+  /// 'con', 'int', 'wis', 'cha'). Una clave vacía o desconocida vale 0
+  /// en vez de reventar: las fichas viejas pueden traer cualquier cosa
+  /// en "related_stat" y la UI de tiradas no debe romperse por eso.
+  int modFor(String key) {
+    switch (key) {
+      case 'str':
+        return str.mod;
+      case 'dex':
+        return dex.mod;
+      case 'con':
+        return con.mod;
+      case 'int':
+        return intelligence.mod;
+      case 'wis':
+        return wis.mod;
+      case 'cha':
+        return cha.mod;
+      default:
+        return 0;
+    }
+  }
 }
 
 /// Una competencia derivada (Arcanos, Sigilo...) que ya trae su
@@ -112,11 +135,7 @@ class Skill {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'related_stat': relatedStat,
-      'modifier': modifier,
-    };
+    return {'name': name, 'related_stat': relatedStat, 'modifier': modifier};
   }
 
   /// Modificador formateado con signo explícito: "+10", "+0", "-1".
