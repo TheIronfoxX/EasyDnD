@@ -8,6 +8,10 @@
 // tema como en widgets y tests sin arrastrar dependencias.
 
 /// Escala de espaciado, en píxeles lógicos. De menor a mayor.
+///
+/// Es una grilla de 4: si un valor no cae acá (por ejemplo 6, 10 o 14 en
+/// controles densos), se deja inline a propósito para no inventar medios
+/// pasos que después nadie respeta.
 abstract final class AppSpacing {
   static const double xs = 4;
   static const double sm = 8;
@@ -18,6 +22,9 @@ abstract final class AppSpacing {
 }
 
 /// Radios de esquina. [pill] es el comodín para chips y etiquetas.
+///
+/// Los radios fuera de escala (3, 4, 6, 10...) son detalles ópticos de un
+/// control puntual; no se promueven a token hasta que se repitan.
 abstract final class AppRadii {
   static const double sm = 8;
   static const double md = 12;
