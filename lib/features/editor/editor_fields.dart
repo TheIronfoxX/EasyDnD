@@ -15,17 +15,9 @@ import 'package:flutter/services.dart';
 import '../../core/dice.dart';
 import '../../domain/models/weapon.dart';
 
-/// Labels en español de los seis atributos, indexados por la clave del
-/// shape. Lo comparten las secciones que muestran o preguntan por un
-/// stat relacionado (atributos, competencias, habilidades).
-const Map<String, String> kStatLabels = {
-  'str': 'Fuerza',
-  'dex': 'Destreza',
-  'con': 'Constitución',
-  'int': 'Inteligencia',
-  'wis': 'Sabiduría',
-  'cha': 'Carisma',
-};
+// Reexportado para las secciones del editor que ya lo importaban desde
+// acá; la fuente de verdad vive en core/dnd_rules.dart.
+export '../../core/dnd_rules.dart' show kStatLabels;
 
 /// Campo de texto simple (nombre, raza, descripciones...).
 class EditorTextField extends StatelessWidget {

@@ -5,10 +5,9 @@
 // corregir con IA, importar o crear otra ficha), y una NavigationBar
 // con los tres tabs del juego — Combate, Ficha e Inventario.
 //
-// Los cuerpos de los tabs son provisorios en esta sub-etapa: el
-// tablero real llega en 5b, las acciones con dados en 5c y el
-// inventario/ficha en 5d. Lo que SÍ queda cerrado acá es la
-// navegación entre pantallas y el cambio de personaje activo.
+// El tablero de combate llega en 5b, las acciones con dados en 5c y el
+// inventario/ficha en 5d. Lo que SÍ queda cerrado acá es la navegación
+// entre pantallas y el cambio de personaje activo.
 //
 // El estado de la UI (tab seleccionado) es local: el store guarda la
 // ficha y el índice activo, no qué pestaña estaba mirando el jugador.
@@ -21,6 +20,8 @@ import '../../state/character_store.dart';
 import '../editor/character_editor_screen.dart';
 import '../import/import_wizard_screen.dart';
 import 'hud_combat_tab.dart';
+import 'hud_inventory_tab.dart';
+import 'hud_sheet_tab.dart';
 import 'welcome_screen.dart';
 
 /// Acciones del menú de mantenimiento de la AppBar.
@@ -171,18 +172,8 @@ class _HudScreenState extends State<HudScreen> {
         index: _tabIndex,
         children: [
           HudCombatTab(character: character),
-          const _HudSectionPlaceholder(
-            icon: Icons.badge_outlined,
-            title: 'Hoja de personaje',
-            description:
-                'Atributos, competencias, historia y códice '
-                'de la ficha activa.',
-          ),
-          const _HudSectionPlaceholder(
-            icon: Icons.backpack_rounded,
-            title: 'Inventario y compañeros',
-            description: 'Armas, objetos, bolsa y aliados del personaje.',
-          ),
+          HudSheetTab(character: character),
+          HudInventoryTab(character: character),
         ],
       ),
       bottomNavigationBar: NavigationBar(
@@ -282,50 +273,6 @@ class _MenuRow extends StatelessWidget {
           child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
         ),
       ],
-    );
-  }
-}
-
-/// Cuerpo provisorio de un tab. Cada sub-etapa siguiente lo reemplaza
-/// por la sección real sin tocar el shell.
-class _HudSectionPlaceholder extends StatelessWidget {
-  const _HudSectionPlaceholder({
-    required this.icon,
-    required this.title,
-    required this.description,
-  });
-
-  final IconData icon;
-  final String title;
-  final String description;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 48, color: theme.colorScheme.outline),
-            const SizedBox(height: 16),
-            Text(title, style: theme.textTheme.titleLarge),
-            const SizedBox(height: 8),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 360),
-              child: Text(
-                description,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

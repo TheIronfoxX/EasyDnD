@@ -76,12 +76,13 @@ void main() {
 
       await tester.tap(find.text('Ficha'));
       await tester.pumpAndSettle();
-      expect(find.text('Hoja de personaje'), findsOneWidget);
+      expect(find.text('Atributos'), findsOneWidget);
       expect(find.text('Vida'), findsNothing);
 
       await tester.tap(find.text('Inventario'));
       await tester.pumpAndSettle();
-      expect(find.text('Inventario y compañeros'), findsOneWidget);
+      expect(find.text('Armas'), findsOneWidget);
+      expect(find.text('Bolsa'), findsOneWidget);
     });
 
     testWidgets('el selector de roster cambia el personaje activo', (

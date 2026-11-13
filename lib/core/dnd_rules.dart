@@ -6,6 +6,19 @@
 // character_provider.dart. Acá viven juntas, son datos y funciones
 // puras (sin Flutter, sin modelos de por medio) y se testean solas.
 
+/// Labels en español de los seis atributos, indexados por la clave del
+/// shape. Lo comparten el editor y las vistas de solo lectura del HUD
+/// (ficha y competencias). Vive en core para que el HUD no dependa de
+/// widgets del editor.
+const Map<String, String> kStatLabels = {
+  'str': 'Fuerza',
+  'dex': 'Destreza',
+  'con': 'Constitución',
+  'int': 'Inteligencia',
+  'wis': 'Sabiduría',
+  'cha': 'Carisma',
+};
+
 /// Detalle mecánico estático de una condición (Apresado, Envenenado,
 /// Derribado...). Es un dato de solo lectura, independiente de
 /// cualquier personaje: la ficha solo guarda el *nombre* de la
