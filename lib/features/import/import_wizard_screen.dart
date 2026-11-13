@@ -28,6 +28,7 @@ import '../../state/character_store.dart';
 import 'wizard_step_paste.dart';
 import 'wizard_step_preview.dart';
 import 'wizard_step_source.dart';
+import '../../core/theme/design_tokens.dart';
 
 class ImportWizardScreen extends StatefulWidget {
   const ImportWizardScreen({super.key, this.replaceIndex});
@@ -77,14 +78,17 @@ class _ImportWizardScreenState extends State<ImportWizardScreen> {
   void _validateAndAdvance() {
     final text = _responseController.text.trim();
     if (text.isEmpty) {
-      setState(() => _responseErrors = [
-            const ValidationIssue(
-              severity: ValidationSeverity.error,
-              field: 'json',
-              message: 'Pegá primero el JSON que te devolvió la IA '
-                  '(o elegí un archivo).',
-            ),
-          ]);
+      setState(
+        () => _responseErrors = [
+          const ValidationIssue(
+            severity: ValidationSeverity.error,
+            field: 'json',
+            message:
+                'Pegá primero el JSON que te devolvió la IA '
+                '(o elegí un archivo).',
+          ),
+        ],
+      );
       return;
     }
 
@@ -127,9 +131,12 @@ class _ImportWizardScreenState extends State<ImportWizardScreen> {
     final store = context.watch<CharacterStore>();
     final replaceIndex = widget.replaceIndex;
     final isReplace =
-        replaceIndex != null && replaceIndex >= 0 && replaceIndex < store.roster.length;
-    final replacedName =
-        isReplace ? store.roster[replaceIndex].basicInfo.name : null;
+        replaceIndex != null &&
+        replaceIndex >= 0 &&
+        replaceIndex < store.roster.length;
+    final replacedName = isReplace
+        ? store.roster[replaceIndex].basicInfo.name
+        : null;
 
     return Scaffold(
       appBar: AppBar(
@@ -146,24 +153,24 @@ class _ImportWizardScreenState extends State<ImportWizardScreen> {
               switchOutCurve: Curves.easeIn,
               child: switch (_step) {
                 0 => WizardStepSource(
-                    key: const ValueKey('wizard-step-source'),
-                    isReplace: isReplace,
-                    replacedName: replacedName,
-                    currentSheet: isReplace ? store.roster[replaceIndex] : null,
-                    onNivel20LinkResolved: _onNivel20LinkResolved,
-                  ),
+                  key: const ValueKey('wizard-step-source'),
+                  isReplace: isReplace,
+                  replacedName: replacedName,
+                  currentSheet: isReplace ? store.roster[replaceIndex] : null,
+                  onNivel20LinkResolved: _onNivel20LinkResolved,
+                ),
                 1 => WizardStepPaste(
-                    key: const ValueKey('wizard-step-paste'),
-                    controller: _responseController,
-                    errors: _responseErrors,
-                  ),
+                  key: const ValueKey('wizard-step-paste'),
+                  controller: _responseController,
+                  errors: _responseErrors,
+                ),
                 _ => WizardStepPreview(
-                    key: const ValueKey('wizard-step-preview'),
-                    result: _result!,
-                    isReplace: isReplace,
-                    replacedName: replacedName,
-                    onConfirm: _confirmImport,
-                  ),
+                  key: const ValueKey('wizard-step-preview'),
+                  result: _result!,
+                  isReplace: isReplace,
+                  replacedName: replacedName,
+                  onConfirm: _confirmImport,
+                ),
               },
             ),
           ),
@@ -222,19 +229,31 @@ class _BottomBar extends StatelessWidget {
         primary = FilledButton.icon(
           onPressed: onConfirm,
           icon: const Icon(Icons.download_done_rounded),
-          label: Text(isReplace ? 'Reemplazar a ${replacedName ?? 'la ficha'}' : 'Importar personaje'),
+          label: Text(
+            isReplace
+                ? 'Reemplazar a ${replacedName ?? 'la ficha'}'
+                : 'Importar personaje',
+          ),
         );
     }
 
     return SafeArea(
       top: false,
-      minimum: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      minimum: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.lg,
+        AppSpacing.md,
+      ),
       child: Row(
         children: [
           if (step > 0)
             Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: OutlinedButton(onPressed: onBack, child: const Text('Atrás')),
+              padding: const EdgeInsets.only(right: AppSpacing.md),
+              child: OutlinedButton(
+                onPressed: onBack,
+                child: const Text('Atrás'),
+              ),
             ),
           Expanded(child: primary),
         ],
@@ -258,7 +277,10 @@ class _StepIndicator extends StatelessWidget {
     final scheme = theme.colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
       child: Row(
         children: [
           for (var i = 0; i < labels.length; i++) ...[
@@ -280,21 +302,29 @@ class _StepIndicator extends StatelessWidget {
                         ? scheme.primary
                         : scheme.surfaceContainerHighest,
                     border: Border.all(
-                      color: i <= current ? scheme.primary : scheme.outlineVariant,
+                      color: i <= current
+                          ? scheme.primary
+                          : scheme.outlineVariant,
                     ),
                   ),
                   alignment: Alignment.center,
                   child: i < current
-                      ? Icon(Icons.check_rounded, size: 18, color: scheme.onPrimary)
+                      ? Icon(
+                          Icons.check_rounded,
+                          size: 18,
+                          color: scheme.onPrimary,
+                        )
                       : Text(
                           '${i + 1}',
                           style: theme.textTheme.labelMedium?.copyWith(
-                            color: i <= current ? scheme.onPrimary : scheme.outline,
+                            color: i <= current
+                                ? scheme.onPrimary
+                                : scheme.outline,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSpacing.xs),
                 Text(
                   labels[i],
                   style: theme.textTheme.labelSmall?.copyWith(

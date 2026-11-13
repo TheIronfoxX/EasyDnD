@@ -14,6 +14,7 @@ import '../../core/dnd_rules.dart';
 import '../../domain/models/character.dart';
 import '../../domain/models/stats.dart';
 import 'hud_widgets.dart';
+import '../../core/theme/design_tokens.dart';
 
 class HudSheetTab extends StatelessWidget {
   const HudSheetTab({super.key, required this.character});
@@ -23,7 +24,12 @@ class HudSheetTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.xl,
+      ),
       children: [
         _AttributesSection(stats: character.stats),
         _SkillsSection(skills: character.skills),
@@ -93,12 +99,15 @@ class _ScoreTile extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: 10,
+      ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withValues(
           alpha: 0.35,
         ),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadii.md),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -111,7 +120,7 @@ class _ScoreTile extends StatelessWidget {
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -121,12 +130,12 @@ class _ScoreTile extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(999),
+                  borderRadius: BorderRadius.circular(AppRadii.pill),
                 ),
                 child: Text(
                   score.modFormatted,
@@ -166,7 +175,9 @@ class _SkillsSection extends StatelessWidget {
               children: [
                 for (final skill in skills)
                   ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xs,
+                    ),
                     leading: CircleAvatar(
                       radius: 16,
                       backgroundColor: theme.colorScheme.secondaryContainer,
@@ -287,7 +298,7 @@ class _ReadOnlyField extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -299,7 +310,7 @@ class _ReadOnlyField extends StatelessWidget {
               letterSpacing: 1,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           Text(text.trim(), style: theme.textTheme.bodyMedium),
         ],
       ),

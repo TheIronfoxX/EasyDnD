@@ -20,6 +20,7 @@ import 'package:flutter/material.dart';
 
 import '../../domain/models/character.dart';
 import 'editor_fields.dart';
+import '../../core/theme/design_tokens.dart';
 
 class EditorSectionSlots extends StatefulWidget {
   const EditorSectionSlots({super.key, required this.draft});
@@ -61,10 +62,7 @@ class _EditorSectionSlotsState extends State<EditorSectionSlots> {
     // Niveles elegibles: los libres, más el propio si es edición
     // (incluido un nivel fuera de 1-9 que trajera una ficha rara — el
     // dropdown no puede quedarse sin el valor actual).
-    final options = {
-      ..._freeLevels(),
-      if (editing) slots[index].level,
-    }.toList()
+    final options = {..._freeLevels(), if (editing) slots[index].level}.toList()
       ..sort();
 
     final result = await showDialog<SpellSlot>(
@@ -94,7 +92,8 @@ class _EditorSectionSlotsState extends State<EditorSectionSlots> {
 
     return EditorSectionScaffold(
       title: 'Ranuras de conjuro',
-      help: 'Por nivel de conjuro: cuántas ranuras en total y cuántas '
+      help:
+          'Por nivel de conjuro: cuántas ranuras en total y cuántas '
           'quedan. El alta solo ofrece niveles que la ficha todavía no '
           'tiene.',
       onAdd: _add,
@@ -112,14 +111,15 @@ class _EditorSectionSlotsState extends State<EditorSectionSlots> {
               child: Text('${slots[i].level}'),
             ),
             title: Text('Nivel ${slots[i].level}'),
-            subtitle: Text('${slots[i].current} de ${slots[i].max} '
-                'disponibles'),
+            subtitle: Text(
+              '${slots[i].current} de ${slots[i].max} '
+              'disponibles',
+            ),
             trailing: IconButton(
               tooltip: 'Borrar nivel',
               icon: const Icon(Icons.delete_outline_rounded),
-              onPressed: () => setState(
-                () => widget.draft.spellSlots.slots.removeAt(i),
-              ),
+              onPressed: () =>
+                  setState(() => widget.draft.spellSlots.slots.removeAt(i)),
             ),
             onTap: () => _edit(index: i),
           ),
@@ -157,9 +157,9 @@ class _SlotDialogState extends State<_SlotDialog> {
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
-    Navigator.of(context).pop(
-      SpellSlot(level: _level, max: _max, current: _current),
-    );
+    Navigator.of(
+      context,
+    ).pop(SpellSlot(level: _level, max: _max, current: _current));
   }
 
   @override
@@ -185,7 +185,7 @@ class _SlotDialogState extends State<_SlotDialog> {
                 if (value != null) setState(() => _level = value);
               },
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             EditorIntField(
               label: 'Ranuras totales',
               value: _max,
@@ -193,7 +193,7 @@ class _SlotDialogState extends State<_SlotDialog> {
                 if (value != null) _max = value;
               },
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             EditorIntField(
               label: 'Disponibles ahora',
               value: _current,
@@ -216,10 +216,7 @@ class _SlotDialogState extends State<_SlotDialog> {
           onPressed: () => Navigator.of(context).pop(null),
           child: const Text('Cancelar'),
         ),
-        FilledButton(
-          onPressed: _submit,
-          child: const Text('Guardar'),
-        ),
+        FilledButton(onPressed: _submit, child: const Text('Guardar')),
       ],
     );
   }

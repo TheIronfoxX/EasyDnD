@@ -36,6 +36,7 @@ import 'editor_section_skills.dart';
 import 'editor_section_slots.dart';
 import 'editor_section_stats.dart';
 import 'editor_section_weapons.dart';
+import '../../core/theme/design_tokens.dart';
 
 class CharacterEditorScreen extends StatefulWidget {
   const CharacterEditorScreen({super.key, this.character});
@@ -137,8 +138,9 @@ class _CharacterEditorScreenState extends State<CharacterEditorScreen> {
 
   static String _basicInfoSubtitle(CharacterModel draft) {
     final basic = draft.basicInfo;
-    final clase =
-        basic.characterClass.isEmpty ? 'sin clase' : basic.characterClass;
+    final clase = basic.characterClass.isEmpty
+        ? 'sin clase'
+        : basic.characterClass;
     return 'Nivel ${basic.level} · ${basic.hpMax} PG · CA ${basic.ac} · $clase';
   }
 
@@ -251,9 +253,9 @@ class _CharacterEditorScreenState extends State<CharacterEditorScreen> {
   // -------------------------------------------------------------------
 
   Future<void> _openSection(_SectionSpec section) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => section.page(_draft)),
-    );
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => section.page(_draft)));
     // Al volver: los contadores de los tiles pueden haber cambiado.
     if (mounted) setState(() {});
   }
@@ -306,7 +308,7 @@ class _CharacterEditorScreenState extends State<CharacterEditorScreen> {
             children: [
               for (final error in result.errors)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
+                  padding: const EdgeInsets.only(bottom: AppSpacing.xs),
                   child: Text('${error.field} — ${error.message}'),
                 ),
             ],
@@ -339,8 +341,10 @@ class _CharacterEditorScreenState extends State<CharacterEditorScreen> {
                   ListTile(
                     dense: true,
                     contentPadding: EdgeInsets.zero,
-                    title: Text(warning.field,
-                        style: const TextStyle(fontFamily: 'monospace')),
+                    title: Text(
+                      warning.field,
+                      style: const TextStyle(fontFamily: 'monospace'),
+                    ),
                     subtitle: Text(warning.message),
                   ),
               ],
@@ -396,12 +400,14 @@ class _CharacterEditorScreenState extends State<CharacterEditorScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(isNew
-              ? 'Nueva ficha'
-              : 'Editar a ${widget.character!.basicInfo.name}'),
+          title: Text(
+            isNew
+                ? 'Nueva ficha'
+                : 'Editar a ${widget.character!.basicInfo.name}',
+          ),
         ),
         body: ListView(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
           children: [
             for (final section in _sections)
               ListTile(
@@ -415,7 +421,12 @@ class _CharacterEditorScreenState extends State<CharacterEditorScreen> {
         ),
         bottomNavigationBar: SafeArea(
           top: false,
-          minimum: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          minimum: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.lg,
+            AppSpacing.md,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,

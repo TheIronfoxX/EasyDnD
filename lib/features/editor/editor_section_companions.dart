@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 
 import '../../domain/models/character.dart';
 import 'editor_fields.dart';
+import '../../core/theme/design_tokens.dart';
 
 class EditorSectionCompanions extends StatefulWidget {
   const EditorSectionCompanions({super.key, required this.draft});
@@ -186,7 +187,7 @@ class _CompanionDialogState extends State<_CompanionDialog> {
                 validator: (value) =>
                     (value ?? '').trim().isEmpty ? 'Poné un nombre.' : null,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               TextFormField(
                 initialValue: _type,
                 textCapitalization: TextCapitalization.sentences,
@@ -214,7 +215,7 @@ class _CompanionDialogState extends State<_CompanionDialog> {
                     if (value != null) _setMaxHp(value);
                   },
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
                 EditorIntField(
                   label: 'PG actuales',
                   value: _currentHp,
@@ -231,7 +232,7 @@ class _CompanionDialogState extends State<_CompanionDialog> {
                     if (value != null) _currentHp = value;
                   },
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
               ],
               EditorIntField(
                 label: 'CA',

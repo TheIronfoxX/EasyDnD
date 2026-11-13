@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import '../../domain/models/character.dart';
 import '../../domain/models/stats.dart';
 import 'editor_fields.dart';
+import '../../core/theme/design_tokens.dart';
 
 class EditorSectionStats extends StatefulWidget {
   const EditorSectionStats({super.key, required this.draft});
@@ -69,7 +70,8 @@ class _EditorSectionStatsState extends State<EditorSectionStats> {
 
     return EditorSectionScaffold(
       title: 'Atributos',
-      help: 'El modificador es el número que usa el HUD. El estándar '
+      help:
+          'El modificador es el número que usa el HUD. El estándar '
           'de 5e sale de (valor − 10) / 2, pero lo podés pisar si tu '
           'ficha lo dice (homebrew).',
       children: [
@@ -131,15 +133,18 @@ class _ScoreCard extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+        padding: const EdgeInsets.fromLTRB(
+          14,
+          AppSpacing.md,
+          14,
+          AppSpacing.md,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Expanded(
-                  child: Text(label, style: theme.textTheme.titleSmall),
-                ),
+                Expanded(child: Text(label, style: theme.textTheme.titleSmall)),
                 Text(
                   score.modFormatted,
                   style: theme.textTheme.titleSmall?.copyWith(
@@ -181,7 +186,7 @@ class _ScoreCard extends StatelessWidget {
             ),
             if (modDiffers)
               Padding(
-                padding: const EdgeInsets.only(top: 4),
+                padding: const EdgeInsets.only(top: AppSpacing.xs),
                 child: Align(
                   alignment: Alignment.centerRight,
                   child: TextButton.icon(

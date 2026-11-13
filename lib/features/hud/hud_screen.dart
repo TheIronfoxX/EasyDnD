@@ -24,6 +24,7 @@ import 'hud_dialogs.dart';
 import 'hud_inventory_tab.dart';
 import 'hud_sheet_tab.dart';
 import 'welcome_screen.dart';
+import '../../core/theme/design_tokens.dart';
 
 /// Acciones del menú de mantenimiento de la AppBar.
 enum _HudMenuAction {
@@ -132,7 +133,7 @@ class _HudScreenState extends State<HudScreen> {
       appBar: AppBar(
         leadingWidth: 60,
         leading: Padding(
-          padding: const EdgeInsets.only(left: 12),
+          padding: const EdgeInsets.only(left: AppSpacing.md),
           child: CircleAvatar(
             backgroundColor: Theme.of(context).colorScheme.primaryContainer,
             foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
@@ -330,7 +331,7 @@ class _MenuRow extends StatelessWidget {
     return Row(
       children: [
         Icon(icon, size: 20, color: color),
-        const SizedBox(width: 12),
+        const SizedBox(width: AppSpacing.md),
         Expanded(
           child: Text(
             label,

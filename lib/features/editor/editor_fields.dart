@@ -14,6 +14,7 @@ import 'package:flutter/services.dart';
 
 import '../../core/dice.dart';
 import '../../domain/models/weapon.dart';
+import '../../core/theme/design_tokens.dart';
 
 // Reexportado para las secciones del editor que ya lo importaban desde
 // acá; la fuente de verdad vive en core/dnd_rules.dart.
@@ -200,9 +201,9 @@ class _EditorDiceFieldState extends State<EditorDiceField> {
         errorMaxLines: 2,
       ),
       autocorrect: false,
-      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontFamily: 'monospace',
-          ),
+      style: Theme.of(
+        context,
+      ).textTheme.bodyMedium?.copyWith(fontFamily: 'monospace'),
       onChanged: _handleChanged,
     );
   }
@@ -269,7 +270,7 @@ class _EditorMagicChargesState extends State<EditorMagicCharges> {
         ),
         if (charges.hasCharges)
           Padding(
-            padding: const EdgeInsets.only(left: 12),
+            padding: const EdgeInsets.only(left: AppSpacing.md),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -355,7 +356,12 @@ class EditorSectionScaffold extends StatelessWidget {
       body: SafeArea(
         child: ListView(
           // Con FAB el último ítem necesita lugar para no quedar tapado.
-          padding: EdgeInsets.fromLTRB(16, 16, 16, onAdd == null ? 32 : 96),
+          padding: EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.lg,
+            AppSpacing.lg,
+            onAdd == null ? AppSpacing.xxl : 96,
+          ),
           children: [
             if (help != null) ...[
               Text(
@@ -364,11 +370,11 @@ class EditorSectionScaffold extends StatelessWidget {
                   color: theme.colorScheme.outline,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
             ],
             for (final child in children) ...[
               child,
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
             ],
           ],
         ),
@@ -388,13 +394,13 @@ class EditorEmptyHint extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
       child: Text(
         text,
         textAlign: TextAlign.center,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.outline,
-            ),
+          color: Theme.of(context).colorScheme.outline,
+        ),
       ),
     );
   }

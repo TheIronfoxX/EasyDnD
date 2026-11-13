@@ -17,6 +17,7 @@ import '../../domain/models/character.dart';
 import '../../domain/models/weapon.dart';
 import '../../state/character_store.dart';
 import 'hud_widgets.dart';
+import '../../core/theme/design_tokens.dart';
 
 class HudInventoryTab extends StatelessWidget {
   const HudInventoryTab({super.key, required this.character});
@@ -26,7 +27,12 @@ class HudInventoryTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.xl,
+      ),
       children: [
         _WeaponsSection(character: character),
         _ItemsSection(character: character),
@@ -92,7 +98,7 @@ class _WeaponRow extends StatelessWidget {
             foregroundColor: theme.colorScheme.onSecondaryContainer,
             child: const Icon(Icons.gavel_rounded, size: 18),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -117,7 +123,7 @@ class _WeaponRow extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.sm),
           if (weapon.isUnique)
             const _UnitBadge(label: 'Única')
           else
@@ -156,12 +162,15 @@ class _ChargePill extends StatelessWidget {
     final depleted = current <= 0;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 2,
+      ),
       decoration: BoxDecoration(
         color: depleted
             ? theme.colorScheme.errorContainer
             : theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(AppRadii.pill),
       ),
       child: Text(
         '$current/$max cargas',
@@ -230,7 +239,7 @@ class _ItemRow extends StatelessWidget {
             size: 20,
             color: theme.colorScheme.onSurfaceVariant,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -253,7 +262,7 @@ class _ItemRow extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.sm),
           _QuantityStepper(
             value: item.quantity,
             decrementTooltip: 'Restar una unidad de ${item.name}',
@@ -300,7 +309,7 @@ class _PurseSection extends StatelessWidget {
                   value: '${purse.gold} po',
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: HudStatTile(
                   icon: Icons.circle_rounded,
@@ -308,7 +317,7 @@ class _PurseSection extends StatelessWidget {
                   value: '${purse.silver} pp',
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: HudStatTile(
                   icon: Icons.circle_outlined,
@@ -404,7 +413,7 @@ class _CompanionRow extends StatelessWidget {
                 foregroundColor: theme.colorScheme.onTertiaryContainer,
                 child: const Icon(Icons.pets_rounded, size: 18),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -436,7 +445,7 @@ class _CompanionRow extends StatelessWidget {
             ],
           ),
           if (companion.hasHp) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             LinearProgressIndicator(
               value: companion.maxHp <= 0
                   ? 0
@@ -535,10 +544,13 @@ class _UnitBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: AppSpacing.xs,
+      ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(AppRadii.pill),
       ),
       child: Text(
         label,

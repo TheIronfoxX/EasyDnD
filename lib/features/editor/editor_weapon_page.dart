@@ -19,6 +19,7 @@ import 'package:flutter/material.dart';
 
 import '../../domain/models/weapon.dart';
 import 'editor_fields.dart';
+import '../../core/theme/design_tokens.dart';
 
 class EditorWeaponPage extends StatefulWidget {
   const EditorWeaponPage({
@@ -149,7 +150,7 @@ class _EditorWeaponPageState extends State<EditorWeaponPage> {
               'Ej.: Varita de proyectiles — 3 cargas que se '
               'recuperan al descansar',
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.sm),
         Text(
           'DAÑO CONDICIONAL',
           style: theme.textTheme.labelSmall?.copyWith(
@@ -167,9 +168,14 @@ class _EditorWeaponPageState extends State<EditorWeaponPage> {
             // demás conservan su texto (con keys por índice se
             // pisarían entre sí).
             key: ObjectKey(conditional),
-            margin: const EdgeInsets.only(bottom: 8),
+            margin: const EdgeInsets.only(bottom: AppSpacing.sm),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.xs,
+                AppSpacing.md,
+                AppSpacing.md,
+              ),
               child: Column(
                 children: [
                   Row(
@@ -195,7 +201,7 @@ class _EditorWeaponPageState extends State<EditorWeaponPage> {
                     hint: 'Ej.: si el objetivo ya está quemado',
                     onChanged: (value) => conditional.trigger = value,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.md),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -229,7 +235,7 @@ class _EditorWeaponPageState extends State<EditorWeaponPage> {
             label: const Text('Agregar daño condicional'),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.sm),
         Text(
           'PROPIEDADES',
           style: theme.textTheme.labelSmall?.copyWith(

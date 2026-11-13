@@ -28,6 +28,7 @@ import 'package:flutter/services.dart';
 
 import '../../core/dice.dart';
 import '../../core/resolution.dart';
+import '../../core/theme/design_tokens.dart';
 
 /// Cargas/usos de un arma o habilidad, tal como las ve la hoja.
 class RollCharges {
@@ -388,7 +389,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
       child: ConstrainedBox(
         constraints: BoxConstraints(maxHeight: maxHeight),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, AppSpacing.xl),
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 520),
@@ -409,7 +410,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
       children: [
         _SheetHeader(action: action),
         if (action.isSavingThrow) ...[
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           _Banner(
             icon: Icons.shield_rounded,
             text: 'CD de Salvación: ${action.saveDc ?? '—'}',
@@ -428,7 +429,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
           ),
         ],
         if (_hasText(action.loreDescription)) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           Text(
             action.loreDescription!,
             style: theme.textTheme.bodySmall?.copyWith(
@@ -438,7 +439,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
           ),
         ],
         if (_hasText(action.tacticalSummary)) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           _Banner(
             icon: Icons.lightbulb_outline_rounded,
             text: action.tacticalSummary!,
@@ -447,7 +448,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
         if (action.usesSpellSlot) ...[
           const SizedBox(height: 20),
           _sectionLabel('Nivel de lanzamiento'),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           if (_eligibleOptions.isEmpty)
             Text(
               'La ficha no tiene ranuras de nivel ${action.baseLevel}.',
@@ -481,7 +482,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
             ),
         ],
         if (!_canRoll) ...[
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           _Banner(
             icon: Icons.error_outline_rounded,
             text: !_hasChargesLeft
@@ -494,7 +495,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
           if (!action.isPlainUse && !action.isSavingThrow) ...[
             const SizedBox(height: 20),
             _sectionLabel('Tirada'),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -524,7 +525,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
               _action.isSavingThrow) ...[
             const SizedBox(height: 20),
             _sectionLabel('Método de daño'),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             SegmentedButton<_RollMode>(
               segments: const [
                 ButtonSegment(
@@ -578,7 +579,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
                 : 'El objetivo falla',
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.sm),
         OutlinedButton.icon(
           onPressed: _onSavePassed,
           icon: const Icon(Icons.check_rounded),
@@ -602,7 +603,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
         ],
         Row(
           children: [
@@ -619,7 +620,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
               ),
             ),
             if (_needsTwoDice) ...[
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: TextField(
                   controller: _manualDie2,
@@ -634,7 +635,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
             ],
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         FilledButton.icon(
           onPressed: _confirmManual,
           icon: const Icon(Icons.check_rounded),
@@ -669,7 +670,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
             ),
           ),
         ],
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         Text(
           _dice.length > 1
               ? 'Dados: ${_dice.join(' y ')} → se usa $natural '
@@ -680,13 +681,16 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         Center(
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 28,
+              vertical: AppSpacing.md,
+            ),
             decoration: BoxDecoration(
               color: highlight.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(AppRadii.lg),
             ),
             child: Text(
               '$total',
@@ -705,7 +709,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
         if (isCrit)
           _Verdict(
             label: '¡Éxito crítico!',
@@ -720,7 +724,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
           )
         else
           _Descriptions(action: _action),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
         Row(
           children: [
             Expanded(
@@ -751,9 +755,9 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _SheetHeader(action: _action),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
         _sectionLabel('Daño / efecto'),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.sm),
         if (showManualInput)
           TextField(
             controller: _manualDamage,
@@ -770,12 +774,15 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
           )
         else
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: 14,
+            ),
             decoration: BoxDecoration(
               color: theme.colorScheme.surfaceContainerHighest.withValues(
                 alpha: 0.4,
               ),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadii.md),
             ),
             child: Row(
               children: [
@@ -875,7 +882,7 @@ class _SheetHeader extends StatelessWidget {
           foregroundColor: theme.colorScheme.onPrimaryContainer,
           child: Icon(action.icon, size: 20),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: AppSpacing.md),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -923,7 +930,10 @@ class _Banner extends StatelessWidget {
         : theme.colorScheme.onSurfaceVariant;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: 10,
+      ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(10),
@@ -932,7 +942,7 @@ class _Banner extends StatelessWidget {
       child: Row(
         children: [
           Icon(icon, size: 18, color: color),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
               text,
@@ -960,7 +970,10 @@ class _FixedSlotIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: 10,
+      ),
       decoration: BoxDecoration(
         color: theme.colorScheme.primary.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(10),
@@ -1013,7 +1026,7 @@ class _Verdict extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadii.md),
         border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
       child: Column(
@@ -1062,7 +1075,7 @@ class _Descriptions extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           Text(success, style: theme.textTheme.bodySmall),
           const SizedBox(height: 10),
         ],
@@ -1074,7 +1087,7 @@ class _Descriptions extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           Text(failure, style: theme.textTheme.bodySmall),
         ],
       ],

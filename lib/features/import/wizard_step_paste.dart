@@ -16,6 +16,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../../domain/character_validator.dart';
+import '../../core/theme/design_tokens.dart';
 
 class WizardStepPaste extends StatefulWidget {
   const WizardStepPaste({
@@ -43,7 +44,12 @@ class _WizardStepPasteState extends State<WizardStepPaste> {
     final scheme = theme.colorScheme;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.xl,
+      ),
       children: [
         Text('Pegá la respuesta de la IA', style: theme.textTheme.titleLarge),
         const SizedBox(height: 6),
@@ -53,15 +59,13 @@ class _WizardStepPasteState extends State<WizardStepPaste> {
           'alrededor). También podés elegir un archivo .json.',
           style: theme.textTheme.bodyMedium,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
 
         TextField(
           controller: widget.controller,
           maxLines: 10,
           minLines: 6,
-          style: theme.textTheme.bodySmall?.copyWith(
-            fontFamily: 'monospace',
-          ),
+          style: theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
           decoration: InputDecoration(
             labelText: 'JSON de la ficha',
             hintText: '{ "basic_info": { "name": ... }, ... }',
@@ -77,8 +81,7 @@ class _WizardStepPasteState extends State<WizardStepPaste> {
 
         if (widget.errors.isNotEmpty) ...[
           const SizedBox(height: 10),
-          for (final error in widget.errors)
-            _ErrorRow(issue: error),
+          for (final error in widget.errors) _ErrorRow(issue: error),
           const SizedBox(height: 6),
           Text(
             'Corregí el JSON (o pedile a la IA que lo arregle) y volvé a '
@@ -87,7 +90,7 @@ class _WizardStepPasteState extends State<WizardStepPaste> {
           ),
         ],
 
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
@@ -151,7 +154,7 @@ class _ErrorRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(Icons.cancel_outlined, size: 16, color: scheme.error),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text.rich(
               TextSpan(

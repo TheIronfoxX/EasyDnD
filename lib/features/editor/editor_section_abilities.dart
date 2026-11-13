@@ -14,6 +14,7 @@ import '../../domain/models/ability.dart';
 import '../../domain/models/character.dart';
 import 'editor_ability_page.dart';
 import 'editor_fields.dart';
+import '../../core/theme/design_tokens.dart';
 
 class EditorSectionAbilities extends StatefulWidget {
   const EditorSectionAbilities({super.key, required this.draft});
@@ -21,8 +22,7 @@ class EditorSectionAbilities extends StatefulWidget {
   final CharacterModel draft;
 
   @override
-  State<EditorSectionAbilities> createState() =>
-      _EditorSectionAbilitiesState();
+  State<EditorSectionAbilities> createState() => _EditorSectionAbilitiesState();
 }
 
 class _EditorSectionAbilitiesState extends State<EditorSectionAbilities> {
@@ -68,7 +68,8 @@ class _EditorSectionAbilitiesState extends State<EditorSectionAbilities> {
 
     return EditorSectionScaffold(
       title: 'Habilidades',
-      help: 'Lo que la ficha puede hacer en su turno, por economía de '
+      help:
+          'Lo que la ficha puede hacer en su turno, por economía de '
           'acciones. Tocá una para editarla completa; el alta arranca '
           'en "Acción" y desde el detalle la movés de categoría.',
       onAdd: _add,
@@ -89,7 +90,12 @@ class _EditorSectionAbilitiesState extends State<EditorSectionAbilities> {
     final theme = Theme.of(context);
     return [
       Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.sm,
+          AppSpacing.lg,
+          0,
+        ),
         child: Text(
           '${label.toUpperCase()} · ${list.length}',
           style: theme.textTheme.labelSmall?.copyWith(

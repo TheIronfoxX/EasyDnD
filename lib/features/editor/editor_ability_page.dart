@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 
 import '../../domain/models/ability.dart';
 import 'editor_fields.dart';
+import '../../core/theme/design_tokens.dart';
 
 /// Categorías de la economía de acciones, por la clave del shape.
 /// La comparte el listado de la sección para sus headers.
@@ -118,7 +119,8 @@ class _EditorAbilityPageState extends State<EditorAbilityPage> {
 
     return EditorSectionScaffold(
       title: widget.isNew ? 'Nueva habilidad' : 'Editar habilidad',
-      help: 'Todo lo que tocás entra al borrador al momento; el commit '
+      help:
+          'Todo lo que tocás entra al borrador al momento; el commit '
           'a la ficha real sigue siendo el "Guardar" del editor.',
       children: [
         DropdownButtonFormField<String>(
@@ -142,10 +144,10 @@ class _EditorAbilityPageState extends State<EditorAbilityPage> {
         DropdownButtonFormField<String>(
           key: const ValueKey('ability-related-stat'),
           initialValue: ability.relatedStat,
-          items: _itemsWith(
-            {'': '(ninguno)', ...kStatLabels},
-            ability.relatedStat,
-          ),
+          items: _itemsWith({
+            '': '(ninguno)',
+            ...kStatLabels,
+          }, ability.relatedStat),
           decoration: const InputDecoration(
             labelText: 'Atributo para el modificador',
             border: OutlineInputBorder(),
@@ -167,8 +169,8 @@ class _EditorAbilityPageState extends State<EditorAbilityPage> {
           label: 'Dados de daño',
           initialValue: ability.damageDice ?? '',
           hint: 'Ej.: 8d6 o 1d8+3 (vacío = no hace daño)',
-          onChanged: (value) => ability.damageDice =
-              value.trim().isEmpty ? null : value.trim(),
+          onChanged: (value) =>
+              ability.damageDice = value.trim().isEmpty ? null : value.trim(),
         ),
         if (_category == 'passive')
           DropdownButtonFormField<String>(
@@ -212,15 +214,17 @@ class _EditorAbilityPageState extends State<EditorAbilityPage> {
           label: 'Sabor / lore (opcional)',
           initialValue: ability.loreDescription ?? '',
           maxLines: 3,
-          onChanged: (value) => ability.loreDescription =
-              value.trim().isEmpty ? null : value.trim(),
+          onChanged: (value) => ability.loreDescription = value.trim().isEmpty
+              ? null
+              : value.trim(),
         ),
         EditorTextField(
           label: 'Resumen mecánico (opcional)',
           initialValue: ability.tacticalSummary ?? '',
           maxLines: 2,
-          onChanged: (value) => ability.tacticalSummary =
-              value.trim().isEmpty ? null : value.trim(),
+          onChanged: (value) => ability.tacticalSummary = value.trim().isEmpty
+              ? null
+              : value.trim(),
         ),
         EditorMagicCharges(charges: charges),
         SwitchListTile(
@@ -234,7 +238,7 @@ class _EditorAbilityPageState extends State<EditorAbilityPage> {
         ),
         if (ability.isScalable)
           Padding(
-            padding: const EdgeInsets.only(left: 12),
+            padding: const EdgeInsets.only(left: AppSpacing.md),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

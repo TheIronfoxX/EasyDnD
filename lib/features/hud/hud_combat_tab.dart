@@ -19,6 +19,7 @@ import '../../state/character_store.dart';
 import 'hud_actions_section.dart';
 import 'hud_dialogs.dart';
 import 'hud_widgets.dart';
+import '../../core/theme/design_tokens.dart';
 
 class HudCombatTab extends StatelessWidget {
   const HudCombatTab({super.key, required this.character});
@@ -28,7 +29,12 @@ class HudCombatTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.xl,
+      ),
       children: [
         _HealthSection(character: character),
         _TurnSection(character: character),
@@ -107,7 +113,7 @@ class _HealthSection extends StatelessWidget {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.only(bottom: 6, left: 4),
+                padding: const EdgeInsets.only(bottom: 6, left: AppSpacing.xs),
                 child: Text(
                   '/ ${info.hpMax} PG',
                   style: theme.textTheme.titleMedium?.copyWith(
@@ -117,7 +123,7 @@ class _HealthSection extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           LinearProgressIndicator(
             value: ratio,
             minHeight: 12,
@@ -127,7 +133,7 @@ class _HealthSection extends StatelessWidget {
                 : theme.colorScheme.primary,
             backgroundColor: theme.colorScheme.surfaceContainerHighest,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           Row(
             children: [
               Expanded(
@@ -137,7 +143,7 @@ class _HealthSection extends StatelessWidget {
                   label: const Text('Daño'),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: FilledButton.icon(
                   onPressed: () => _adjust(context, damage: false),
@@ -147,7 +153,7 @@ class _HealthSection extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           Row(
             children: [
               Expanded(
@@ -157,7 +163,7 @@ class _HealthSection extends StatelessWidget {
                   value: '${info.ac}',
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: HudStatTile(
                   icon: Icons.directions_walk_rounded,
@@ -165,7 +171,7 @@ class _HealthSection extends StatelessWidget {
                   value: '${info.speed} m',
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: HudStatTile(
                   icon: Icons.casino_rounded,
@@ -219,10 +225,13 @@ class _HealthBadge extends StatelessWidget {
     };
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: AppSpacing.xs,
+      ),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(AppRadii.pill),
       ),
       child: Text(
         label,
@@ -289,7 +298,7 @@ class _TurnSection extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           Row(
             children: [
               Icon(
@@ -297,7 +306,7 @@ class _TurnSection extends StatelessWidget {
                 size: 20,
                 color: theme.colorScheme.onSurfaceVariant,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -314,7 +323,7 @@ class _TurnSection extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppSpacing.xs),
                     LinearProgressIndicator(
                       value: movementRatio,
                       minHeight: 6,
@@ -475,7 +484,7 @@ class _ConditionsSection extends StatelessWidget {
               ],
             ),
           if (hasDisadvantage) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             Row(
               children: [
                 Icon(
@@ -483,7 +492,7 @@ class _ConditionsSection extends StatelessWidget {
                   size: 18,
                   color: theme.colorScheme.error,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
                     'Desventaja en tiradas de ataque y pruebas de '
@@ -528,7 +537,7 @@ class _ResourcesSection extends StatelessWidget {
         children: [
           for (final resource in character.resources)
             Padding(
-              padding: const EdgeInsets.only(bottom: 4),
+              padding: const EdgeInsets.only(bottom: AppSpacing.xs),
               child: Row(
                 children: [
                   Expanded(

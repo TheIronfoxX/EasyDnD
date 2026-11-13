@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 
 import '../../domain/models/character.dart';
 import 'editor_fields.dart';
+import '../../core/theme/design_tokens.dart';
 
 class EditorSectionItems extends StatefulWidget {
   const EditorSectionItems({super.key, required this.draft});
@@ -97,7 +98,7 @@ class _EditorSectionItemsState extends State<EditorSectionItems> {
             color: theme.colorScheme.outline,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.sm),
         Text(
           'OBJETOS',
           style: theme.textTheme.labelSmall?.copyWith(
@@ -189,7 +190,7 @@ class _MundaneItemDialogState extends State<_MundaneItemDialog> {
               validator: (value) =>
                   (value ?? '').trim().isEmpty ? 'Poné un nombre.' : null,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             TextFormField(
               initialValue: _description,
               textCapitalization: TextCapitalization.sentences,
@@ -201,7 +202,7 @@ class _MundaneItemDialogState extends State<_MundaneItemDialog> {
               maxLines: 2,
               onChanged: (value) => _description = value,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             EditorIntField(
               label: 'Cantidad',
               value: _quantity,

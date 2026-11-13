@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 import '../../domain/models/character.dart';
 import '../../domain/models/stats.dart';
 import 'editor_fields.dart';
+import '../../core/theme/design_tokens.dart';
 
 class EditorSectionSkills extends StatefulWidget {
   const EditorSectionSkills({super.key, required this.draft});
@@ -34,9 +35,8 @@ class _EditorSectionSkillsState extends State<EditorSectionSkills> {
     final skills = widget.draft.skills;
     final result = await showDialog<Skill>(
       context: context,
-      builder: (_) => _SkillDialog(
-        initial: index == null ? null : skills[index],
-      ),
+      builder: (_) =>
+          _SkillDialog(initial: index == null ? null : skills[index]),
     );
     if (result == null) return;
     setState(() {
@@ -54,7 +54,8 @@ class _EditorSectionSkillsState extends State<EditorSectionSkills> {
 
     return EditorSectionScaffold(
       title: 'Competencias',
-      help: 'El modificador final de cada competencia, tal como lo usa '
+      help:
+          'El modificador final de cada competencia, tal como lo usa '
           'el HUD. No se recalcula solo: si cambia un atributo o el '
           'bono de competencia, actualizalo a mano.',
       onAdd: () => _edit(),
@@ -70,8 +71,7 @@ class _EditorSectionSkillsState extends State<EditorSectionSkills> {
             trailing: IconButton(
               tooltip: 'Borrar competencia',
               icon: const Icon(Icons.delete_outline_rounded),
-              onPressed: () =>
-                  setState(() => widget.draft.skills.removeAt(i)),
+              onPressed: () => setState(() => widget.draft.skills.removeAt(i)),
             ),
             onTap: () => _edit(index: i),
           ),
@@ -105,8 +105,9 @@ class _StatBadge extends StatelessWidget {
       foregroundColor: theme.colorScheme.onSecondaryContainer,
       child: Text(
         skill.relatedStat.toUpperCase(),
-        style: theme.textTheme.labelSmall
-            ?.copyWith(fontWeight: FontWeight.bold),
+        style: theme.textTheme.labelSmall?.copyWith(
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
@@ -134,11 +135,7 @@ class _SkillDialogState extends State<_SkillDialog> {
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
     Navigator.of(context).pop(
-      Skill(
-        name: _name.trim(),
-        relatedStat: _relatedStat,
-        modifier: _modifier,
-      ),
+      Skill(name: _name.trim(), relatedStat: _relatedStat, modifier: _modifier),
     );
   }
 
@@ -164,7 +161,7 @@ class _SkillDialogState extends State<_SkillDialog> {
               validator: (value) =>
                   (value ?? '').trim().isEmpty ? 'Poné un nombre.' : null,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             DropdownButtonFormField<String>(
               // Valor inicial vacío (ficha vieja sin related_stat):
               // arranca sin selección y el validator exige elegir.
@@ -184,7 +181,7 @@ class _SkillDialogState extends State<_SkillDialog> {
                   value == null ? 'Elegí a qué atributo se agarra.' : null,
               onChanged: (value) => setState(() => _relatedStat = value ?? ''),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             EditorIntField(
               label: 'Modificador',
               value: _modifier,
@@ -201,10 +198,7 @@ class _SkillDialogState extends State<_SkillDialog> {
           onPressed: () => Navigator.of(context).pop(null),
           child: const Text('Cancelar'),
         ),
-        FilledButton(
-          onPressed: _submit,
-          child: const Text('Guardar'),
-        ),
+        FilledButton(onPressed: _submit, child: const Text('Guardar')),
       ],
     );
   }

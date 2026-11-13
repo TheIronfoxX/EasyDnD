@@ -21,6 +21,7 @@ import 'package:flutter/services.dart';
 import '../../domain/ai_prompt.dart';
 import '../../domain/character_validator.dart';
 import '../../domain/models/character.dart';
+import '../../core/theme/design_tokens.dart';
 
 class WizardStepPreview extends StatelessWidget {
   const WizardStepPreview({
@@ -45,7 +46,12 @@ class WizardStepPreview extends StatelessWidget {
     final warnings = result.warnings;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.xl,
+      ),
       children: [
         Text('Revisá antes de confirmar', style: theme.textTheme.titleLarge),
         const SizedBox(height: 6),
@@ -55,16 +61,16 @@ class WizardStepPreview extends StatelessWidget {
               : 'Esta es la ficha que se va a añadir a tu roster.',
           style: theme.textTheme.bodyMedium,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
 
         _SummaryCard(character: character),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
 
         if (warnings.isEmpty)
           _NoWarningsCard(hasResources: character.resources.isNotEmpty)
         else ...[
           _WarningsCard(warnings: warnings),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           _CorrectionCard(warnings: warnings, result: result),
         ],
       ],
@@ -91,7 +97,7 @@ class _SummaryCard extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -101,8 +107,9 @@ class _SummaryCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     basic.name,
-                    style: theme.textTheme.headlineSmall
-                        ?.copyWith(fontWeight: FontWeight.bold),
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 _Chip('Nivel ${basic.level}'),
@@ -122,7 +129,10 @@ class _SummaryCard extends StatelessWidget {
                 _StatChip(label: 'Velocidad', value: '${basic.speed} m'),
                 _StatChip(
                   label: 'CD salv.',
-                  value: basic.spellSaveDc == null ? '—' : '${basic.spellSaveDc}'),
+                  value: basic.spellSaveDc == null
+                      ? '—'
+                      : '${basic.spellSaveDc}',
+                ),
               ],
             ),
             const SizedBox(height: 14),
@@ -161,14 +171,14 @@ class _Chip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.secondaryContainer,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(AppRadii.pill),
       ),
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSecondaryContainer,
-              fontWeight: FontWeight.w600,
-            ),
+          color: Theme.of(context).colorScheme.onSecondaryContainer,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -185,7 +195,10 @@ class _StatChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(10),
@@ -201,8 +214,9 @@ class _StatChip extends StatelessWidget {
           ),
           Text(
             value,
-            style: theme.textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.bold),
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
@@ -229,22 +243,25 @@ class _NoWarningsCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: scheme.primaryContainer,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadii.md),
       ),
       child: Row(
         children: [
-          Icon(Icons.verified_rounded,
-              color: scheme.onPrimaryContainer, size: 20),
+          Icon(
+            Icons.verified_rounded,
+            color: scheme.onPrimaryContainer,
+            size: 20,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               hasResources
                   ? 'El validador no encontró avisos: la ficha está '
-                      'completa y lista para el HUD.'
+                        'completa y lista para el HUD.'
                   : 'El validador no encontró avisos. Igual fijate: la '
-                      'ficha no declara ningún recurso gastable (Ki, '
-                      'Inspiración, Furia...), y casi ninguna clase de 5e '
-                      'tiene cero.',
+                        'ficha no declara ningún recurso gastable (Ki, '
+                        'Inspiración, Furia...), y casi ninguna clase de 5e '
+                        'tiene cero.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: scheme.onPrimaryContainer,
               ),
@@ -275,9 +292,12 @@ class _WarningsCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.warning_amber_rounded,
-                    color: scheme.tertiary, size: 20),
-                const SizedBox(width: 8),
+                Icon(
+                  Icons.warning_amber_rounded,
+                  color: scheme.tertiary,
+                  size: 20,
+                ),
+                const SizedBox(width: AppSpacing.sm),
                 Text(
                   'Avisos (${warnings.length}) — la ficha entra igual',
                   style: theme.textTheme.titleSmall,
@@ -287,12 +307,15 @@ class _WarningsCard extends StatelessWidget {
             const SizedBox(height: 10),
             for (final warning in warnings)
               Padding(
-                padding: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.subdirectory_arrow_right,
-                        size: 14, color: scheme.tertiary),
+                    Icon(
+                      Icons.subdirectory_arrow_right,
+                      size: 14,
+                      color: scheme.tertiary,
+                    ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Column(
@@ -306,8 +329,10 @@ class _WarningsCard extends StatelessWidget {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          Text(warning.message,
-                              style: theme.textTheme.bodySmall),
+                          Text(
+                            warning.message,
+                            style: theme.textTheme.bodySmall,
+                          ),
                         ],
                       ),
                     ),
@@ -347,7 +372,7 @@ class _CorrectionCard extends StatelessWidget {
               'podés importar así como está: los avisos no bloquean.',
               style: theme.textTheme.bodySmall,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
@@ -363,18 +388,20 @@ class _CorrectionCard extends StatelessWidget {
   }
 
   Future<void> _copyCorrectionPrompt(BuildContext context) async {
-    final characterJson = const JsonEncoder.withIndent('  ')
-        .convert(result.character!.toJson());
-    final problems =
-        warnings.map((w) => '${w.field}: ${w.message}').toList();
+    final characterJson = const JsonEncoder.withIndent(
+      '  ',
+    ).convert(result.character!.toJson());
+    final problems = warnings.map((w) => '${w.field}: ${w.message}').toList();
     final prompt = AiPrompt.forCorrection(characterJson, problems);
 
     await Clipboard.setData(ClipboardData(text: prompt));
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Prompt de corrección copiado. Pegalo en tu IA y '
-            'traé la respuesta al paso anterior.'),
+        content: Text(
+          'Prompt de corrección copiado. Pegalo en tu IA y '
+          'traé la respuesta al paso anterior.',
+        ),
       ),
     );
   }

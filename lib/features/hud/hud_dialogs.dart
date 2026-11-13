@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/dnd_rules.dart';
+import '../../core/theme/design_tokens.dart';
 
 /// Lo que el jugador marcó en el descanso personalizado.
 class CustomRestChoice {
@@ -204,7 +205,7 @@ class _AmountDialogState extends State<_AmountDialog> {
           children: [
             if (widget.description != null) ...[
               Text(widget.description!),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
             ],
             TextFormField(
               controller: _controller,
@@ -228,7 +229,7 @@ class _AmountDialogState extends State<_AmountDialog> {
               },
             ),
             if (_quickAmounts.isNotEmpty) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               Wrap(
                 spacing: 8,
                 children: [
@@ -389,7 +390,7 @@ class _ConditionPickerDialogState extends State<_ConditionPickerDialog> {
               ),
               onSubmitted: (_) => _addCustom(),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             Expanded(
               child: _availableCatalog.isEmpty
                   ? const Center(

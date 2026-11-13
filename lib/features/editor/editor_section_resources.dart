@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 
 import '../../domain/models/character.dart';
 import 'editor_fields.dart';
+import '../../core/theme/design_tokens.dart';
 
 class EditorSectionResources extends StatefulWidget {
   const EditorSectionResources({super.key, required this.draft});
@@ -159,7 +160,7 @@ class _ResourceDialogState extends State<_ResourceDialog> {
               validator: (value) =>
                   (value ?? '').trim().isEmpty ? 'Poné un nombre.' : null,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             EditorIntField(
               label: 'Tope de usos',
               value: _max,
@@ -167,7 +168,7 @@ class _ResourceDialogState extends State<_ResourceDialog> {
                 if (value != null) _setMax(value);
               },
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             EditorIntField(
               label: 'Usos restantes',
               value: _current,

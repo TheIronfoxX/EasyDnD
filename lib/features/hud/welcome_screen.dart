@@ -46,7 +46,7 @@ class WelcomeScreen extends StatelessWidget {
           children: [
             Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(AppSpacing.xl),
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 520),
                   child: Column(
@@ -61,13 +61,13 @@ class WelcomeScreen extends StatelessWidget {
                           child: const Icon(Icons.casino_rounded, size: 40),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: AppSpacing.xl),
                       Text(
                         'EasyDnD',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.displaySmall,
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.sm),
                       Text(
                         'Tu hoja de personaje viva para la mesa. '
                         'Combate, inventario y dados, sin perder de vista '
@@ -77,7 +77,7 @@ class WelcomeScreen extends StatelessWidget {
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: AppSpacing.xxl),
                       FilledButton.icon(
                         onPressed: () => _openImport(context),
                         icon: const Icon(Icons.auto_awesome_rounded),
@@ -86,7 +86,7 @@ class WelcomeScreen extends StatelessWidget {
                           child: Text('Importar ficha con IA'),
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSpacing.md),
                       FilledButton.tonalIcon(
                         onPressed: () => _openEditor(context),
                         icon: const Icon(Icons.person_add_rounded),
@@ -95,7 +95,7 @@ class WelcomeScreen extends StatelessWidget {
                           child: Text('Crear ficha a mano'),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: AppSpacing.xl),
                       Text(
                         'Todo queda guardado en este dispositivo: la app '
                         'funciona sin conexión.',

@@ -22,6 +22,7 @@ import '../../data/nivel20_extractor.dart';
 import '../../domain/ai_prompt.dart';
 import '../../domain/character_validator.dart';
 import '../../domain/models/character.dart';
+import '../../core/theme/design_tokens.dart';
 
 /// Cómo llegan los datos del personaje al prompt.
 enum ImportSourceMode {
@@ -218,7 +219,12 @@ class _WizardStepSourceState extends State<WizardStepSource> {
           ];
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.xl,
+      ),
       children: [
         Text(
           'Conseguí el prompt para tu IA',
@@ -234,7 +240,7 @@ class _WizardStepSourceState extends State<WizardStepSource> {
           const SizedBox(height: 14),
           _ReplaceBanner(name: widget.replacedName),
         ],
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
 
         SegmentedButton<ImportSourceMode>(
           segments: [
@@ -250,27 +256,27 @@ class _WizardStepSourceState extends State<WizardStepSource> {
             });
           },
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
 
         switch (_mode) {
           ImportSourceMode.emptySheet => const _EmptySheetHint(),
-          ImportSourceMode.pastedText => _PastedTextField(controller: _sourceController),
+          ImportSourceMode.pastedText => _PastedTextField(
+            controller: _sourceController,
+          ),
           ImportSourceMode.nivel20Link => _Nivel20LinkField(
-              controller: _linkController,
-              isExtracting: _isExtracting,
-              error: _extractError,
-              hasFicha: _extractedFicha != null,
-              onExtract: _extractNivel20,
-            ),
-          ImportSourceMode.currentSheet => _CurrentSheetCard(problems: _currentSheetProblems),
+            controller: _linkController,
+            isExtracting: _isExtracting,
+            error: _extractError,
+            hasFicha: _extractedFicha != null,
+            onExtract: _extractNivel20,
+          ),
+          ImportSourceMode.currentSheet => _CurrentSheetCard(
+            problems: _currentSheetProblems,
+          ),
         },
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
 
-        _PromptPreview(
-          prompt: _prompt,
-          copied: _copied,
-          onCopy: _copyPrompt,
-        ),
+        _PromptPreview(prompt: _prompt, copied: _copied, onCopy: _copyPrompt),
       ],
     );
   }
@@ -288,16 +294,19 @@ class _ReplaceBanner extends StatelessWidget {
     final scheme = theme.colorScheme;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: scheme.secondaryContainer,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadii.md),
         border: Border.all(color: scheme.secondary),
       ),
       child: Row(
         children: [
-          Icon(Icons.published_with_changes_rounded,
-              color: scheme.onSecondaryContainer, size: 20),
+          Icon(
+            Icons.published_with_changes_rounded,
+            color: scheme.onSecondaryContainer,
+            size: 20,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -330,14 +339,16 @@ class _EmptySheetHint extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.edit_note_rounded,
-                    size: 20, color: theme.colorScheme.primary),
-                const SizedBox(width: 8),
-                Text('Modo ficha vacía',
-                    style: theme.textTheme.titleSmall),
+                Icon(
+                  Icons.edit_note_rounded,
+                  size: 20,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Text('Modo ficha vacía', style: theme.textTheme.titleSmall),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               'No tenés nada digital de tu personaje. Copiá el prompt de '
               'abajo, y ANTES de mandárselo a la IA pegá los datos de tu '
@@ -376,17 +387,16 @@ class _PastedTextFieldState extends State<_PastedTextField> {
           controller: widget.controller,
           maxLines: 6,
           minLines: 4,
-          style: theme.textTheme.bodySmall?.copyWith(
-            fontFamily: 'monospace',
-          ),
+          style: theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
           decoration: InputDecoration(
             labelText: 'Texto de la ficha',
-            hintText: 'Pegá acá el JSON crudo de Nivel20 o el texto de la '
+            hintText:
+                'Pegá acá el JSON crudo de Nivel20 o el texto de la '
                 'ficha (de un PDF, de tus apuntes...)',
             border: const OutlineInputBorder(),
             errorText: isBrokenJson
                 ? 'Eso empieza como JSON pero no decodifica: revisá que '
-                    'esté copiado completo.'
+                      'esté copiado completo.'
                 : null,
             errorMaxLines: 3,
           ),
@@ -396,7 +406,7 @@ class _PastedTextFieldState extends State<_PastedTextField> {
         ),
         if (isJson && !isBrokenJson)
           Padding(
-            padding: const EdgeInsets.only(top: 6, left: 4),
+            padding: const EdgeInsets.only(top: 6, left: AppSpacing.xs),
             child: Text(
               'Detectamos JSON de Nivel20: se limpia el HTML de las '
               'descripciones antes de armar el prompt.',
@@ -467,11 +477,13 @@ class _Nivel20LinkField extends StatelessWidget {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.cloud_download_rounded),
-            label: Text(isExtracting
-                ? 'Descargando tu ficha…'
-                : hasFicha
-                    ? 'Volver a descargar'
-                    : 'Descargar ficha'),
+            label: Text(
+              isExtracting
+                  ? 'Descargando tu ficha…'
+                  : hasFicha
+                  ? 'Volver a descargar'
+                  : 'Descargar ficha',
+            ),
           ),
         ),
         if (error != null) ...[
@@ -543,18 +555,23 @@ class _CurrentSheetCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Problemas detectados en la ficha guardada:',
-                style: theme.textTheme.titleSmall),
-            const SizedBox(height: 8),
+            Text(
+              'Problemas detectados en la ficha guardada:',
+              style: theme.textTheme.titleSmall,
+            ),
+            const SizedBox(height: AppSpacing.sm),
             for (final problem in problems!)
               Padding(
-                padding: const EdgeInsets.only(bottom: 4),
+                padding: const EdgeInsets.only(bottom: AppSpacing.xs),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.warning_amber_rounded,
-                        size: 16, color: scheme.tertiary),
-                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      size: 16,
+                      color: scheme.tertiary,
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(problem, style: theme.textTheme.bodySmall),
                     ),
@@ -584,10 +601,10 @@ class _StatusCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadii.md),
         border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
       child: Row(
@@ -625,14 +642,14 @@ class _PromptPreview extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Prompt para tu IA', style: theme.textTheme.titleSmall),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.sm),
         Container(
           width: double.infinity,
           constraints: const BoxConstraints(maxHeight: 280),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: scheme.surfaceContainerLowest,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadii.md),
             border: Border.all(color: scheme.outlineVariant),
           ),
           child: prompt == null
@@ -642,8 +659,9 @@ class _PromptPreview extends StatelessWidget {
                     child: Text(
                       'El prompt aparece acá cuando completes el modo de '
                       'arriba.',
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: scheme.outline),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: scheme.outline,
+                      ),
                     ),
                   ),
                 )
@@ -666,7 +684,11 @@ class _PromptPreview extends StatelessWidget {
               copied ? Icons.check_rounded : Icons.copy_rounded,
               size: 18,
             ),
-            label: Text(copied ? '¡Copiado! Ya lo tenés en el portapapeles' : 'Copiar prompt'),
+            label: Text(
+              copied
+                  ? '¡Copiado! Ya lo tenés en el portapapeles'
+                  : 'Copiar prompt',
+            ),
           ),
         ),
       ],

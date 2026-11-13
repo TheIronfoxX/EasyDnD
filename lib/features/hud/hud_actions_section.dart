@@ -28,6 +28,7 @@ import '../../domain/models/weapon.dart';
 import '../../state/character_store.dart';
 import 'hud_resolution_sheet.dart';
 import 'hud_widgets.dart';
+import '../../core/theme/design_tokens.dart';
 
 class HudActionsSection extends StatelessWidget {
   const HudActionsSection({super.key, required this.character, this.random});
@@ -236,8 +237,10 @@ class _ActionTile extends StatelessWidget {
     final noCharges = action.hasCharges && action.charges!.current <= 0;
 
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadii.md),
+      ),
       leading: CircleAvatar(
         radius: 18,
         backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(
@@ -273,7 +276,7 @@ class _ActionTile extends StatelessWidget {
               current: action.charges!.current,
               max: action.charges!.max,
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.sm),
           ],
           Icon(
             Icons.casino_rounded,
@@ -335,7 +338,7 @@ class _PassiveTile extends StatelessWidget {
 
     if (!_hasInfo) {
       return ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+        contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
         leading: CircleAvatar(
           radius: 18,
           backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(
@@ -354,8 +357,13 @@ class _PassiveTile extends StatelessWidget {
     return Theme(
       data: theme.copyWith(dividerColor: Colors.transparent),
       child: ExpansionTile(
-        tilePadding: const EdgeInsets.symmetric(horizontal: 4),
-        childrenPadding: const EdgeInsets.fromLTRB(4, 0, 4, 12),
+        tilePadding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+        childrenPadding: const EdgeInsets.fromLTRB(
+          AppSpacing.xs,
+          0,
+          AppSpacing.xs,
+          AppSpacing.md,
+        ),
         leading: CircleAvatar(
           radius: 18,
           backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(
@@ -383,7 +391,7 @@ class _PassiveTile extends StatelessWidget {
               ),
             ),
           if (ability.tacticalSummary?.trim().isNotEmpty ?? false) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
@@ -410,12 +418,15 @@ class _ChargeBadge extends StatelessWidget {
     final depleted = current <= 0;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 2,
+      ),
       decoration: BoxDecoration(
         color: depleted
             ? theme.colorScheme.errorContainer
             : theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(AppRadii.pill),
       ),
       child: Text(
         '$current/$max',
