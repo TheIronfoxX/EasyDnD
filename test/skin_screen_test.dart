@@ -12,6 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:easydnd/app/easydnd_app.dart';
 import 'package:easydnd/core/theme/accent_presets.dart';
 import 'package:easydnd/core/theme/app_theme.dart';
+import 'package:easydnd/core/theme/font_presets.dart';
 import 'package:easydnd/data/roster_repository.dart';
 import 'package:easydnd/state/character_store.dart';
 import 'package:easydnd/state/skin_controller.dart';
@@ -65,7 +66,7 @@ void main() {
       expect(find.text('Apariencia'), findsOneWidget);
       expect(find.text('Modo'), findsOneWidget);
       expect(find.text('Color de acento'), findsOneWidget);
-      expect(find.text('Vista previa'), findsOneWidget);
+      expect(find.text('Tipografía'), findsOneWidget);
     });
 
     testWidgets('el menú del HUD abre Apariencia', (tester) async {
@@ -146,6 +147,35 @@ void main() {
       final context = tester.element(find.text('Color de acento'));
       expect(Theme.of(context).colorScheme.primary, skin.accentColor);
       expect(find.text('Cambiar color personalizado'), findsOneWidget);
+    });
+
+    testWidgets('la tipografía elegida se aplica y se persiste', (
+      tester,
+    ) async {
+      final store = await bootStore();
+      final skin = await bootSkin();
+      await pumpApp(tester, store, skin);
+      await tester.tap(find.byTooltip('Apariencia'));
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.text('Diario'));
+      await tester.tap(find.text('Diario'));
+      await tester.pumpAndSettle();
+
+      expect(skin.fontPreset.id, FontPresets.journal.id);
+      final context = tester.element(find.text('Diario'));
+      final textTheme = Theme.of(context).textTheme;
+      expect(textTheme.titleLarge?.fontFamily, 'serif');
+      expect(textTheme.bodyMedium?.fontFamily, isNot('serif'));
+
+      final chip = tester.widget<ChoiceChip>(
+        find.widgetWithText(ChoiceChip, 'Diario'),
+      );
+      expect(chip.selected, isTrue);
+
+      final restarted = await bootSkin();
+      expect(restarted.fontPreset.id, FontPresets.journal.id);
+      expect(restarted.themeData.textTheme.titleLarge?.fontFamily, 'serif');
     });
   });
 }

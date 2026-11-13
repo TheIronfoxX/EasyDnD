@@ -1,4 +1,5 @@
-// Controlador del skin de la app (Etapa 6): acento + modo claro/oscuro.
+// Controlador del skin de la app (Etapa 6): acento + modo claro/oscuro
+// + tipografía.
 //
 // Es el equivalente rework de ThemeNotifier de la app vieja, pero
 // separado del árbol de widgets: main() lo inicializa antes de pintar y
@@ -13,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/theme/app_theme.dart';
+import '../core/theme/font_presets.dart';
 
 class SkinController extends ChangeNotifier {
   SkinController(this._prefs);
@@ -20,6 +22,7 @@ class SkinController extends ChangeNotifier {
   /// Claves nuevas del rework.
   static const String accentKey = 'easydnd.skin.accent.v1';
   static const String darkModeKey = 'easydnd.skin.dark.v1';
+  static const String fontKey = 'easydnd.skin.font.v1';
 
   /// Claves de la app vieja, solo para migrar una vez.
   static const String legacyAccentKey = 'accent_color_argb';
@@ -29,10 +32,12 @@ class SkinController extends ChangeNotifier {
 
   Color _accentColor = AppTheme.defaultAccent;
   bool _isDarkMode = true; // la app siempre arrancó en oscuro
+  FontPreset _fontPreset = FontPresets.defaultPreset;
   bool _isReady = false;
 
   Color get accentColor => _accentColor;
   bool get isDarkMode => _isDarkMode;
+  FontPreset get fontPreset => _fontPreset;
   bool get isReady => _isReady;
   ThemeMode get themeMode => _isDarkMode ? ThemeMode.dark : ThemeMode.light;
 
@@ -41,10 +46,11 @@ class SkinController extends ChangeNotifier {
   ThemeData get themeData => AppTheme.build(
     brightness: _isDarkMode ? Brightness.dark : Brightness.light,
     accent: _accentColor,
+    fontPreset: _fontPreset,
   );
 
-  /// Recupera acento y modo guardados. Idempotente, como el init del
-  /// CharacterStore.
+  /// Recupera acento, modo y tipografía guardados. Idempotente, como el
+  /// init del CharacterStore.
   Future<void> init() async {
     if (_isReady) return;
 
@@ -66,6 +72,10 @@ class SkinController extends ChangeNotifier {
       await _prefs.setBool(darkModeKey, legacyMode);
     }
 
+    // byId cae al preset por defecto si no hay nada guardado o si el id
+    // es de una versión futura que este build no conoce.
+    _fontPreset = FontPresets.byId(_prefs.getString(fontKey));
+
     _isReady = true;
     notifyListeners();
   }
@@ -84,6 +94,14 @@ class SkinController extends ChangeNotifier {
     _isDarkMode = value;
     notifyListeners();
     await _prefs.setBool(darkModeKey, value);
+  }
+
+  /// Cambia la tipografía y la persiste. Mismo preset = no-op.
+  Future<void> setFontPreset(FontPreset preset) async {
+    if (_fontPreset.id == preset.id) return;
+    _fontPreset = preset;
+    notifyListeners();
+    await _prefs.setString(fontKey, preset.id);
   }
 
   Future<void> toggleThemeMode() => setDarkMode(!_isDarkMode);

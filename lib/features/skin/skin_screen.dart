@@ -1,9 +1,9 @@
-// Pantalla de apariencia / skin (Etapa 6b).
+// Pantalla de apariencia / skin (Etapa 6b/6c).
 //
 // Es el único lugar donde el jugador toca el tema: modo claro/oscuro,
-// presets de acento y color libre con el picker HSV. Todo pasa por
-// [SkinController], que persiste y reconstruye el MaterialApp; esta
-// pantalla solo refleja su estado (watch) y le manda cambios.
+// presets de acento, color libre con el picker HSV y tipografía. Todo
+// pasa por [SkinController], que persiste y reconstruye el MaterialApp;
+// esta pantalla solo refleja su estado (watch) y le manda cambios.
 //
 // Nada de colores fijos acá: los presets viven en AccentPresets y el
 // resto sale del tema activo, así que la pantalla se ve bien en ambos
@@ -14,6 +14,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/theme/accent_presets.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/theme/font_presets.dart';
 import '../../state/skin_controller.dart';
 import 'hsv_color_picker_dialog.dart';
 
@@ -96,6 +97,32 @@ class SkinScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
+          const _SectionTitle('Tipografía'),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Elegí la familia del texto. "Diario" usa serif en los títulos '
+            'y sans en el cuerpo; "Consola" es monoespaciada.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: [
+              for (final preset in FontPresets.all)
+                ChoiceChip(
+                  label: Text(preset.label),
+                  tooltip: preset.description,
+                  selected: skin.fontPreset.id == preset.id,
+                  onSelected: (_) => skin.setFontPreset(preset),
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          const _TypographySample(),
+          const SizedBox(height: AppSpacing.xl),
           _ThemePreview(accent: skin.accentColor),
         ],
       ),
@@ -171,6 +198,50 @@ class _AccentSwatch extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Muestra el preset tipográfico activo con texto real del juego. El
+/// estilo sale del tema, así que cambia solo al elegir otra familia.
+class _TypographySample extends StatelessWidget {
+  const _TypographySample();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(
+          alpha: 0.35,
+        ),
+        borderRadius: BorderRadius.circular(AppRadii.md),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Rook el Intacto',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Guerrero 5 · 34/42 PG',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            'Ataque con espada larga: 1d20 + 5 → 18. Daño: 1d8 + 3.',
+            style: theme.textTheme.bodyMedium,
+          ),
+        ],
       ),
     );
   }

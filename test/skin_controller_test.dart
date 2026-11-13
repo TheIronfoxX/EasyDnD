@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:easydnd/core/theme/app_palette.dart';
 import 'package:easydnd/core/theme/app_theme.dart';
 import 'package:easydnd/core/theme/app_theme_colors.dart';
+import 'package:easydnd/core/theme/font_presets.dart';
 import 'package:easydnd/state/skin_controller.dart';
 
 void main() {
@@ -35,6 +36,16 @@ void main() {
       expect(skin.isDarkMode, isTrue);
       expect(skin.themeMode, ThemeMode.dark);
       expect(skin.accentColor, AppTheme.defaultAccent);
+      expect(skin.fontPreset.id, FontPresets.defaultPreset.id);
+    });
+
+    test('la tipografía por defecto es la del sistema', () async {
+      final skin = await boot();
+      final textTheme = skin.themeData.textTheme;
+
+      expect(textTheme.bodyMedium?.fontFamily, isNot('serif'));
+      expect(textTheme.titleLarge?.fontFamily, isNot('serif'));
+      expect(textTheme.bodyMedium?.fontFamily, isNot('monospace'));
     });
 
     test('el ThemeData sale de la paleta y del acento', () async {
@@ -90,6 +101,28 @@ void main() {
         second.themeData.scaffoldBackgroundColor,
         AppPalette.light.background,
       );
+    });
+
+    test('la tipografía sobrevive a reiniciar', () async {
+      final first = await boot();
+      await first.setFontPreset(FontPresets.journal);
+
+      expect(first.themeData.textTheme.titleLarge?.fontFamily, 'serif');
+      expect(first.themeData.textTheme.bodyMedium?.fontFamily, isNot('serif'));
+
+      final second = await boot();
+      expect(second.fontPreset.id, FontPresets.journal.id);
+      expect(second.themeData.textTheme.titleLarge?.fontFamily, 'serif');
+      expect(second.themeData.textTheme.bodyMedium?.fontFamily, isNot('serif'));
+    });
+
+    test('un id de tipografía desconocido cae al preset por defecto', () async {
+      SharedPreferences.setMockInitialValues({
+        SkinController.fontKey: 'tipografia-del-futuro',
+      });
+
+      final skin = await boot();
+      expect(skin.fontPreset.id, FontPresets.defaultPreset.id);
     });
 
     test('migra las claves de la app vieja en el primer arranque', () async {
@@ -153,6 +186,19 @@ void main() {
 
       await skin.setDarkMode(true);
       expect(notifications, 2);
+    });
+
+    test('setFontPreset notifica y no repite el mismo preset', () async {
+      final skin = await boot();
+      var notifications = 0;
+      skin.addListener(() => notifications++);
+
+      await skin.setFontPreset(FontPresets.console);
+      expect(notifications, 1);
+      expect(skin.themeData.textTheme.bodyMedium?.fontFamily, 'monospace');
+
+      await skin.setFontPreset(FontPresets.console);
+      expect(notifications, 1);
     });
   });
 

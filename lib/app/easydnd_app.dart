@@ -34,8 +34,14 @@ class EasyDnDApp extends StatelessWidget {
           return MaterialApp(
             title: 'EasyDnD',
             debugShowCheckedModeBanner: false,
-            theme: AppTheme.light(accent: skin.accentColor),
-            darkTheme: AppTheme.dark(accent: skin.accentColor),
+            theme: AppTheme.light(
+              accent: skin.accentColor,
+              fontPreset: skin.fontPreset,
+            ),
+            darkTheme: AppTheme.dark(
+              accent: skin.accentColor,
+              fontPreset: skin.fontPreset,
+            ),
             themeMode: skin.themeMode,
             home: const StartupGate(),
           );

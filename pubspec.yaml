@@ -22,7 +22,9 @@ dependencies:
   # migración desde las claves viejas es directa.
   shared_preferences: ^2.3.2
 
-  # Tipografía de las skins (Etapa 6).
+  # Tipografía de las skins (Etapa 6). Hoy las skins usan las familias
+  # genéricas de la plataforma (offline, sin assets); queda declarada para
+  # cuando se empaqueten fuentes propias.
   google_fonts: ^6.2.1
 
   # Descarga de la ficha cruda de Nivel20 (wizard de importación, Etapa 3).
