@@ -18,6 +18,7 @@ import '../../domain/models/character.dart';
 import '../../state/character_store.dart';
 import '../editor/character_editor_screen.dart';
 import '../import/import_wizard_screen.dart';
+import '../skin/skin_screen.dart';
 import 'hud_combat_tab.dart';
 import 'hud_dialogs.dart';
 import 'hud_inventory_tab.dart';
@@ -25,7 +26,14 @@ import 'hud_sheet_tab.dart';
 import 'welcome_screen.dart';
 
 /// Acciones del menú de mantenimiento de la AppBar.
-enum _HudMenuAction { edit, correctWithAi, importNew, createNew, delete }
+enum _HudMenuAction {
+  edit,
+  correctWithAi,
+  importNew,
+  createNew,
+  appearance,
+  delete,
+}
 
 class HudScreen extends StatefulWidget {
   const HudScreen({super.key});
@@ -72,6 +80,10 @@ class _HudScreenState extends State<HudScreen> {
             builder: (_) => const CharacterEditorScreen(),
           ),
         );
+      case _HudMenuAction.appearance:
+        await Navigator.of(
+          context,
+        ).push(MaterialPageRoute<void>(builder: (_) => const SkinScreen()));
       case _HudMenuAction.delete:
         await _deleteCharacter(character);
     }
@@ -187,6 +199,14 @@ class _HudScreenState extends State<HudScreen> {
                 child: _MenuRow(
                   icon: Icons.person_add_rounded,
                   label: 'Crear ficha a mano',
+                ),
+              ),
+              PopupMenuDivider(),
+              PopupMenuItem(
+                value: _HudMenuAction.appearance,
+                child: _MenuRow(
+                  icon: Icons.palette_outlined,
+                  label: 'Apariencia',
                 ),
               ),
               PopupMenuDivider(),
