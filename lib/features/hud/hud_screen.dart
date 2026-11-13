@@ -1,16 +1,15 @@
-// Shell del HUD de combate (Etapa 5a).
+// Shell del HUD de combate (Etapa 5).
 //
 // La estructura definitiva: una AppBar con la identidad de la ficha
 // activa, el selector de roster y el menú de mantenimiento (editar,
-// corregir con IA, importar o crear otra ficha), y una NavigationBar
-// con los tres tabs del juego — Combate, Ficha e Inventario.
-//
-// El tablero de combate llega en 5b, las acciones con dados en 5c y el
-// inventario/ficha en 5d. Lo que SÍ queda cerrado acá es la navegación
-// entre pantallas y el cambio de personaje activo.
+// corregir con IA, importar, crear o eliminar una ficha), y una
+// NavigationBar con los tres tabs del juego — Combate, Ficha e
+// Inventario.
 //
 // El estado de la UI (tab seleccionado) es local: el store guarda la
 // ficha y el índice activo, no qué pestaña estaba mirando el jugador.
+// Borrar la última ficha cae en la bienvenida sin reiniciar la app
+// (el StartupGate escucha el mismo store).
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -20,12 +19,13 @@ import '../../state/character_store.dart';
 import '../editor/character_editor_screen.dart';
 import '../import/import_wizard_screen.dart';
 import 'hud_combat_tab.dart';
+import 'hud_dialogs.dart';
 import 'hud_inventory_tab.dart';
 import 'hud_sheet_tab.dart';
 import 'welcome_screen.dart';
 
 /// Acciones del menú de mantenimiento de la AppBar.
-enum _HudMenuAction { edit, correctWithAi, importNew, createNew }
+enum _HudMenuAction { edit, correctWithAi, importNew, createNew, delete }
 
 class HudScreen extends StatefulWidget {
   const HudScreen({super.key});
@@ -72,6 +72,31 @@ class _HudScreenState extends State<HudScreen> {
             builder: (_) => const CharacterEditorScreen(),
           ),
         );
+      case _HudMenuAction.delete:
+        await _deleteCharacter(character);
+    }
+  }
+
+  /// Borrado con confirmación. El índice se captura ANTES del diálogo:
+  /// mientras está abierto nadie más puede cambiar el roster, pero si
+  /// algo lo hiciera el store igual ignora índices fuera de rango.
+  Future<void> _deleteCharacter(CharacterModel character) async {
+    final store = context.read<CharacterStore>();
+    final messenger = ScaffoldMessenger.of(context);
+    final index = store.activeIndex;
+    final name = character.basicInfo.name;
+
+    final confirmed = await showDeleteCharacterDialog(context, name: name);
+    if (!confirmed || !mounted) return;
+
+    store.deleteCharacter(index);
+
+    // Con el roster vacío la app vuelve a la bienvenida; ahí el aviso
+    // sobra. Con fichas restantes, confirma que el borrado se hizo.
+    if (store.roster.isNotEmpty) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Ficha de $name eliminada.')),
+      );
     }
   }
 
@@ -162,6 +187,15 @@ class _HudScreenState extends State<HudScreen> {
                 child: _MenuRow(
                   icon: Icons.person_add_rounded,
                   label: 'Crear ficha a mano',
+                ),
+              ),
+              PopupMenuDivider(),
+              PopupMenuItem(
+                value: _HudMenuAction.delete,
+                child: _MenuRow(
+                  icon: Icons.delete_forever_rounded,
+                  label: 'Eliminar ficha',
+                  destructive: true,
                 ),
               ),
             ],
@@ -258,19 +292,32 @@ class _RosterSelector extends StatelessWidget {
 }
 
 class _MenuRow extends StatelessWidget {
-  const _MenuRow({required this.icon, required this.label});
+  const _MenuRow({
+    required this.icon,
+    required this.label,
+    this.destructive = false,
+  });
 
   final IconData icon;
   final String label;
+  final bool destructive;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = destructive ? theme.colorScheme.error : null;
+
     return Row(
       children: [
-        Icon(icon, size: 20),
+        Icon(icon, size: 20, color: color),
         const SizedBox(width: 12),
         Expanded(
-          child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: color == null ? null : TextStyle(color: color),
+          ),
         ),
       ],
     );

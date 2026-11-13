@@ -1,8 +1,9 @@
-// Tests del shell del HUD (Etapa 5a): bienvenida, identidad de la ficha
-// activa, tabs, selector de roster y entradas al editor/wizard.
+// Tests del shell del HUD (Etapa 5): bienvenida, identidad de la ficha
+// activa, tabs, selector de roster, menú de mantenimiento y borrado.
 //
-// Los cuerpos de los tabs son provisorios en esta sub-etapa; acá se
-// vigila la navegación y que el selector mueva el índice activo del
+// Los cuerpos de los tabs se prueban en hud_dashboard_test.dart,
+// hud_actions_test.dart, hud_inventory_test.dart y hud_sheet_tab_test.dart;
+// acá se vigila la navegación y que las acciones del shell muevan el
 // store sin duplicar ni perder fichas.
 
 import 'package:flutter_test/flutter_test.dart';

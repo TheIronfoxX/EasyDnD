@@ -1,5 +1,5 @@
-// Diálogos del tablero de combate (Etapa 5b): cantidades de daño y
-// curación, dados de golpe, descansos y condiciones.
+// Diálogos del tablero de combate (Etapa 5): cantidades de daño y
+// curación, dados de golpe, descansos, condiciones y borrado de fichas.
 //
 // Todos devuelven el resultado y NO mutan el store: la pantalla decide
 // cuándo aplicar. Es la misma separación que usa el editor entre
@@ -47,6 +47,42 @@ Future<int?> showAmountDialog(
       maxAmount: maxAmount,
     ),
   );
+}
+
+/// Confirmación de borrado de una ficha. Devuelve true solo si el
+/// jugador confirma: eliminar del roster no se puede deshacer.
+Future<bool> showDeleteCharacterDialog(
+  BuildContext context, {
+  required String name,
+}) async {
+  final result = await showDialog<bool>(
+    context: context,
+    builder: (context) {
+      final theme = Theme.of(context);
+      return AlertDialog(
+        title: const Text('Eliminar ficha'),
+        content: Text(
+          '¿Seguro que querés eliminar "$name"? '
+          'Esta acción no se puede deshacer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: theme.colorScheme.error,
+              foregroundColor: theme.colorScheme.onError,
+            ),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      );
+    },
+  );
+  return result ?? false;
 }
 
 /// Confirmación del descanso largo. Devuelve true solo si el jugador

@@ -1,4 +1,4 @@
-// Tablero de combate (Etapa 5b).
+// Tablero de combate (Etapa 5).
 //
 // La hoja viva del personaje activo, ordenada por urgencia en mesa:
 // vida → economía de turno → condiciones → recursos → ranuras →
@@ -6,8 +6,9 @@
 // antes (el store se autoprotege) y se re-renderiza sola porque el
 // shell del HUD escucha el ChangeNotifier.
 //
-// Las acciones con dados (armas y habilidades) llegan en 5c; esta
-// pantalla se ocupa del estado y de las tiradas de descanso.
+// Las acciones con dados (armas y habilidades) viven en
+// hud_actions_section.dart; acá se ocupa el estado y las tiradas de
+// descanso.
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
