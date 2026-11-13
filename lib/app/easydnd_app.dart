@@ -4,39 +4,42 @@ import 'package:provider/provider.dart';
 import '../core/theme/app_theme.dart';
 import '../features/hud/startup_gate.dart';
 import '../state/character_store.dart';
+import '../state/skin_controller.dart';
 
 /// Raíz del árbol de widgets de EasyDnD.
 ///
-/// El CharacterStore vive acá (por encima del MaterialApp, así también
-/// lo ven las pantallas que se apilen encima) y se inyecta por valor con
-/// un ChangeNotifierProvider: lo construye y lo inicializa main() una
-/// sola vez, antes de pintar, y así las pantallas que lo miran con
-/// context.watch se re-renderizan cuando el roster cambia.
+/// El CharacterStore y el SkinController viven acá (por encima del
+/// MaterialApp, así también los ven las pantallas que se apilen encima)
+/// y se inyectan por valor con ChangeNotifierProvider: main() los
+/// construye e inicializa una sola vez, antes de pintar.
 ///
-/// Desde la Etapa 5 el home es la StartupGate: decide entre bienvenida
-/// (roster vacío) y HUD de combate (con fichas), y el estado "cargando"
-/// para cuando el store todavía no terminó init().
-///
-/// La Etapa 6 agrega acá el SkinController y el sistema de tokens de
-/// diseño.
+/// El SkinController se escucha para reconstruir MaterialApp cuando
+/// cambia el acento o el modo. La Etapa 6 completa (picker de skin) usa
+/// este mismo controlador.
 class EasyDnDApp extends StatelessWidget {
-  const EasyDnDApp({super.key, required this.store});
+  const EasyDnDApp({super.key, required this.store, required this.skin});
 
   final CharacterStore store;
+  final SkinController skin;
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<CharacterStore>.value(
-      value: store,
-      child: MaterialApp(
-        title: 'EasyDnD',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light(),
-        darkTheme: AppTheme.dark(),
-        // La app siempre arrancó en oscuro: lo dejamos explícito hasta que
-        // exista la preferencia persistida de tema (Etapa 6).
-        themeMode: ThemeMode.dark,
-        home: const StartupGate(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<CharacterStore>.value(value: store),
+        ChangeNotifierProvider<SkinController>.value(value: skin),
+      ],
+      child: Consumer<SkinController>(
+        builder: (context, skin, _) {
+          return MaterialApp(
+            title: 'EasyDnD',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.light(accent: skin.accentColor),
+            darkTheme: AppTheme.dark(accent: skin.accentColor),
+            themeMode: skin.themeMode,
+            home: const StartupGate(),
+          );
+        },
       ),
     );
   }

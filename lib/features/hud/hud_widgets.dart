@@ -10,6 +10,8 @@
 
 import 'package:flutter/material.dart';
 
+import '../../core/theme/design_tokens.dart';
+
 /// Tarjeta de sección con encabezado icono + título + acción opcional.
 /// Es la unidad visual del tablero: una tarjeta por tema (vida, turno,
 /// condiciones...) en vez de un muro de texto.
@@ -35,17 +37,22 @@ class HudSectionCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
       clipBehavior: Clip.antiAlias,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 12, 16),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.lg,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
               children: [
                 Icon(icon, size: 20, color: theme.colorScheme.primary),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
                     title,
@@ -57,7 +64,7 @@ class HudSectionCard extends StatelessWidget {
                 if (trailing != null) trailing!,
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             child,
           ],
         ),
@@ -89,17 +96,20 @@ class HudStatTile extends StatelessWidget {
 
     return Material(
       color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppRadii.md),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.sm,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(icon, size: 20, color: theme.colorScheme.onSurfaceVariant),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.xs),
               Text(
                 value,
                 maxLines: 1,

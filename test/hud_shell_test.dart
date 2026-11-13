@@ -12,6 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:easydnd/app/easydnd_app.dart';
 import 'package:easydnd/data/roster_repository.dart';
 import 'package:easydnd/state/character_store.dart';
+import 'package:easydnd/state/skin_controller.dart';
 
 import 'fakes/test_fichas.dart';
 
@@ -28,7 +29,10 @@ void main() {
   }
 
   Future<void> pumpApp(WidgetTester tester, CharacterStore store) async {
-    await tester.pumpWidget(EasyDnDApp(store: store));
+    final prefs = await SharedPreferences.getInstance();
+    final skin = SkinController(prefs);
+    await skin.init();
+    await tester.pumpWidget(EasyDnDApp(store: store, skin: skin));
     await tester.pumpAndSettle();
   }
 
