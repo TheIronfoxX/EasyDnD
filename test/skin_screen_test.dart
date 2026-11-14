@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:easydnd/app/easydnd_app.dart';
 import 'package:easydnd/core/theme/accent_presets.dart';
+import 'package:easydnd/core/theme/app_fonts.dart';
 import 'package:easydnd/core/theme/app_theme.dart';
 import 'package:easydnd/core/theme/font_presets.dart';
 import 'package:easydnd/data/roster_repository.dart';
@@ -158,24 +159,34 @@ void main() {
       await tester.tap(find.byTooltip('Apariencia'));
       await tester.pumpAndSettle();
 
-      await tester.ensureVisible(find.text('Diario'));
-      await tester.tap(find.text('Diario'));
-      await tester.pumpAndSettle();
-
-      expect(skin.fontPreset.id, FontPresets.journal.id);
-      final context = tester.element(find.text('Diario'));
-      final textTheme = Theme.of(context).textTheme;
-      expect(textTheme.titleLarge?.fontFamily, 'serif');
-      expect(textTheme.bodyMedium?.fontFamily, isNot('serif'));
-
-      final chip = tester.widget<ChoiceChip>(
+      // El default es "Diario": títulos en Cinzel, cuerpo en Inter.
+      final diarioChip = tester.widget<ChoiceChip>(
         find.widgetWithText(ChoiceChip, 'Diario'),
       );
-      expect(chip.selected, isTrue);
+      expect(diarioChip.selected, isTrue);
+      final context = tester.element(find.text('Diario'));
+      final textTheme = Theme.of(context).textTheme;
+      expect(textTheme.titleLarge?.fontFamily, AppFonts.cinzel);
+      expect(textTheme.bodyMedium?.fontFamily, AppFonts.inter);
+
+      // Elegir "Consola" pasa todo a monoespaciada y sobrevive al reinicio.
+      await tester.ensureVisible(find.text('Consola'));
+      await tester.tap(find.text('Consola'));
+      await tester.pumpAndSettle();
+
+      expect(skin.fontPreset.id, FontPresets.console.id);
+      final consoleContext = tester.element(find.text('Consola'));
+      expect(
+        Theme.of(consoleContext).textTheme.bodyMedium?.fontFamily,
+        AppFonts.jetBrainsMono,
+      );
 
       final restarted = await bootSkin();
-      expect(restarted.fontPreset.id, FontPresets.journal.id);
-      expect(restarted.themeData.textTheme.titleLarge?.fontFamily, 'serif');
+      expect(restarted.fontPreset.id, FontPresets.console.id);
+      expect(
+        restarted.themeData.textTheme.titleLarge?.fontFamily,
+        AppFonts.jetBrainsMono,
+      );
     });
   });
 }

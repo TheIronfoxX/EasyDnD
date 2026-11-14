@@ -22,6 +22,7 @@ import '../../data/nivel20_extractor.dart';
 import '../../domain/ai_prompt.dart';
 import '../../domain/character_validator.dart';
 import '../../domain/models/character.dart';
+import '../../core/theme/app_fonts.dart';
 import '../../core/theme/design_tokens.dart';
 
 /// Cómo llegan los datos del personaje al prompt.
@@ -387,7 +388,9 @@ class _PastedTextFieldState extends State<_PastedTextField> {
           controller: widget.controller,
           maxLines: 6,
           minLines: 4,
-          style: theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontFamily: AppFonts.jetBrainsMono,
+          ),
           decoration: InputDecoration(
             labelText: 'Texto de la ficha',
             hintText:
@@ -669,7 +672,7 @@ class _PromptPreview extends StatelessWidget {
                   child: SelectableText(
                     prompt!,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      fontFamily: 'monospace',
+                      fontFamily: AppFonts.jetBrainsMono,
                       height: 1.4,
                     ),
                   ),

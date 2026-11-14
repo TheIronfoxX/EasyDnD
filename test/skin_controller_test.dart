@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:easydnd/core/theme/app_fonts.dart';
 import 'package:easydnd/core/theme/app_palette.dart';
 import 'package:easydnd/core/theme/app_theme.dart';
 import 'package:easydnd/core/theme/app_theme_colors.dart';
@@ -39,13 +40,13 @@ void main() {
       expect(skin.fontPreset.id, FontPresets.defaultPreset.id);
     });
 
-    test('la tipografía por defecto es la del sistema', () async {
+    test('la tipografía por defecto es "Diario"', () async {
       final skin = await boot();
       final textTheme = skin.themeData.textTheme;
 
-      expect(textTheme.bodyMedium?.fontFamily, isNot('serif'));
-      expect(textTheme.titleLarge?.fontFamily, isNot('serif'));
-      expect(textTheme.bodyMedium?.fontFamily, isNot('monospace'));
+      expect(skin.fontPreset.id, FontPresets.journal.id);
+      expect(textTheme.titleLarge?.fontFamily, AppFonts.cinzel);
+      expect(textTheme.bodyMedium?.fontFamily, AppFonts.inter);
     });
 
     test('el ThemeData sale de la paleta y del acento', () async {
@@ -105,15 +106,27 @@ void main() {
 
     test('la tipografía sobrevive a reiniciar', () async {
       final first = await boot();
-      await first.setFontPreset(FontPresets.journal);
+      await first.setFontPreset(FontPresets.console);
 
-      expect(first.themeData.textTheme.titleLarge?.fontFamily, 'serif');
-      expect(first.themeData.textTheme.bodyMedium?.fontFamily, isNot('serif'));
+      expect(
+        first.themeData.textTheme.titleLarge?.fontFamily,
+        AppFonts.jetBrainsMono,
+      );
+      expect(
+        first.themeData.textTheme.bodyMedium?.fontFamily,
+        AppFonts.jetBrainsMono,
+      );
 
       final second = await boot();
-      expect(second.fontPreset.id, FontPresets.journal.id);
-      expect(second.themeData.textTheme.titleLarge?.fontFamily, 'serif');
-      expect(second.themeData.textTheme.bodyMedium?.fontFamily, isNot('serif'));
+      expect(second.fontPreset.id, FontPresets.console.id);
+      expect(
+        second.themeData.textTheme.titleLarge?.fontFamily,
+        AppFonts.jetBrainsMono,
+      );
+      expect(
+        second.themeData.textTheme.bodyMedium?.fontFamily,
+        AppFonts.jetBrainsMono,
+      );
     });
 
     test('un id de tipografía desconocido cae al preset por defecto', () async {
@@ -195,7 +208,10 @@ void main() {
 
       await skin.setFontPreset(FontPresets.console);
       expect(notifications, 1);
-      expect(skin.themeData.textTheme.bodyMedium?.fontFamily, 'monospace');
+      expect(
+        skin.themeData.textTheme.bodyMedium?.fontFamily,
+        AppFonts.jetBrainsMono,
+      );
 
       await skin.setFontPreset(FontPresets.console);
       expect(notifications, 1);

@@ -14,6 +14,7 @@ import 'package:flutter/services.dart';
 
 import '../../core/dice.dart';
 import '../../domain/models/weapon.dart';
+import '../../core/theme/app_fonts.dart';
 import '../../core/theme/design_tokens.dart';
 
 // Reexportado para las secciones del editor que ya lo importaban desde
@@ -63,7 +64,9 @@ class EditorTextField extends StatelessWidget {
       keyboardType: keyboardType,
       autocorrect: autocorrect,
       style: monospace
-          ? theme.textTheme.bodyMedium?.copyWith(fontFamily: 'monospace')
+          ? theme.textTheme.bodyMedium?.copyWith(
+              fontFamily: AppFonts.jetBrainsMono,
+            )
           : null,
       onChanged: onChanged,
     );
@@ -203,7 +206,7 @@ class _EditorDiceFieldState extends State<EditorDiceField> {
       autocorrect: false,
       style: Theme.of(
         context,
-      ).textTheme.bodyMedium?.copyWith(fontFamily: 'monospace'),
+      ).textTheme.bodyMedium?.copyWith(fontFamily: AppFonts.jetBrainsMono),
       onChanged: _handleChanged,
     );
   }

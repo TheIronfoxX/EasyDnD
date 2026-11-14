@@ -26,6 +26,7 @@ import 'package:provider/provider.dart';
 import '../../domain/character_validator.dart';
 import '../../domain/models/character.dart';
 import '../../state/character_store.dart';
+import '../../core/theme/app_fonts.dart';
 import 'editor_section_abilities.dart';
 import 'editor_section_basic_info.dart';
 import 'editor_section_companions.dart';
@@ -343,7 +344,9 @@ class _CharacterEditorScreenState extends State<CharacterEditorScreen> {
                     contentPadding: EdgeInsets.zero,
                     title: Text(
                       warning.field,
-                      style: const TextStyle(fontFamily: 'monospace'),
+                      style: const TextStyle(
+                        fontFamily: AppFonts.jetBrainsMono,
+                      ),
                     ),
                     subtitle: Text(warning.message),
                   ),

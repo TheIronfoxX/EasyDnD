@@ -129,7 +129,7 @@ class AppTheme {
 
   /// Aplica el preset tipográfico: primero la familia de cuerpo a todo
   /// el TextTheme, después pisa los títulos con la familia de display
-  /// (en "Diario", serif arriba y sans abajo). `null` en cualquiera de
+  /// (en "Diario", Cinzel arriba e Inter abajo). `null` en cualquiera de
   /// las dos significa la familia por defecto de la plataforma.
   static TextTheme _typography(TextTheme base, FontPreset preset) {
     final withBody = base.apply(fontFamily: preset.bodyFamily);

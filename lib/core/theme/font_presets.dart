@@ -1,17 +1,17 @@
-// Presets tipográficos (Etapa 6c).
+// Presets tipográficos (Etapa 6c; familias reales desde la 8a).
 //
-// El skin elige una familia para el cuerpo y otra para los títulos. Acá
-// usamos familias genéricas que Android y la web resuelven sin descargar
-// nada: la app es offline y no queremos que el primer arranque dependa de
-// una fuente remota ni inflar el repo con binarios.
+// El skin elige una familia para el cuerpo y otra para los títulos. Las
+// familias son las empaquetadas en `assets/fonts` (ver [AppFonts]): la
+// app es offline y, en la web, CanvasKit no resuelve las genéricas
+// 'serif'/'monospace', así que no se usan.
 //
-// "Diario" mezcla títulos serif con cuerpo sans (el look de la app
-// vieja); "Mesa" es el sistema de punta a punta; "Consola" es
-// monoespaciada, cómoda para números y mesas tácticas.
-//
-// `null` significa "la familia por defecto de la plataforma".
+// "Diario" mezcla títulos Cinzel con cuerpo Inter (el look de la app
+// vieja, ahora de verdad); "Mesa" es Inter de punta a punta, neutra;
+// "Consola" es JetBrains Mono, cómoda para números y mesas tácticas.
 
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+
+import 'app_fonts.dart';
 
 @immutable
 class FontPreset {
@@ -35,27 +35,33 @@ abstract final class FontPresets {
   static const FontPreset journal = FontPreset(
     id: 'diario',
     label: 'Diario',
-    description: 'Títulos serif y cuerpo sans, como un libro de aventuras.',
-    displayFamily: 'serif',
+    description:
+        'Títulos en Cinzel y cuerpo en Inter, como un libro de aventuras.',
+    bodyFamily: AppFonts.inter,
+    displayFamily: AppFonts.cinzel,
   );
 
   static const FontPreset table = FontPreset(
     id: 'mesa',
     label: 'Mesa',
-    description: 'La sans del sistema: neutra y muy legible.',
+    description: 'Inter de punta a punta: neutra y muy legible.',
+    bodyFamily: AppFonts.inter,
+    displayFamily: AppFonts.inter,
   );
 
   static const FontPreset console = FontPreset(
     id: 'consola',
     label: 'Consola',
-    description: 'Monoespaciada, ideal para números y mesas tácticas.',
-    bodyFamily: 'monospace',
-    displayFamily: 'monospace',
+    description: 'JetBrains Mono, ideal para números y mesas tácticas.',
+    bodyFamily: AppFonts.jetBrainsMono,
+    displayFamily: AppFonts.jetBrainsMono,
   );
 
   static const List<FontPreset> all = [journal, table, console];
 
-  static const FontPreset defaultPreset = table;
+  /// Por defecto "Diario": es la identidad de la app y se nota desde el
+  /// primer arranque. Quien ya eligió otro preset lo conserva (persistido).
+  static const FontPreset defaultPreset = journal;
 
   /// Resuelve un id guardado. Un id desconocido o ausente cae al preset
   /// por defecto (así una preferencia vieja nunca deja la app sin tema).

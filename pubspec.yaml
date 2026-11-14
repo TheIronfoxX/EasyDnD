@@ -27,11 +27,6 @@ dependencies:
   # migración desde las claves viejas es directa.
   shared_preferences: ^2.3.2
 
-  # Tipografía de las skins (Etapa 6). Hoy las skins usan las familias
-  # genéricas de la plataforma (offline, sin assets); queda declarada para
-  # cuando se empaqueten fuentes propias.
-  google_fonts: ^6.2.1
-
   # Descarga de la ficha cruda de Nivel20 (wizard de importación, Etapa 3).
   http: ^1.2.2
 
@@ -57,6 +52,33 @@ flutter:
     # Ícono de la app (lo usaba la pantalla de bienvenida vieja y lo va a
     # seguir usando la nueva).
     - assets/icon/icon.png
+
+  # Tipografía propia (Etapa 8a). Empaquetada, no descargada: la app es
+  # offline y en la web CanvasKit no resuelve las familias genéricas.
+  # Las licencias OFL viven junto a los .ttf pero NO se declaran como
+  # assets, así no se bundlean. Pesos instanciados desde las variables de
+  # Google Fonts (Cinzel/Inter/JetBrains Mono).
+  fonts:
+    - family: Cinzel
+      fonts:
+        - asset: assets/fonts/Cinzel-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Cinzel-Bold.ttf
+          weight: 700
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.ttf
+          weight: 700
+    - family: JetBrainsMono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/JetBrainsMono-Bold.ttf
+          weight: 700
 
 flutter_launcher_icons:
   android: true

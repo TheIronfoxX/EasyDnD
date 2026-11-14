@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/theme/accent_presets.dart';
+import '../../core/theme/app_fonts.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../core/theme/font_presets.dart';
 import '../../state/skin_controller.dart';
@@ -100,8 +101,8 @@ class SkinScreen extends StatelessWidget {
           const _SectionTitle('Tipografía'),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'Elegí la familia del texto. "Diario" usa serif en los títulos '
-            'y sans en el cuerpo; "Consola" es monoespaciada.',
+            'Elegí la familia del texto. "Diario" usa Cinzel en los títulos '
+            'e Inter en el cuerpo; "Consola" es JetBrains Mono.',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -240,6 +241,14 @@ class _TypographySample extends StatelessWidget {
           Text(
             'Ataque con espada larga: 1d20 + 5 → 18. Daño: 1d8 + 3.',
             style: theme.textTheme.bodyMedium,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            '1d20 + 5 → 18    ·    1d8 + 3',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontFamily: AppFonts.jetBrainsMono,
+              color: theme.colorScheme.primary,
+            ),
           ),
         ],
       ),

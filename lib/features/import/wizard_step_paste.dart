@@ -16,6 +16,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../../domain/character_validator.dart';
+import '../../core/theme/app_fonts.dart';
 import '../../core/theme/design_tokens.dart';
 
 class WizardStepPaste extends StatefulWidget {
@@ -65,7 +66,9 @@ class _WizardStepPasteState extends State<WizardStepPaste> {
           controller: widget.controller,
           maxLines: 10,
           minLines: 6,
-          style: theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontFamily: AppFonts.jetBrainsMono,
+          ),
           decoration: InputDecoration(
             labelText: 'JSON de la ficha',
             hintText: '{ "basic_info": { "name": ... }, ... }',
@@ -162,7 +165,7 @@ class _ErrorRow extends StatelessWidget {
                   TextSpan(
                     text: '${issue.field} — ',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      fontFamily: 'monospace',
+                      fontFamily: AppFonts.jetBrainsMono,
                       color: scheme.error,
                       fontWeight: FontWeight.bold,
                     ),

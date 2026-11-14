@@ -21,6 +21,7 @@ import 'package:flutter/services.dart';
 import '../../domain/ai_prompt.dart';
 import '../../domain/character_validator.dart';
 import '../../domain/models/character.dart';
+import '../../core/theme/app_fonts.dart';
 import '../../core/theme/design_tokens.dart';
 
 class WizardStepPreview extends StatelessWidget {
@@ -324,7 +325,7 @@ class _WarningsCard extends StatelessWidget {
                           Text(
                             warning.field,
                             style: theme.textTheme.bodySmall?.copyWith(
-                              fontFamily: 'monospace',
+                              fontFamily: AppFonts.jetBrainsMono,
                               color: scheme.tertiary,
                               fontWeight: FontWeight.bold,
                             ),
