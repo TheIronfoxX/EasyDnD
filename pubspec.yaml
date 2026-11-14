@@ -14,6 +14,11 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # Íconos Cupertino. No los usamos directamente, pero alguna dependencia
+  # los referencia y el build web avisa por el font asset faltante al hacer
+  # tree-shaking. Declararlos lo silencia.
+  cupertino_icons: ^1.0.8
+
   # Estado: Provider, troceado en stores chicos por feature (Etapa 2+).
   provider: ^6.1.2
 

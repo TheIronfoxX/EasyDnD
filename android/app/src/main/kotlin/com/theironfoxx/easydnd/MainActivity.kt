@@ -1,4 +1,4 @@
-package com.example.easydnd_nuevo
+package com.theironfoxx.easydnd
 
 import io.flutter.embedding.android.FlutterActivity
 
