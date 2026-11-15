@@ -79,6 +79,14 @@ void main() {
   });
 
   group('warnings (no bloquean, avisan del fallback)', () {
+    test('speed fuera de 5-120 pies avisa (¿metros?)', () {
+      final json = buildFichaJson();
+      (json['basic_info'] as Map)['speed'] = 3;
+      final result = CharacterValidator.validateMap(json);
+      expect(result.isOk, isTrue);
+      expect(result.warnings.any((w) => w.field == 'basic_info.speed'), isTrue);
+    });
+
     test('dado de daño irreconocible', () {
       final json = buildFichaJson();
       final weapon = (json['inventory'] as Map)['weapons'] as List;

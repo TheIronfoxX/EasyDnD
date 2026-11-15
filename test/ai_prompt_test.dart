@@ -75,14 +75,14 @@ void main() {
       final prompt = AiPrompt.forCorrection(
         '{"basic_info": {"name": "Kaelen"}}',
         [
-          'basic_info.speed: Sin "speed"; se asume 9 metros.',
+          'basic_info.speed: Sin "speed"; se asume 30 pies.',
           'abilities_by_action.passive[X].scaling_formula: irresoluble',
         ],
       );
 
       expect(prompt, contains('{"basic_info": {"name": "Kaelen"}}'));
       expect(prompt,
-          contains('- basic_info.speed: Sin "speed"; se asume 9 metros.'));
+          contains('- basic_info.speed: Sin "speed"; se asume 30 pies.'));
       expect(prompt,
           contains('- abilities_by_action.passive[X].scaling_formula: irresoluble'));
       // La orden explícita de no pisar los campos del jugador.

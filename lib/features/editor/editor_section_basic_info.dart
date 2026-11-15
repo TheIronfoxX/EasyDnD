@@ -112,7 +112,7 @@ class _EditorSectionBasicInfoState extends State<EditorSectionBasicInfo> {
           onChanged: (value) => basic.ac = value ?? basic.ac,
         ),
         EditorIntField(
-          label: 'Velocidad (metros por turno)',
+          label: 'Velocidad (pies por turno)',
           value: basic.speed,
           onChanged: (value) {
             if (value != null) widget.draft.setSpeed(value);

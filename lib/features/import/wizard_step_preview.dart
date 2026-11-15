@@ -127,7 +127,7 @@ class _SummaryCard extends StatelessWidget {
               children: [
                 _StatChip(label: 'PG máx.', value: '${basic.hpMax}'),
                 _StatChip(label: 'CA', value: '${basic.ac}'),
-                _StatChip(label: 'Velocidad', value: '${basic.speed} m'),
+                _StatChip(label: 'Velocidad', value: '${basic.speed} ft'),
                 _StatChip(
                   label: 'CD salv.',
                   value: basic.spellSaveDc == null

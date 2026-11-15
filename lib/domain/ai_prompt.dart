@@ -125,7 +125,7 @@ El resto de equipo (pociones, cuerdas, herramientas, reliquias) va en el array "
 
 "purse": monedas del personaje (gold, silver, copper), como números enteros independientes. Si no hay dinero, usa 0.
 
-"speed": velocidad de movimiento base del personaje, en pies por turno (no en metros). Es un número entero. Parte de la velocidad base de su raza (esto esta en metros, ponlo tu bien) (Humano/Elfo/Semielfo = 9, Enano/Halfling/Gnomo = 7.5 si tu conversión lo permite, si no redondea a 7 u 8 según el resto de la ficha, Media-Elfo = 9...) y aplícale cualquier modificador de clase o rasgo que la aumente o reduzca (ej. Monje sin armadura pesada, Bárbaro, armadura pesada sin la Fuerza requerida). Si la ficha original ya trae la velocidad en metros, úsala tal cual; si viene en pies, conviértela (30 pies = 9 metros) en vez de copiar el número en pies directamente. Si el personaje tiene varias velocidades (andando, volando, nadando, escalando) usa aquí SOLO la de caminar/terrestre — no hay campos separados para las demás en este formato.
+"speed": velocidad de movimiento base del personaje, en PIES por turno (NO en metros). Es un número entero, múltiplo de 5 (rango razonable 5-120). Parte de la velocidad base de su raza (Humano/Elfo/Semielfo/Semiorco/Tiefling/Dracónido = 30, Enano/Halfling/Gnomo = 25 o 30 según la edición de la ficha) y aplícale cualquier modificador de clase o rasgo que la aumente o reduzca (ej. Monje sin armadura pesada +10 o más, Bárbaro +10, armadura pesada sin la Fuerza requerida -10). Si la ficha original trae la velocidad en metros, conviértela a pies (9 m = 30 pies, 1,5 m = 5 pies) antes de escribirla; si ya viene en pies, úsala tal cual. Si el personaje tiene varias velocidades (andando, volando, nadando, escalando) usa aquí SOLO la de caminar/terrestre — no hay campos separados para las demás en este formato.
 
 "spell_save_dc": la CD de salvación de conjuros del personaje, dentro de "basic_info", como número entero. Se calcula: 8 + bonificador de competencia (según el nivel total del personaje: +2 en niveles 1-4, +3 en 5-8, +4 en 9-12, +5 en 13-16, +6 en 17-20) + modificador de la característica de lanzamiento de conjuros de su clase (Carisma para Paladín/Bardo/Hechicero/Brujo, Sabiduría para Clérigo/Druida/Explorador, Inteligencia para Mago/Artífice).
    - Si el personaje tiene varias clases de lanzador (multiclase), pregúntame cuál característica usar antes de asumir una — no la adivines.
@@ -149,7 +149,7 @@ Devuélveme el JSON completo, sin comentarios ni texto fuera del bloque de códi
     "characterClass": "Paladín 5",
     "hp_max": 44,
     "ac": 18,
-    "speed": 9,
+    "speed": 30,
     "spell_save_dc": 14
   },
   "purse": {

@@ -337,7 +337,7 @@ void main() {
 
     test('economía de acción del turno', () async {
       final store = await boot();
-      store.addCharacter(buildCharacter(speed: 9));
+      store.addCharacter(buildCharacter(speed: 30));
 
       store.toggleAction('action');
       expect(store.activeCharacter!.turnStatus.actionUsed, isTrue);
@@ -350,7 +350,7 @@ void main() {
       expect(store.activeCharacter!.turnStatus.reactionUsed, isTrue);
 
       store.setMovementRemaining(99);
-      expect(store.activeCharacter!.turnStatus.movementRemaining, 9);
+      expect(store.activeCharacter!.turnStatus.movementRemaining, 30);
       store.setMovementRemaining(-4);
       expect(store.activeCharacter!.turnStatus.movementRemaining, 0);
 
@@ -361,7 +361,7 @@ void main() {
       expect(status.actionUsed, isFalse);
       expect(status.bonusActionUsed, isFalse);
       expect(status.reactionUsed, isFalse);
-      expect(status.movementRemaining, 9);
+      expect(status.movementRemaining, 30);
     });
   });
 

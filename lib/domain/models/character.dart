@@ -36,8 +36,8 @@ class BasicInfo {
   /// número ahí se cae a 1.
   int level;
 
-  /// Velocidad de movimiento base, en metros por turno (no en pies).
-  /// 9 por defecto (velocidad humana estándar) para fichas anteriores
+  /// Velocidad de movimiento base, en pies por turno.
+  /// 30 por defecto (velocidad humana estándar) para fichas anteriores
   /// a este campo.
   int speed;
 
@@ -73,7 +73,7 @@ class BasicInfo {
     required this.currentHp,
     required this.ac,
     this.level = 1,
-    this.speed = 9,
+    this.speed = 30,
     this.nivel20Link,
     this.spellSaveDc,
     int? hitDieSides,
@@ -118,7 +118,7 @@ class BasicInfo {
       ac: ((json['ac'] as num?) ?? 10).toInt(),
       level: (json['level'] as num?)?.toInt() ??
           DndRules.levelFromCharacterClass(characterClass),
-      speed: (json['speed'] as num?)?.toInt() ?? 9,
+      speed: (json['speed'] as num?)?.toInt() ?? 30,
       nivel20Link: json['nivel20_link'] as String?,
       spellSaveDc: (json['spell_save_dc'] as num?)?.toInt(),
       hitDieSides: (json['hit_die_sides'] as num?)?.toInt(),

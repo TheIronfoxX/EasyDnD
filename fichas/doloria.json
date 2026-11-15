@@ -5,7 +5,7 @@
     "characterClass": "Paladín 6",
     "hp_max": 65,
     "ac": 13,
-    "speed": 9,
+    "speed": 30,
     "spell_save_dc": 15
   },
   "purse": {

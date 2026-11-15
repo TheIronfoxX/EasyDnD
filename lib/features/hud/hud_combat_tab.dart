@@ -168,7 +168,7 @@ class _HealthSection extends StatelessWidget {
                 child: HudStatTile(
                   icon: Icons.directions_walk_rounded,
                   label: 'Velocidad',
-                  value: '${info.speed} m',
+                  value: '${info.speed} ft',
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -316,7 +316,7 @@ class _TurnSection extends StatelessWidget {
                         const Text('Movimiento'),
                         const Spacer(),
                         Text(
-                          '${status.movementRemaining} / $speed m',
+                          '${status.movementRemaining} / $speed ft',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
@@ -335,21 +335,21 @@ class _TurnSection extends StatelessWidget {
                 ),
               ),
               IconButton(
-                tooltip: 'Restar 1 m de movimiento',
+                tooltip: 'Restar 5 ft de movimiento',
                 icon: const Icon(Icons.remove_circle_outline_rounded),
                 onPressed: status.movementRemaining <= 0
                     ? null
                     : () => store.setMovementRemaining(
-                        status.movementRemaining - 1,
+                        status.movementRemaining - 5,
                       ),
               ),
               IconButton(
-                tooltip: 'Sumar 1 m de movimiento',
+                tooltip: 'Sumar 5 ft de movimiento',
                 icon: const Icon(Icons.add_circle_outline_rounded),
                 onPressed: status.movementRemaining >= speed
                     ? null
                     : () => store.setMovementRemaining(
-                        status.movementRemaining + 1,
+                        status.movementRemaining + 5,
                       ),
               ),
             ],

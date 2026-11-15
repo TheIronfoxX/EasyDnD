@@ -5,7 +5,7 @@
     "characterClass": "Guerrero 6",
     "hp_max": 81,
     "ac": 16,
-    "speed": 9,
+    "speed": 30,
     "spell_save_dc": 0
   },
   "purse": {

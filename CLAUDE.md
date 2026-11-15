@@ -77,7 +77,7 @@ app's JSON (`basic_info`, `inventory`, `abilities_by_action`, `stats`, `spell_sl
 `skills`, `lore_info`, `purse`, `resources`, `turn_status`, `active_conditions`,
 `companions`) so existing exported sheets and the old roster migrate transparently.
 New fields get silent, sensible fallbacks when missing from older JSON (e.g. `speed`
-defaults to 9, `hitDieSides` is inferred from `characterClass` text) rather than
+defaults to 30 (feet), `hitDieSides` is inferred from `characterClass` text) rather than
 bumping the shape for minor additions. `schema_version: 2` at the root exists for
 future breaking migrations. Most model fields are deliberately non-`final`: the HUD
 mutates HP, charges, slots, and conditions in place during combat and relies on the

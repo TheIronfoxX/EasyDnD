@@ -5,7 +5,7 @@
     "characterClass": "Clérigo 6",
     "hp_max": 60,
     "ac": 12,
-    "speed": 9,
+    "speed": 30,
     "spell_save_dc": 16
   },
   "purse": {

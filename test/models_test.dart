@@ -139,7 +139,7 @@ void main() {
       expect(model.basicInfo.hitDieSides, 8); // Artillero → d8
       expect(model.basicInfo.hitDiceMax, 6); // uno por nivel
       expect(model.basicInfo.hitDiceCurrent, 6);
-      expect(model.basicInfo.speed, 9); // default humano
+      expect(model.basicInfo.speed, 30); // default humano
     });
 
     test('sin turn_status el movimiento arranca a tope según speed', () {

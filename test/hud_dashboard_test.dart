@@ -64,7 +64,7 @@ void main() {
     expect(find.text('Ileso'), findsOneWidget);
     expect(find.text('CA'), findsOneWidget);
     expect(find.text('18'), findsOneWidget);
-    expect(find.text('9 m'), findsOneWidget);
+    expect(find.text('30 ft'), findsOneWidget);
     expect(find.text('5/5 d10'), findsOneWidget);
   });
 
@@ -114,14 +114,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(store.activeCharacter!.turnStatus.reactionUsed, isTrue);
 
-    await scrollTo(tester, find.byTooltip('Restar 1 m de movimiento'));
-    await tester.tap(find.byTooltip('Restar 1 m de movimiento'));
+    await scrollTo(tester, find.byTooltip('Restar 5 ft de movimiento'));
+    await tester.tap(find.byTooltip('Restar 5 ft de movimiento'));
     await tester.pumpAndSettle();
-    expect(store.activeCharacter!.turnStatus.movementRemaining, 8);
+    expect(store.activeCharacter!.turnStatus.movementRemaining, 25);
 
-    await tester.tap(find.byTooltip('Sumar 1 m de movimiento'));
+    await tester.tap(find.byTooltip('Sumar 5 ft de movimiento'));
     await tester.pumpAndSettle();
-    expect(store.activeCharacter!.turnStatus.movementRemaining, 9);
+    expect(store.activeCharacter!.turnStatus.movementRemaining, 30);
 
     await scrollTo(tester, find.text('Terminar turno'));
     await tester.tap(find.text('Terminar turno'));
@@ -131,7 +131,7 @@ void main() {
     expect(status.actionUsed, isFalse);
     expect(status.bonusActionUsed, isFalse);
     expect(status.reactionUsed, isFalse);
-    expect(status.movementRemaining, 9);
+    expect(status.movementRemaining, 30);
   });
 
   testWidgets('condiciones: alta del catálogo, aviso de desventaja y baja', (

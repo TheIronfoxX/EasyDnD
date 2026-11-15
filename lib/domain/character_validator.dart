@@ -192,9 +192,14 @@ class CharacterValidator {
           '"hp_current" ($hpCurrent) queda fuera del rango 0-$hpMax; se ajustará en el primer cambio de vida.');
     }
 
-    if (basic['speed'] is! num) {
+    final speed = basic['speed'];
+    if (speed is! num) {
       warn('basic_info.speed',
-          'Sin "speed"; se asume 9 metros (velocidad humana estándar).');
+          'Sin "speed"; se asume 30 pies (velocidad humana estándar).');
+    } else if (speed < 5 || speed > 120) {
+      warn('basic_info.speed',
+          '"speed" ($speed) fuera del rango 5-120 pies; ¿está en metros '
+          'o es un error de la IA?');
     }
 
     if (basic['hit_die_sides'] is! num) {

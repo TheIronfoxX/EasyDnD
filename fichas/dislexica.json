@@ -5,7 +5,7 @@
     "characterClass": "Explorador 6 (Cazador)",
     "hp_max": 72,
     "ac": 15,
-    "speed": 9
+    "speed": 30
   },
   "purse": {
     "gold": 0,

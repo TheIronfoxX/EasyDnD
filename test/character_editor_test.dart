@@ -249,13 +249,13 @@ void main() {
       // El avatar (8b) empuja este campo debajo del pliegue: el
       // ListView de la sección es lazy, hay que scrollearlo.
       await tester.scrollUntilVisible(
-        find.widgetWithText(TextFormField, 'Velocidad (metros por turno)'),
+        find.widgetWithText(TextFormField, 'Velocidad (pies por turno)'),
         200,
         scrollable: find.byType(Scrollable).first,
       );
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'Velocidad (metros por turno)'),
-        '12',
+        find.widgetWithText(TextFormField, 'Velocidad (pies por turno)'),
+        '40',
       );
       await tester.pump();
 
@@ -276,7 +276,7 @@ void main() {
       final guardada = store.activeCharacter!;
       expect(guardada.id, idOriginal);
       expect(guardada.basicInfo.characterClass, 'Clérigo 4');
-      expect(guardada.basicInfo.speed, 12);
+      expect(guardada.basicInfo.speed, 40);
       // El estado de combate sobrevive a la edición.
       expect(guardada.basicInfo.currentHp, 10);
     });
