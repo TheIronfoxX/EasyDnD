@@ -8,7 +8,13 @@
 // Límites conocidos (Nivel20 no da el dato o no es fiable), documentados
 // aquí para no sorprender a nadie:
 // - Sin PG actuales: hp_current = hp_max al importar.
-// - Sin monedas ni recursos gastables: purse en 0 y resources vacío.
+// - Sin recursos gastables: resources vacío.
+// - Monedas: Nivel20 no trae un bloque de monedas estructurado, así que
+//   se detectan por regex en el texto libre de equipo y notas (ver
+//   _purse/_extractCurrency). Solo se reconocen oro/plata/cobre (po/pp/pc
+//   y sus formas largas) porque el modelo Purse no tiene campos para
+//   electro ni platino; lo que la regex no detecte lo puede completar el
+//   parche de IA (AiPrompt.forNivel20Enrichment).
 // - Sin clasificación de rasgos: todo rasgo va a "passive" con rol
 //   "Utilidad" (el jugador lo ajusta en el editor).
 // - Las tiradas de salvación y el bonificador de competencia no tienen
@@ -74,7 +80,7 @@ class Nivel20Mapper {
             _int(professions.first['hit_points_dice']) != null)
           'hit_die_sides': _int(professions.first['hit_points_dice']),
       },
-      'purse': {'gold': 0, 'silver': 0, 'copper': 0},
+      'purse': _purse(root),
       'ai_tips': '',
       'user_tactics': '',
       'adventure_notes': '',
@@ -591,13 +597,23 @@ class Nivel20Mapper {
   // ARMAS E INVENTARIO
   // ---------------------------------------------------------------------
 
+  /// Armas declaradas en Nivel20: "items.armas[]" y el "attacks[]" de
+  /// nivel raíz suelen duplicar las mismas armas equipadas, así que se
+  /// combinan y se deduplican por nombre (slug), quedándose con la
+  /// primera aparición.
   static List<Map<String, dynamic>> _weapons(Map<String, dynamic> root) {
-    final armas = _list(_map(root['items'])['armas']).map(_map);
+    final sources = <Map<String, dynamic>>[
+      ..._list(_map(root['items'])['armas']).map(_map),
+      ..._list(root['attacks']).map(_map),
+    ];
     final out = <Map<String, dynamic>>[];
-    final used = <String>{};
-    for (final w in armas) {
+    final usedIds = <String>{};
+    final seenNames = <String>{};
+    for (final w in sources) {
       final name = _str(w['name']);
       if (name.isEmpty) continue;
+      if (!seenNames.add(_slug(name))) continue; // ya procesada (duplicado)
+
       final attack = _map(w['attack']);
       final dmg = _map(attack['damage']);
       final bonus = _int(_map(attack['to_hit'])['value']) ?? 0;
@@ -622,10 +638,29 @@ class Nivel20Mapper {
           },
       ];
 
+      // Datos que no tienen campo propio en Weapon (range, bono extra de
+      // to_hit/damage, munición): se preservan como notas legibles en
+      // "properties" en vez de perderse.
+      final properties = <String>[
+        ..._list(w['tags']).map((t) => _str(t)).where((t) => t.isNotEmpty),
+      ];
+      final range = _str(attack['range']);
+      if (range.isNotEmpty) properties.add('Alcance: $range');
+      final municion = _str(_map(w['fields'])['municion']);
+      if (municion.isNotEmpty) properties.add('Munición: $municion');
+      final toHitBonusText = _str(_map(attack['to_hit'])['bonus']);
+      if (toHitBonusText.isNotEmpty) {
+        properties.add('Bono de ataque adicional: $toHitBonusText');
+      }
+      final damageBonusText = _str(dmg['bonus']);
+      if (damageBonusText.isNotEmpty) {
+        properties.add('Bono de daño adicional: $damageBonusText');
+      }
+
       final bonusText = bonus >= 0 ? '+$bonus' : '$bonus';
       var id = 'weapon-${_slug(name)}';
       var n = 2;
-      while (!used.add(id)) {
+      while (!usedIds.add(id)) {
         id = 'weapon-${_slug(name)}-$n';
         n++;
       }
@@ -636,7 +671,7 @@ class Nivel20Mapper {
         'attack_bonus': bonus,
         'damage': {'base_dice': dice, 'base_type': type.toLowerCase()},
         'conditional_damage': conditional,
-        'properties': _list(w['tags']).map((t) => _str(t)).where((t) => t.isNotEmpty).toList(),
+        'properties': properties,
         'homebrew_effect': '',
         'magic_charges': {'has_charges': false, 'max': 0, 'current': 0},
         'success_description': '',
@@ -667,11 +702,80 @@ class Nivel20Mapper {
         });
       }
     }
-    final free = _str(root['equipment']);
-    if (free.isNotEmpty) {
-      out.add({'name': 'Equipo', 'description': free, 'quantity': 1});
+    for (final p in _list(root['protections']).map(_map)) {
+      final name = _str(p['name']);
+      if (name.isEmpty) continue;
+      out.add({
+        'name': name,
+        'description': _str(p['description']),
+        'quantity': _int(p['quantity']) ?? 1,
+      });
+    }
+
+    // Equipo libre: las menciones de monedas van a purse (ver _purse), no
+    // acá. El resto, si trae varios objetos separados por coma o salto de
+    // línea, se parte en un ítem por objeto en vez de uno genérico
+    // "Equipo"; si queda una sola frase, se mantiene como antes.
+    final free = _stripCurrencyMentions(_str(root['equipment']));
+    final parts = free
+        .split(RegExp(r'[\n,]+'))
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+    if (parts.length > 1) {
+      for (final part in parts) {
+        out.add({'name': part, 'description': '', 'quantity': 1});
+      }
+    } else if (parts.isNotEmpty) {
+      out.add({'name': 'Equipo', 'description': parts.first, 'quantity': 1});
     }
     return out;
+  }
+
+  // ---------------------------------------------------------------------
+  // MONEDAS
+  // ---------------------------------------------------------------------
+
+  /// Abreviatura o palabra de Nivel20 -> clave del modelo Purse. Solo
+  /// oro/plata/cobre: el modelo no tiene campos para electro ni platino
+  /// (ver nota de "Límites conocidos" al inicio del archivo).
+  static const _currencyKeys = {
+    'po': 'gold', 'oro': 'gold',
+    'pp': 'silver', 'plata': 'silver',
+    'pc': 'copper', 'cobre': 'copper',
+  };
+
+  static final RegExp _currencyRegex = RegExp(
+    r'(\d+)\s*(?:piezas?|monedas?)?\s*(?:de\s+)?(po|pp|pc|oro|plata|cobre)\b',
+    caseSensitive: false,
+  );
+
+  /// Suma las menciones de monedas en [equipment] y [notas] (regex sobre
+  /// texto libre, ver _currencyRegex) en un único purse. Si la ficha no
+  /// menciona monedas da 0/0/0; el parche de IA puede completar lo que
+  /// esta regex no cubra.
+  static Map<String, dynamic> _purse(Map<String, dynamic> root) {
+    final equipment = _str(root['equipment']);
+    final notas = _str(_map(root['fields'])['notas']);
+    final out = {'gold': 0, 'silver': 0, 'copper': 0};
+    for (final text in [equipment, notas]) {
+      for (final m in _currencyRegex.allMatches(text)) {
+        final key = _currencyKeys[m.group(2)!.toLowerCase()];
+        final amount = int.tryParse(m.group(1)!);
+        if (key != null && amount != null) out[key] = out[key]! + amount;
+      }
+    }
+    return out;
+  }
+
+  /// Quita del texto las menciones de monedas que _purse ya contabilizó,
+  /// para que no terminen duplicadas como "objeto" en mundane_items.
+  static String _stripCurrencyMentions(String text) {
+    return text
+        .replaceAll(_currencyRegex, '')
+        .replaceAll(RegExp(r'[,\s]*,[,\s]*'), ', ')
+        .replaceAll(RegExp(r'^[,\s]+|[,\s]+$'), '')
+        .trim();
   }
 
   // ---------------------------------------------------------------------

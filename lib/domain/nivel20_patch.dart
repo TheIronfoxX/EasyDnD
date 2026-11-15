@@ -4,7 +4,7 @@
 // (atributos, PG, CA, velocidad, ranuras, armas y conjuros del SRD). La
 // IA ya NO recibe ni devuelve esa ficha: solo clasifica rasgos, extrae
 // recursos, desglosa el equipo y redacta textos, y responde con un JSON
-// "parche" de cuatro claves opcionales. Este archivo decodifica ese
+// "parche" de claves opcionales. Este archivo decodifica ese
 // parche y lo fusiona sobre el CharacterModel base SIN tocar nada más.
 //
 // Forma del parche (todas las claves opcionales):
@@ -16,7 +16,9 @@
 //   ],
 //   "resources": [ { "name", "current", "max" } ],
 //   "inventory": { "mundane_items": [ { "name", "description", "quantity" } ] },
-//   "lore_info": { "tactical_summary", "lore_description" }
+//   "lore_info": { "tactical_summary", "lore_description" },
+//   "purse": { "gold", "silver", "copper" }   // monedas ADICIONALES: se suman
+//   "companions": [ { "name", "type", "has_hp", "current_hp", "max_hp", "ac" } ]
 // }
 //
 // Puro Dart, sin Flutter.
@@ -37,6 +39,8 @@ class Nivel20Patch {
     'resources',
     'inventory',
     'lore_info',
+    'purse',
+    'companions',
   ];
 
   static const _categories = ['action', 'bonus_action', 'reaction', 'passive'];
@@ -63,17 +67,62 @@ class Nivel20Patch {
 
   /// Fusiona [patch] sobre una COPIA de [base] y la devuelve. [base] no se
   /// modifica. Garantía: atributos, habilidades (skills), PG, CA, velocidad,
-  /// ranuras, bolsa, armas y conjuros quedan intactos; cualquier valor del
+  /// ranuras, armas y conjuros quedan intactos; cualquier valor del
   /// parche fuera de rango o mal formado se ignora en silencio.
   static CharacterModel apply(CharacterModel base, Map<String, dynamic> patch) {
     final c = CharacterModel.fromJson(
-      jsonDecode(jsonEncode(base.toJson())) as Map<String, dynamic>,
+      mergePurseAndCompanions(
+        jsonDecode(jsonEncode(base.toJson())) as Map<String, dynamic>,
+        patch,
+      ),
     );
     _features(c, patch['classified_features']);
     _resources(c, patch['resources']);
     _inventory(c, patch['inventory']);
     _lore(c, patch['lore_info']);
     return c;
+  }
+
+  /// Fusiona sobre el JSON de la ficha base las claves "purse" y
+  /// "companions" del [patch], sin pisar lo que el mapeador ya detectó:
+  /// - "purse": monedas ADICIONALES, se suman (nunca restan ni reemplazan).
+  /// - "companions": se añaden los que no estén ya (por nombre).
+  /// Devuelve una copia; [baseJson] no se modifica.
+  static Map<String, dynamic> mergePurseAndCompanions(
+    Map<String, dynamic> baseJson,
+    Map<String, dynamic> patch,
+  ) {
+    final merged = Map<String, dynamic>.from(baseJson);
+
+    final patchPurse = patch['purse'];
+    if (patchPurse is Map) {
+      final purse = Map<String, dynamic>.from(
+        (merged['purse'] as Map?)?.cast<String, dynamic>() ?? {},
+      );
+      for (final key in ['gold', 'silver', 'copper']) {
+        final extra = _i(patchPurse[key]) ?? 0;
+        purse[key] = ((purse[key] as num?)?.toInt() ?? 0) + (extra > 0 ? extra : 0);
+      }
+      merged['purse'] = purse;
+    }
+
+    final patchCompanions = patch['companions'];
+    if (patchCompanions is List) {
+      final companions = List<dynamic>.from(
+        (merged['companions'] as List?) ?? const [],
+      );
+      final names = companions
+          .map((c) => _key(_s((c as Map)['name'])))
+          .toSet();
+      for (final c in _maps(patchCompanions)) {
+        final name = _s(c['name']);
+        if (name.isEmpty || !names.add(_key(name))) continue;
+        companions.add(c);
+      }
+      merged['companions'] = companions;
+    }
+
+    return merged;
   }
 
   // ---------------------------------------------------------------------

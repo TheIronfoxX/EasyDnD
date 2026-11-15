@@ -69,7 +69,7 @@ class Nivel20Import {
     if (patch == null) {
       return _error(
         'La respuesta no es un parche válido: pega el JSON con '
-        '"classified_features", "resources", "inventory" y/o "lore_info".',
+        '"classified_features", "resources", "inventory", "lore_info", "purse" y/o "companions".',
       );
     }
     try {
@@ -106,6 +106,20 @@ class Nivel20Import {
       equipment: sources.equipment,
     );
   }
+
+  /// Fusiona sobre la ficha base (Nivel20Mapper.toJson) un parche sparse
+  /// que solo trae las claves opcionales "purse" y/o "companions" (ver
+  /// AiPrompt.forNivel20Enrichment, puntos 5 y 6), sin pisar lo que el
+  /// mapeador ya detectó:
+  /// - "purse" en [patch] son monedas ADICIONALES: se suman (nunca se
+  ///   restan ni reemplazan) sobre lo que ya traía la ficha base.
+  /// - "companions" en [patch] se añaden los que no estén ya (comparando
+  ///   por nombre), sin duplicar ni tocar los existentes.
+  static Map<String, dynamic> mergeAiPatch(
+    Map<String, dynamic> baseJson,
+    Map<String, dynamic> patch,
+  ) =>
+      Nivel20Patch.mergePurseAndCompanions(baseJson, patch);
 }
 
 /// Las dos acciones del Paso 1 cuando hay una ficha de Nivel20 lista.

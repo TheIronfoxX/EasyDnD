@@ -92,6 +92,54 @@ void main() {
     test('secciones vacías se marcan "(sin datos)"', () {
       expect(AiPrompt.forNivel20Enrichment(), contains('(sin datos)'));
     });
+
+    test('pide las claves opcionales purse y companions', () {
+      expect(prompt, contains('"purse"'));
+      expect(prompt, contains('"companions"'));
+      expect(prompt, contains('"name", "type", "has_hp", "current_hp", "max_hp", "ac"'));
+    });
+  });
+
+  group('Nivel20Import.mergeAiPatch', () {
+    test('suma el oro del parche sin pisar el ya detectado por regex', () {
+      final base = {'purse': {'gold': 50, 'silver': 0, 'copper': 0}};
+      final patch = {'purse': {'gold': 10, 'silver': 5, 'copper': 0}};
+      final merged = Nivel20Import.mergeAiPatch(base, patch);
+      expect(merged['purse'], {'gold': 60, 'silver': 5, 'copper': 0});
+    });
+
+    test('sin "purse" en el parche, deja el de la base intacto', () {
+      final base = {'purse': {'gold': 50, 'silver': 0, 'copper': 0}};
+      final merged = Nivel20Import.mergeAiPatch(base, {});
+      expect(merged['purse'], {'gold': 50, 'silver': 0, 'copper': 0});
+    });
+
+    test('añade companions del parche sin duplicar los ya existentes', () {
+      final base = {
+        'companions': [
+          {'name': 'Nix', 'type': 'familiar', 'has_hp': false, 'current_hp': 0, 'max_hp': 0, 'ac': 10},
+        ],
+      };
+      final patch = {
+        'companions': [
+          // Mismo nombre que uno ya existente: no debe duplicarse.
+          {'name': 'Nix', 'type': 'otro', 'has_hp': true, 'current_hp': 5, 'max_hp': 5, 'ac': 12},
+          {'name': 'Calion', 'type': 'aliado', 'has_hp': true, 'current_hp': 20, 'max_hp': 20, 'ac': 14},
+        ],
+      };
+      final merged = Nivel20Import.mergeAiPatch(base, patch);
+      final companions = merged['companions'] as List;
+      expect(companions, hasLength(2));
+      expect(companions.map((c) => c['name']), ['Nix', 'Calion']);
+      // El Nix existente no se pisó con el del parche.
+      expect(companions.first['type'], 'familiar');
+    });
+
+    test('sin "companions" en el parche, deja la base intacta', () {
+      final base = {'companions': <Map<String, dynamic>>[]};
+      final merged = Nivel20Import.mergeAiPatch(base, {'purse': {'gold': 1}});
+      expect(merged['companions'], isEmpty);
+    });
   });
 
   group('wizard: importación directa de Nivel20', () {
