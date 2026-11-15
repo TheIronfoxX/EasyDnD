@@ -126,7 +126,7 @@ class DndRules {
       description: 'El personaje está incapacitado, no puede moverse ni '
           'hablar, y falla automáticamente las salvaciones de Fuerza y '
           'Destreza. Los ataques contra él tienen ventaja y cualquier '
-          'impacto cuerpo a cuerpo a menos de 1,5 metros es crítico '
+          'impacto cuerpo a cuerpo a menos de 5 pies es crítico '
           'automático.',
       causesDisadvantage: false,
     ),

@@ -15,6 +15,35 @@ import 'package:easydnd/data/nivel20_extractor.dart';
 
 void main() {
   group('cleanRawJsonString', () {
+    test('limpia HTML y entidades dentro de actions[] anidadas', () {
+      final raw = jsonEncode({
+        'info': {'name': 'X'},
+        'actions': [
+          {
+            'name': 'Bast&oacute;n',
+            'description': '<p>Uno</p>\n<p>Dos&nbsp;&amp;&#39;tres&#x27;</p>',
+            'elements': [
+              {'description': '<p>Ataque<br/>con <strong>fuerza</strong></p>'},
+            ],
+          },
+        ],
+      });
+      final decoded = jsonDecode(Nivel20Extractor.cleanRawJsonString(raw))
+          as Map<String, dynamic>;
+      final action = (decoded['actions'] as List).single as Map;
+      expect(action['name'], 'Bastón');
+      expect(action['description'], "Uno\n\nDos &'tres'");
+      expect(((action['elements'] as List).single as Map)['description'],
+          'Ataque\ncon fuerza');
+    });
+
+    test('no doble-decodifica &amp;lt;', () {
+      final raw = jsonEncode({'info': {'name': '&amp;lt;b&amp;gt;'}});
+      final decoded = jsonDecode(Nivel20Extractor.cleanRawJsonString(raw))
+          as Map<String, dynamic>;
+      expect((decoded['info'] as Map)['name'], '&lt;b&gt;');
+    });
+
     test('desenvuelve printable_hash y limpia HTML en strings hoja', () {
       final raw = jsonEncode({
         'printable_hash': {

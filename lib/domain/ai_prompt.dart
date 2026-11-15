@@ -198,7 +198,7 @@ Devuélveme el JSON completo, sin comentarios ni texto fuera del bloque de códi
           "Versátil",
           "Mágica"
         ],
-        "homebrew_effect": "Emite luz tenue en un radio de 3 metros cuando se desenvaina.",
+        "homebrew_effect": "Emite luz tenue en un radio de 10 pies cuando se desenvaina.",
         "magic_charges": {
           "has_charges": false,
           "max": 0,
@@ -221,7 +221,7 @@ Devuélveme el JSON completo, sin comentarios ni texto fuera del bloque de códi
         "conditional_damage": [],
         "properties": [
           "Arrojadiza",
-          "Alcance (9/36m)"
+          "Alcance (30/120 pies)"
         ],
         "homebrew_effect": "",
         "magic_charges": {

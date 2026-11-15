@@ -216,39 +216,73 @@ class Nivel20Extractor {
   static final RegExp _multiSpaceRegex = RegExp(r'[ \t]{2,}');
   static final RegExp _multiNewlineRegex = RegExp(r'\n{3,}');
 
+  /// Entidades con nombre más comunes en el español de Nivel20. `&amp;`
+  /// NO está aquí: se decodifica al final y por separado para no
+  /// "doble-decodificar" textos como `&amp;lt;`.
   static const _entities = {
     '&nbsp;': ' ',
-    '&amp;': '&',
     '&lt;': '<',
     '&gt;': '>',
     '&quot;': '"',
-    '&#39;': "'",
+    '&apos;': "'",
     '&aacute;': 'á',
     '&eacute;': 'é',
     '&iacute;': 'í',
     '&oacute;': 'ó',
     '&uacute;': 'ú',
+    '&Aacute;': 'Á',
+    '&Eacute;': 'É',
+    '&Iacute;': 'Í',
+    '&Oacute;': 'Ó',
+    '&Uacute;': 'Ú',
     '&ntilde;': 'ñ',
+    '&Ntilde;': 'Ñ',
+    '&uuml;': 'ü',
+    '&iexcl;': '¡',
+    '&iquest;': '¿',
+    '&laquo;': '«',
+    '&raquo;': '»',
+    '&ldquo;': '“',
+    '&rdquo;': '”',
+    '&lsquo;': '‘',
+    '&rsquo;': '’',
+    '&ndash;': '–',
+    '&mdash;': '—',
+    '&hellip;': '…',
   };
 
-  /// Purga etiquetas HTML (<p>, <br>, <strong>...) y entidades comunes de
-  /// un String, dejando texto plano legible.
-  static String _clean(String raw) {
-    var text = raw;
+  static final RegExp _numericEntityRegex =
+      RegExp(r'&#(x[0-9a-fA-F]+|[0-9]+);');
 
-    // <br> y </p><p> se convierten en saltos de línea reales antes de
-    // borrar el resto de etiquetas, para no dejar todo el texto pegado.
+  /// Purga etiquetas HTML (<p>, <br>, <strong>...) y entidades comunes
+  /// (con nombre y numéricas, decimales y hex) de un String, dejando
+  /// texto plano legible.
+  static String _clean(String raw) {
+    var text = raw.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+
+    // <br>, </p><p> y <li> se convierten en saltos de línea reales antes
+    // de borrar el resto de etiquetas, para no dejar todo el texto pegado.
     text = text.replaceAll(RegExp(r'<br\s*/?>', caseSensitive: false), '\n');
     text = text.replaceAll(
         RegExp(r'</p>\s*<p[^>]*>', caseSensitive: false), '\n\n');
+    text = text.replaceAll(RegExp(r'</li>\s*', caseSensitive: false), '\n');
+    text = text.replaceAll(RegExp(r'<li[^>]*>', caseSensitive: false), '- ');
 
     text = text.replaceAll(_tagRegex, '');
 
     _entities.forEach((key, value) => text = text.replaceAll(key, value));
+    text = text.replaceAllMapped(_numericEntityRegex, (m) {
+      final code = m.group(1)!;
+      final value = code.startsWith('x')
+          ? int.tryParse(code.substring(1), radix: 16)
+          : int.tryParse(code);
+      if (value == null || value <= 0 || value > 0x10FFFF) return m.group(0)!;
+      return String.fromCharCode(value);
+    });
+    text = text.replaceAll('&amp;', '&');
 
     text = text.replaceAll(_multiSpaceRegex, ' ');
     text = text.replaceAll(_multiNewlineRegex, '\n\n');
-    text = text.replaceAll('\r\n', '\n');
 
     return text.trim();
   }
