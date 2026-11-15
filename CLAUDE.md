@@ -115,3 +115,7 @@ dependency, so game-rule logic is testable without a widget tree.
 - UI tests (`hud_*_test.dart`, `skin_screen_test.dart`, etc.) drive widgets against
   the real `CharacterStore`/`SkinController`, not fakes of them — only the
   persistence layer underneath is faked.
+
+## Token discipline
+- Read targeted line ranges instead of whole files when inspecting existing code.
+- Do not run `flutter pub get` unless `pubspec.yaml` was modified.

@@ -1,0 +1,34 @@
+# Artefactos y caché de Dart / Flutter
+.dart_tool/
+.pub-cache/
+build/
+coverage/
+pubspec.lock
+
+# Código generado
+*.g.dart
+*.freezed.dart
+*.mocks.dart
+
+# Binarios y recursos estáticos
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.svg
+*.ttf
+*.otf
+*.ico
+
+# Dependencias nativas efímeras
+android/.gradle/
+ios/Pods/
+linux/flutter/ephemeral/
+macos/Flutter/ephemeral/
+windows/flutter/ephemeral/
+
+# Entorno y logs
+.idea/
+.vscode/
+*.iml
+*.log
