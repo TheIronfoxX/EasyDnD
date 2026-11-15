@@ -4,13 +4,19 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 
 import '../../core/theme/design_tokens.dart';
+import '../../core/theme/tactical_palette.dart';
+import '../../core/theme/telemetry.dart';
+import '../../core/ui/stat_dial.dart';
+import '../../core/ui/tactical_card.dart';
 import '../../domain/models/ability.dart';
 import '../../domain/models/character.dart';
 import 'editor_ability_page.dart';
 import 'editor_fields.dart';
-import 'editor_tab_arsenal.dart' show categoryOf, kCategoryChipLabels, reclassifyAbility;
+import 'editor_tab_arsenal.dart'
+    show categoryOf, kCategoryChipLabels, reclassifyAbility;
 import 'spell_picker_sheet.dart';
 
 /// Recargas de un recurso: clave del shape → etiqueta.
@@ -21,7 +27,11 @@ const Map<String, String> kRecoveryLabels = {
 };
 
 class EditorTabGrimorio extends StatefulWidget {
-  const EditorTabGrimorio({super.key, required this.draft, required this.onChanged});
+  const EditorTabGrimorio({
+    super.key,
+    required this.draft,
+    required this.onChanged,
+  });
 
   final CharacterModel draft;
   final VoidCallback onChanged;
@@ -104,13 +114,15 @@ class _EditorTabGrimorioState extends State<EditorTabGrimorio> {
   @override
   Widget build(BuildContext context) {
     final draft = widget.draft;
-    final theme = Theme.of(context);
     final spells = draft.abilitiesByAction.all.where((a) => a.isSpell).toList()
       ..sort((a, b) => a.baseLevel.compareTo(b.baseLevel));
     final resources = draft.resources;
 
     return ListView(
       key: const Key('list-grimorio'),
+      // Pestaña corta y de uso frecuente: se construye entera para que la
+      // cuadrícula de ranuras exista aunque quede bajo el pliegue.
+      scrollCacheExtent: const ScrollCacheExtent.pixels(4000),
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
         EditorBlockTitle('Conjuros · ${spells.length}'),
@@ -131,7 +143,8 @@ class _EditorTabGrimorioState extends State<EditorTabGrimorio> {
             ),
           ],
         ),
-        if (spells.isEmpty) const EditorEmptyHint('La ficha no trae conjuros todavía.'),
+        if (spells.isEmpty)
+          const EditorEmptyHint('La ficha no trae conjuros todavía.'),
         for (final spell in spells)
           _SpellCard(
             key: ObjectKey(spell),
@@ -143,8 +156,15 @@ class _EditorTabGrimorioState extends State<EditorTabGrimorio> {
             },
             onOpen: () => _openSpell(spell),
             onDelete: () {
-              for (final key in ['action', 'bonusAction', 'reaction', 'passive']) {
-                draft.abilitiesByAction.listFor(key).removeWhere((a) => identical(a, spell));
+              for (final key in [
+                'action',
+                'bonusAction',
+                'reaction',
+                'passive',
+              ]) {
+                draft.abilitiesByAction
+                    .listFor(key)
+                    .removeWhere((a) => identical(a, spell));
               }
               _touch();
             },
@@ -155,7 +175,11 @@ class _EditorTabGrimorioState extends State<EditorTabGrimorio> {
         const EditorBlockTitle('Ranuras de conjuro'),
         LayoutBuilder(
           builder: (context, constraints) {
-            final cell = (constraints.maxWidth - AppSpacing.sm) / 2;
+            final columns = constraints.maxWidth >= 640 ? 3 : 2;
+            final cell =
+                (constraints.maxWidth - AppSpacing.sm * (columns - 1)) /
+                columns;
+            final tone = context.tactical.spell;
             return Wrap(
               spacing: AppSpacing.sm,
               runSpacing: AppSpacing.sm,
@@ -163,25 +187,11 @@ class _EditorTabGrimorioState extends State<EditorTabGrimorio> {
                 for (var level = 1; level <= 9; level++)
                   SizedBox(
                     width: cell,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        EditorStepperField(
-                          id: 'slot-$level',
-                          label: 'Nivel $level',
-                          value: draft.spellSlots.forLevel(level)?.max ?? 0,
-                          onChanged: (v) => _setSlotMax(level, v ?? 0),
-                        ),
-                        if (draft.spellSlots.forLevel(level) != null)
-                          Padding(
-                            padding: const EdgeInsets.only(left: AppSpacing.sm),
-                            child: Text(
-                              '${draft.spellSlots.forLevel(level)!.current} de '
-                              '${draft.spellSlots.forLevel(level)!.max} disponibles',
-                              style: theme.textTheme.bodySmall,
-                            ),
-                          ),
-                      ],
+                    child: _SlotCell(
+                      level: level,
+                      slot: draft.spellSlots.forLevel(level),
+                      tone: tone,
+                      onChanged: (v) => _setSlotMax(level, v ?? 0),
                     ),
                   ),
               ],
@@ -199,7 +209,8 @@ class _EditorTabGrimorioState extends State<EditorTabGrimorio> {
             label: const Text('Agregar recurso'),
           ),
         ),
-        if (resources.isEmpty) const EditorEmptyHint('La ficha no trae recursos todavía.'),
+        if (resources.isEmpty)
+          const EditorEmptyHint('La ficha no trae recursos todavía.'),
         for (var i = 0; i < resources.length; i++)
           _ResourceCard(
             key: ObjectKey(resources[i]),
@@ -239,25 +250,42 @@ class _SpellCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
+    final tone = context.tactical.spell;
+    return TacticalCard(
       key: Key('spell-card-${spell.id}'),
+      tone: tone,
+      margin: const EdgeInsets.only(top: AppSpacing.sm),
+      padding: const EdgeInsets.all(AppSpacing.md),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: EdgeInsets.zero,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
+                EditorIconPlate(icon: Icons.auto_awesome_rounded, tone: tone),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: InkWell(
                     onTap: onOpen,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(spell.name, style: theme.textTheme.titleSmall),
                         Text(
-                          spell.baseLevel == 0 ? 'Truco' : 'Nivel ${spell.baseLevel}',
-                          style: theme.textTheme.bodySmall,
+                          spell.name,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TonePill(
+                            label: spell.baseLevel == 0
+                                ? 'Truco'
+                                : 'Nivel ${spell.baseLevel}',
+                            tone: tone,
+                          ),
                         ),
                       ],
                     ),
@@ -270,19 +298,16 @@ class _SpellCard extends StatelessWidget {
                 ),
               ],
             ),
-            Wrap(
-              spacing: AppSpacing.xs,
-              children: [
-                // Un conjuro no es pasivo: solo las tres categorías activas.
+            // Un conjuro no es pasivo: solo las tres categorías activas.
+            EditorActionChips(
+              idPrefix: spell.id,
+              labels: {
                 for (final e in kCategoryChipLabels.entries)
-                  if (e.key != 'passive')
-                    ChoiceChip(
-                      key: Key('cat-${spell.id}-${e.key}'),
-                      label: Text(e.value),
-                      selected: category == e.key,
-                      onSelected: (_) => onReclassify(e.key),
-                    ),
-              ],
+                  if (e.key != 'passive') e.key: e.value,
+              },
+              current: category,
+              tone: tone,
+              onSelected: onReclassify,
             ),
             const SizedBox(height: AppSpacing.sm),
             Row(
@@ -292,14 +317,16 @@ class _SpellCard extends StatelessWidget {
                   child: EditorDiceField(
                     label: 'Dados de daño',
                     initialValue: spell.damageDice ?? '',
-                    onChanged: (v) => spell.damageDice = v.trim().isEmpty ? null : v,
+                    onChanged: (v) =>
+                        spell.damageDice = v.trim().isEmpty ? null : v,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     key: Key('spell-type-${spell.id}'),
-                    initialValue: kAttackTypeShortLabels.containsKey(spell.attackType)
+                    initialValue:
+                        kAttackTypeShortLabels.containsKey(spell.attackType)
                         ? spell.attackType
                         : 'attack',
                     decoration: const InputDecoration(
@@ -327,10 +354,92 @@ class _SpellCard extends StatelessWidget {
               initialValue: spell.tacticalSummary ?? '',
               maxLines: 3,
               minLines: 1,
-              onChanged: (v) => spell.tacticalSummary = v.trim().isEmpty ? null : v,
+              onChanged: (v) =>
+                  spell.tacticalSummary = v.trim().isEmpty ? null : v,
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Celda de la cuadrícula de ranuras: stepper del tope, pips de lo que
+/// queda y el "X de Y disponibles". Sin ranura (tope 0) queda apagada.
+class _SlotCell extends StatelessWidget {
+  const _SlotCell({
+    required this.level,
+    required this.slot,
+    required this.tone,
+    required this.onChanged,
+  });
+
+  final int level;
+  final SpellSlot? slot;
+  final Color tone;
+  final ValueChanged<int?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final slot = this.slot;
+    final active = slot != null;
+
+    return AnimatedContainer(
+      duration: AppDurations.normal,
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.sm,
+        AppSpacing.sm,
+        AppSpacing.sm,
+        AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: tone.withValues(alpha: active ? 0.09 : 0.03),
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        border: Border.all(
+          color: active
+              ? tone.withValues(alpha: 0.5)
+              : context.tactical.metalBorder.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          EditorStepperField(
+            id: 'slot-$level',
+            label: 'Nivel $level',
+            value: slot?.max ?? 0,
+            onChanged: onChanged,
+          ),
+          if (slot != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Padding(
+              padding: const EdgeInsets.only(left: AppSpacing.xs),
+              child: Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      '${slot.current} de ${slot.max} disponibles',
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant)
+                          .tabular,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Padding(
+              padding: const EdgeInsets.only(left: AppSpacing.xs),
+              child: ResourcePips(
+                current: slot.current,
+                max: slot.max,
+                color: tone,
+                size: 8,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -352,13 +461,21 @@ class _ResourceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return TacticalCard(
+      tone: context.tactical.ability,
+      margin: const EdgeInsets.only(top: AppSpacing.sm),
+      padding: const EdgeInsets.all(AppSpacing.md),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: EdgeInsets.zero,
         child: Column(
           children: [
             Row(
               children: [
+                EditorIconPlate(
+                  icon: Icons.toll_rounded,
+                  tone: context.tactical.ability,
+                ),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: EditorTextField(
                     key: Key('res-$index-name'),
@@ -485,7 +602,8 @@ class _HomebrewSpellDialogState extends State<_HomebrewSpellDialog> {
                   border: OutlineInputBorder(),
                 ),
                 onChanged: (v) => _name = v,
-                validator: (v) => (v ?? '').trim().isEmpty ? 'Poné un nombre.' : null,
+                validator: (v) =>
+                    (v ?? '').trim().isEmpty ? 'Poné un nombre.' : null,
               ),
               const SizedBox(height: AppSpacing.sm),
               EditorStepperField(

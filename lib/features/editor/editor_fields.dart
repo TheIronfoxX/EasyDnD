@@ -16,6 +16,8 @@ import '../../core/dice.dart';
 import '../../domain/models/weapon.dart';
 import '../../core/theme/app_fonts.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/theme/tactical_palette.dart';
+import '../../core/theme/telemetry.dart';
 
 // Reexportado para las secciones del editor que ya lo importaban desde
 // acá; la fuente de verdad vive en core/dnd_rules.dart.
@@ -370,7 +372,7 @@ class EditorSectionScaffold extends StatelessWidget {
               Text(
                 help!,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.outline,
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -396,14 +398,26 @@ class EditorEmptyHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+      padding: const EdgeInsets.symmetric(
+        vertical: AppSpacing.lg,
+        horizontal: AppSpacing.md,
+      ),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        border: Border.all(
+          color: context.tactical.metalBorder.withValues(alpha: 0.6),
+        ),
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.22),
+      ),
       child: Text(
         text,
         textAlign: TextAlign.center,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: Theme.of(context).colorScheme.outline,
-        ),
+        style: Theme.of(
+          context,
+        ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
       ),
     );
   }
@@ -444,8 +458,9 @@ class EditorStepperField extends StatefulWidget {
 }
 
 class _EditorStepperFieldState extends State<EditorStepperField> {
-  late final TextEditingController _controller =
-      TextEditingController(text: widget.value?.toString() ?? '');
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.value?.toString() ?? '',
+  );
 
   @override
   void didUpdateWidget(EditorStepperField old) {
@@ -479,17 +494,35 @@ class _EditorStepperFieldState extends State<EditorStepperField> {
   @override
   Widget build(BuildContext context) {
     final value = widget.value;
+    final primary = Theme.of(context).colorScheme.primary;
+
+    Widget button(IconData icon, Key key, String tooltip, VoidCallback? onTap) {
+      return IconButton(
+        key: key,
+        tooltip: tooltip,
+        visualDensity: VisualDensity.compact,
+        style: IconButton.styleFrom(
+          foregroundColor: primary,
+          backgroundColor: primary.withValues(alpha: 0.12),
+          disabledBackgroundColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadii.sm),
+          ),
+        ),
+        icon: Icon(icon, size: 20),
+        onPressed: onTap,
+      );
+    }
+
     return Row(
       children: [
-        IconButton(
-          key: Key('${widget.id}-dec'),
-          tooltip: 'Restar',
-          visualDensity: VisualDensity.compact,
-          icon: const Icon(Icons.remove_circle_outline_rounded),
-          onPressed: value != null && value <= widget.min
-              ? null
-              : () => _step(-1),
+        button(
+          Icons.remove_rounded,
+          Key('${widget.id}-dec'),
+          'Restar',
+          value != null && value <= widget.min ? null : () => _step(-1),
         ),
+        const SizedBox(width: AppSpacing.xs),
         Expanded(
           child: EditorIntField(
             label: widget.label,
@@ -500,12 +533,12 @@ class _EditorStepperFieldState extends State<EditorStepperField> {
             onChanged: widget.onChanged,
           ),
         ),
-        IconButton(
-          key: Key('${widget.id}-inc'),
-          tooltip: 'Sumar',
-          visualDensity: VisualDensity.compact,
-          icon: const Icon(Icons.add_circle_outline_rounded),
-          onPressed: widget.max != null && value != null && value >= widget.max!
+        const SizedBox(width: AppSpacing.xs),
+        button(
+          Icons.add_rounded,
+          Key('${widget.id}-inc'),
+          'Sumar',
+          widget.max != null && value != null && value >= widget.max!
               ? null
               : () => _step(1),
         ),
@@ -514,7 +547,8 @@ class _EditorStepperFieldState extends State<EditorStepperField> {
   }
 }
 
-/// Encabezado de bloque dentro de una pestaña del taller.
+/// Encabezado de bloque dentro de una pestaña del taller: rombo, título
+/// en versalitas y un trazo que se desvanece.
 class EditorBlockTitle extends StatelessWidget {
   const EditorBlockTitle(this.text, {super.key, this.trailing});
 
@@ -524,16 +558,35 @@ class EditorBlockTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final primary = theme.colorScheme.primary;
     return Padding(
-      padding: const EdgeInsets.only(top: AppSpacing.md, bottom: AppSpacing.xs),
+      padding: const EdgeInsets.only(top: AppSpacing.lg, bottom: AppSpacing.sm),
       child: Row(
         children: [
+          Transform.rotate(
+            angle: 0.785398,
+            child: Container(width: 6, height: 6, color: primary),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Text(
+            text.toUpperCase(),
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: primary,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
-            child: Text(
-              text.toUpperCase(),
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: theme.colorScheme.primary,
-                letterSpacing: 1,
+            child: Container(
+              height: 1,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    context.tactical.metalBorder,
+                    context.tactical.metalBorder.withValues(alpha: 0),
+                  ],
+                ),
               ),
             ),
           ),
@@ -546,7 +599,12 @@ class EditorBlockTitle extends StatelessWidget {
 
 /// Ficha de solo lectura (Iniciativa, Percepción pasiva...).
 class EditorReadout extends StatelessWidget {
-  const EditorReadout({super.key, required this.id, required this.label, required this.value});
+  const EditorReadout({
+    super.key,
+    required this.id,
+    required this.label,
+    required this.value,
+  });
 
   final String id;
   final String label;
@@ -557,8 +615,106 @@ class EditorReadout extends StatelessWidget {
     final theme = Theme.of(context);
     return Column(
       children: [
-        Text(value, key: Key('readout-$id'), style: theme.textTheme.headlineSmall),
-        Text(label, style: theme.textTheme.labelSmall),
+        Text(
+          value,
+          key: Key('readout-$id'),
+          style: theme.textTheme.headlineSmall
+              ?.copyWith(fontWeight: FontWeight.w800)
+              .tabular,
+        ),
+        Text(
+          label,
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            letterSpacing: 0.4,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Placa cuadrada con un icono tintado: ancla visual de las tarjetas del
+/// taller (arma, conjuro, habilidad, objeto...).
+class EditorIconPlate extends StatelessWidget {
+  const EditorIconPlate({
+    super.key,
+    required this.icon,
+    required this.tone,
+    this.size = 40,
+  });
+
+  final IconData icon;
+  final Color tone;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: tone.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(AppRadii.sm + 2),
+        border: Border.all(color: tone.withValues(alpha: 0.5)),
+      ),
+      child: Icon(icon, size: size * 0.5, color: tone),
+    );
+  }
+}
+
+/// Chips de economía de acción (Acción / Adicional / Reacción / Pasiva).
+/// El activo se marca con relleno del color de rol, borde grueso, tilde y
+/// texto en negrita; los demás quedan apagados. Cada chip lleva la key
+/// `cat-<id>-<categoría>`.
+class EditorActionChips extends StatelessWidget {
+  const EditorActionChips({
+    super.key,
+    required this.idPrefix,
+    required this.labels,
+    required this.current,
+    required this.tone,
+    required this.onSelected,
+  });
+
+  final String idPrefix;
+
+  /// clave de categoría → etiqueta, en el orden a mostrar.
+  final Map<String, String> labels;
+  final String current;
+  final Color tone;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Wrap(
+      spacing: AppSpacing.xs,
+      runSpacing: AppSpacing.xs,
+      children: [
+        for (final e in labels.entries)
+          ChoiceChip(
+            key: Key('cat-$idPrefix-${e.key}'),
+            label: Text(e.value),
+            selected: current == e.key,
+            showCheckmark: true,
+            checkmarkColor: tone,
+            selectedColor: tone.withValues(alpha: 0.22),
+            backgroundColor: Colors.transparent,
+            side: BorderSide(
+              color: current == e.key
+                  ? tone
+                  : theme.colorScheme.outline.withValues(alpha: 0.7),
+              width: current == e.key ? 1.6 : 1,
+            ),
+            labelStyle: theme.textTheme.labelMedium?.copyWith(
+              color: current == e.key
+                  ? tone
+                  : theme.colorScheme.onSurfaceVariant,
+              fontWeight: current == e.key ? FontWeight.w800 : FontWeight.w500,
+            ),
+            onSelected: (_) => onSelected(e.key),
+          ),
       ],
     );
   }

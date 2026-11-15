@@ -252,32 +252,38 @@ class _CharacterEditorScreenState extends State<CharacterEditorScreen> {
               ),
             ],
           ),
-          bottomNavigationBar: SafeArea(
-            top: false,
-            minimum: const EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              AppSpacing.md,
-              AppSpacing.lg,
-              AppSpacing.md,
+          bottomNavigationBar: DecoratedBox(
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              border: Border(top: BorderSide(color: theme.colorScheme.outline)),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                FilledButton.icon(
-                  onPressed: _save,
-                  icon: const Icon(Icons.save_rounded),
-                  label: Text(isNew ? 'Crear ficha' : 'Guardar cambios'),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Los cambios viven en el borrador hasta que guardes.',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.outline,
+            child: SafeArea(
+              top: false,
+              minimum: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.md,
+                AppSpacing.lg,
+                AppSpacing.md,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  FilledButton.icon(
+                    onPressed: _save,
+                    icon: const Icon(Icons.save_rounded),
+                    label: Text(isNew ? 'Crear ficha' : 'Guardar cambios'),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 6),
+                  Text(
+                    'Los cambios viven en el borrador hasta que guardes.',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

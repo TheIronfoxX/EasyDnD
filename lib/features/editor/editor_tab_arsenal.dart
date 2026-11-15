@@ -13,6 +13,8 @@ import '../../domain/models/ability.dart';
 import '../../domain/models/character.dart';
 import '../../domain/models/weapon.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/theme/tactical_palette.dart';
+import '../../core/ui/tactical_card.dart';
 import 'editor_ability_page.dart';
 import 'editor_ability_templates.dart';
 import 'editor_fields.dart';
@@ -29,7 +31,11 @@ const Map<String, String> kCategoryChipLabels = {
 
 /// Mueve [ability] a [category] conservando su id (y la identidad del
 /// objeto). Compartido por el Arsenal y el Grimorio.
-void reclassifyAbility(AbilitiesByAction abilities, Ability ability, String category) {
+void reclassifyAbility(
+  AbilitiesByAction abilities,
+  Ability ability,
+  String category,
+) {
   for (final list in [
     abilities.action,
     abilities.bonusAction,
@@ -53,7 +59,11 @@ String categoryOf(AbilitiesByAction abilities, Ability ability) {
 }
 
 class EditorTabArsenal extends StatefulWidget {
-  const EditorTabArsenal({super.key, required this.draft, required this.onChanged});
+  const EditorTabArsenal({
+    super.key,
+    required this.draft,
+    required this.onChanged,
+  });
 
   final CharacterModel draft;
   final VoidCallback onChanged;
@@ -92,7 +102,8 @@ class _EditorTabArsenalState extends State<EditorTabArsenal> {
       strMod: draft.stats.str.mod,
       dexMod: draft.stats.dex.mod,
       proficiencyBonus: DndRules.proficiencyBonusFor(basic.level),
-      proficient: cls == null || CharacterBuilderEngine.isWeaponProficient(cls, srd),
+      proficient:
+          cls == null || CharacterBuilderEngine.isWeaponProficient(cls, srd),
     );
     // Un id único por alta: la misma arma SRD puede entrar dos veces.
     weapon.id = 'weapon_${DateTime.now().microsecondsSinceEpoch}';
@@ -211,7 +222,8 @@ class _EditorTabArsenalState extends State<EditorTabArsenal> {
             ),
           ],
         ),
-        if (weapons.isEmpty) const EditorEmptyHint('La ficha no trae armas todavía.'),
+        if (weapons.isEmpty)
+          const EditorEmptyHint('La ficha no trae armas todavía.'),
         for (var i = 0; i < weapons.length; i++)
           _WeaponCard(
             key: ObjectKey(weapons[i]),
@@ -234,18 +246,23 @@ class _EditorTabArsenalState extends State<EditorTabArsenal> {
         ),
         Wrap(
           spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.xs,
           children: [
             ChoiceChip(
               key: const Key('filter-all'),
               label: const Text('Todas'),
               selected: _filter == null,
+              showCheckmark: false,
               onSelected: (_) => setState(() => _filter = null),
             ),
             for (final e in kCategoryChipLabels.entries)
               ChoiceChip(
                 key: Key('filter-${e.key}'),
-                label: Text('${e.value} · ${abilities.listFor(e.key).where((a) => !a.isSpell).length}'),
+                label: Text(
+                  '${e.value} · ${abilities.listFor(e.key).where((a) => !a.isSpell).length}',
+                ),
                 selected: _filter == e.key,
+                showCheckmark: false,
                 onSelected: (_) => setState(() => _filter = e.key),
               ),
           ],
@@ -253,7 +270,11 @@ class _EditorTabArsenalState extends State<EditorTabArsenal> {
         const SizedBox(height: AppSpacing.sm),
         for (final entry in kCategoryChipLabels.entries)
           if (_filter == null || _filter == entry.key)
-            for (final ability in abilities.listFor(entry.key).where((a) => !a.isSpell).toList())
+            for (final ability
+                in abilities
+                    .listFor(entry.key)
+                    .where((a) => !a.isSpell)
+                    .toList())
               _TraitCard(
                 key: ObjectKey(ability),
                 ability: ability,
@@ -271,7 +292,9 @@ class _EditorTabArsenalState extends State<EditorTabArsenal> {
         if (abilities.all.where((a) => !a.isSpell).isEmpty)
           Text(
             'No hay rasgos todavía.',
-            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
       ],
     );
@@ -302,25 +325,38 @@ class _WeaponCardState extends State<_WeaponCard> {
     final theme = Theme.of(context);
     final w = widget.weapon;
     final bonus = w.attackBonus >= 0 ? '+${w.attackBonus}' : '${w.attackBonus}';
-    return Card(
+    final tone = context.tactical.weapon;
+    return TacticalCard(
       key: Key('weapon-card-${w.id}'),
+      tone: tone,
+      margin: const EdgeInsets.only(top: AppSpacing.sm),
+      padding: const EdgeInsets.all(AppSpacing.md),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: EdgeInsets.zero,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
+                EditorIconPlate(icon: Icons.gavel_rounded, tone: tone),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: InkWell(
                     onTap: widget.onOpen,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(w.name, style: theme.textTheme.titleSmall),
+                        Text(
+                          w.name,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                         Text(
                           'Ataque $bonus · ${w.damage.baseDice} ${w.damage.baseType}',
-                          style: theme.textTheme.bodySmall,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       ],
                     ),
@@ -423,19 +459,30 @@ class _TraitCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
+    final tone = context.tactical.ability;
+    return TacticalCard(
       key: Key('trait-card-${ability.id}'),
+      tone: tone,
+      margin: const EdgeInsets.only(top: AppSpacing.sm),
+      padding: const EdgeInsets.all(AppSpacing.md),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: EdgeInsets.zero,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
+                EditorIconPlate(icon: Icons.flash_on_rounded, tone: tone),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: InkWell(
                     onTap: onOpen,
-                    child: Text(ability.name, style: theme.textTheme.titleSmall),
+                    child: Text(
+                      ability.name,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                 ),
                 IconButton(
@@ -445,17 +492,12 @@ class _TraitCard extends StatelessWidget {
                 ),
               ],
             ),
-            Wrap(
-              spacing: AppSpacing.xs,
-              children: [
-                for (final e in kCategoryChipLabels.entries)
-                  ChoiceChip(
-                    key: Key('cat-${ability.id}-${e.key}'),
-                    label: Text(e.value),
-                    selected: category == e.key,
-                    onSelected: (_) => onReclassify(e.key),
-                  ),
-              ],
+            EditorActionChips(
+              idPrefix: ability.id,
+              labels: kCategoryChipLabels,
+              current: category,
+              tone: tone,
+              onSelected: onReclassify,
             ),
             const SizedBox(height: AppSpacing.sm),
             EditorTextField(
@@ -464,7 +506,8 @@ class _TraitCard extends StatelessWidget {
               initialValue: ability.tacticalSummary ?? '',
               maxLines: 3,
               minLines: 1,
-              onChanged: (v) => ability.tacticalSummary = v.trim().isEmpty ? null : v,
+              onChanged: (v) =>
+                  ability.tacticalSummary = v.trim().isEmpty ? null : v,
             ),
           ],
         ),
