@@ -86,6 +86,7 @@ class HudStatTile extends StatelessWidget {
     this.onTap,
     this.tone,
     this.emphasized = false,
+    this.richValue = false,
   });
 
   final IconData icon;
@@ -94,6 +95,7 @@ class HudStatTile extends StatelessWidget {
   final VoidCallback? onTap;
   final Color? tone;
   final bool emphasized;
+  final bool richValue;
 
   @override
   Widget build(BuildContext context) {
@@ -104,6 +106,7 @@ class HudStatTile extends StatelessWidget {
       tone: tone,
       onTap: onTap,
       emphasized: emphasized,
+      richValue: richValue,
     );
   }
 }

@@ -28,7 +28,11 @@ import 'package:flutter/services.dart';
 
 import '../../core/dice.dart';
 import '../../core/resolution.dart';
+import '../../core/theme/app_fonts.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/theme/tactical_palette.dart';
+import '../../core/theme/telemetry.dart';
+import '../../core/ui/stat_dial.dart';
 
 /// Cargas/usos de un arma o habilidad, tal como las ve la hoja.
 class RollCharges {
@@ -212,6 +216,16 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
   String? _manualError;
 
   RollAction get _action => widget.action;
+
+  /// Color de rol de la acción: arma, conjuro o habilidad activa.
+  Color get _tone {
+    final tactical = context.tactical;
+    return switch (_action.kindLabel) {
+      'Arma' => tactical.weapon,
+      'Conjuro' => tactical.spell,
+      _ => tactical.ability,
+    };
+  }
 
   bool get _needsTwoDice => _advantage != AdvantageMode.normal;
 
@@ -488,7 +502,22 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 520),
-              child: content,
+              // Cada fase entra con un fundido y un leve ascenso. Solo
+              // existe la fase nueva: la anterior no queda superpuesta.
+              child: TweenAnimationBuilder<double>(
+                key: ValueKey(_phase),
+                duration: AppDurations.normal,
+                curve: Curves.easeOut,
+                tween: Tween(begin: 0, end: 1),
+                builder: (context, t, child) => Opacity(
+                  opacity: t,
+                  child: Transform.translate(
+                    offset: Offset(0, 12 * (1 - t)),
+                    child: child,
+                  ),
+                ),
+                child: content,
+              ),
             ),
           ),
         ),
@@ -503,7 +532,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _SheetHeader(action: action),
+        _SheetHeader(action: action, tone: _tone),
         if (action.isSavingThrow) ...[
           const SizedBox(height: AppSpacing.lg),
           _Banner(
@@ -514,13 +543,27 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
         ],
         if (_action.hasCharges) ...[
           const SizedBox(height: 10),
-          Text(
-            'Usos: $_chargesRemaining/${action.charges!.max}',
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: _chargesRemaining > 0
-                  ? theme.colorScheme.onSurfaceVariant
-                  : theme.colorScheme.error,
-            ),
+          Row(
+            children: [
+              Text(
+                'Usos: $_chargesRemaining/${action.charges!.max}',
+                style: theme.textTheme.labelLarge
+                    ?.copyWith(
+                      color: _chargesRemaining > 0
+                          ? theme.colorScheme.onSurfaceVariant
+                          : context.tactical.damage,
+                    )
+                    .tabular,
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: ResourcePips(
+                  current: _chargesRemaining,
+                  max: action.charges!.max,
+                  color: _tone,
+                ),
+              ),
+            ],
           ),
         ],
         if (_action.usesResource) ...[
@@ -529,11 +572,19 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
             'Recurso: $_resourceRemaining/${action.resourceMax}'
             '${action.resourceCost > 1 ? ' · coste ${action.resourceCost}' : ''}'
             ' (${action.resourceName})',
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: _hasResourceLeft
-                  ? theme.colorScheme.onSurfaceVariant
-                  : theme.colorScheme.error,
-            ),
+            style: theme.textTheme.labelLarge
+                ?.copyWith(
+                  color: _hasResourceLeft
+                      ? theme.colorScheme.onSurfaceVariant
+                      : context.tactical.damage,
+                )
+                .tabular,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          ResourcePips(
+            current: _resourceRemaining,
+            max: action.resourceMax,
+            color: _tone,
           ),
         ],
         if (_hasText(action.loreDescription)) ...[
@@ -657,6 +708,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
           const SizedBox(height: 20),
           if (_action.isPlainUse)
             FilledButton.icon(
+              style: _primaryActionStyle(context),
               onPressed: _onUse,
               icon: const Icon(Icons.play_arrow_rounded),
               label: const Text('Usar'),
@@ -665,6 +717,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
             _buildSavingThrowOutcome()
           else if (_mode == _RollMode.digital)
             FilledButton.icon(
+              style: _primaryActionStyle(context),
               onPressed: _rollDigital,
               icon: const Icon(Icons.casino_rounded),
               label: Text(_needsTwoDice ? 'Tirar 2d20' : 'Tirar d20'),
@@ -681,6 +734,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         FilledButton.icon(
+          style: _primaryActionStyle(context),
           onPressed: _onSaveFailed,
           icon: const Icon(Icons.close_rounded),
           label: Text(
@@ -747,6 +801,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
         ),
         const SizedBox(height: AppSpacing.md),
         FilledButton.icon(
+          style: _primaryActionStyle(context),
           onPressed: _confirmManual,
           icon: const Icon(Icons.check_rounded),
           label: const Text('Confirmar tirada'),
@@ -761,16 +816,17 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
     final total = natural + _action.modifier;
     final isCrit = natural == 20;
     final isFumble = natural == 1;
+    final tactical = context.tactical;
     final highlight = isCrit
-        ? theme.colorScheme.tertiary
+        ? tactical.heal
         : isFumble
-        ? theme.colorScheme.error
-        : theme.colorScheme.primary;
+        ? tactical.damage
+        : _tone;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _SheetHeader(action: _action),
+        _SheetHeader(action: _action, tone: _tone),
         if (_action.usesSpellSlot) ...[
           const SizedBox(height: 2),
           Text(
@@ -793,30 +849,47 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
         ),
         const SizedBox(height: AppSpacing.md),
         Center(
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 28,
-              vertical: AppSpacing.md,
-            ),
-            decoration: BoxDecoration(
-              color: highlight.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(AppRadii.lg),
-            ),
+          child: _DieMedallion(
+            color: highlight,
+            dramatic: isCrit || isFumble,
             child: Text(
               '$total',
-              style: theme.textTheme.displaySmall?.copyWith(
-                color: highlight,
-                fontWeight: FontWeight.w800,
-              ),
+              style: theme.textTheme.displayMedium
+                  ?.copyWith(
+                    color: highlight,
+                    fontWeight: FontWeight.w800,
+                    height: 1,
+                  )
+                  .tabular,
             ),
           ),
         ),
-        const SizedBox(height: 6),
-        Text(
-          '$natural natural ${_modLabel(_action.modifier)} mod',
-          textAlign: TextAlign.center,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+        const SizedBox(height: AppSpacing.sm),
+        Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.xs,
+            ),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.45,
+              ),
+              borderRadius: BorderRadius.circular(AppRadii.pill),
+              border: Border.all(
+                color: tactical.metalBorder.withValues(alpha: 0.7),
+              ),
+            ),
+            child: Text(
+              '$natural natural ${_modLabel(_action.modifier)} mod',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(
+                    fontFamily: AppFonts.jetBrainsMono,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  )
+                  .tabular,
+            ),
           ),
         ),
         const SizedBox(height: AppSpacing.lg),
@@ -824,13 +897,15 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
           _Verdict(
             label: '¡Éxito crítico!',
             description: _action.successDescription,
-            color: theme.colorScheme.tertiary,
+            color: tactical.heal,
+            icon: Icons.auto_awesome_rounded,
           )
         else if (isFumble)
           _Verdict(
             label: '¡Pifia!',
             description: _action.failureDescription,
-            color: theme.colorScheme.error,
+            color: tactical.damage,
+            icon: Icons.heart_broken_rounded,
           )
         else
           _Descriptions(action: _action),
@@ -839,6 +914,13 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
           children: [
             Expanded(
               child: OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: tactical.damage,
+                  side: BorderSide(
+                    color: tactical.damage.withValues(alpha: 0.6),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
                 onPressed: _onFail,
                 child: const Text('Fallo'),
               ),
@@ -846,6 +928,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
             const SizedBox(width: 10),
             Expanded(
               child: FilledButton(
+                style: _primaryActionStyle(context),
                 onPressed: _onImpact,
                 child: const Text('Impacto'),
               ),
@@ -864,7 +947,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _SheetHeader(action: _action),
+        _SheetHeader(action: _action, tone: _tone),
         const SizedBox(height: AppSpacing.lg),
         _sectionLabel('Daño / efecto'),
         const SizedBox(height: AppSpacing.sm),
@@ -883,58 +966,37 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
             ),
           )
         else
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg,
-              vertical: 14,
-            ),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest.withValues(
-                alpha: 0.4,
+          _ResultPanel(
+            tone: context.tactical.damage,
+            caption: Text(
+              _action.damageType ?? 'Daño',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
               ),
-              borderRadius: BorderRadius.circular(AppRadii.md),
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    _action.damageType ?? 'Daño',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
+            total: Text(
+              '${_damageTotal ?? 0}',
+              style: theme.textTheme.displaySmall
+                  ?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    height: 1,
+                    color: context.tactical.damage,
+                  )
+                  .tabular,
+            ),
+            details: [
+              if (_damageBreakdown != null)
+                Text(_damageBreakdown!, style: _formulaStyle(context)),
+              // Desglose por grupo solo si hay más de un grupo de dados
+              // (compuestos como 2d8+4d6, o base + escalado).
+              if (_damageGroups.where((g) => g.dice.isNotEmpty).length > 1)
+                for (var i = 0; i < _damageGroups.length; i++)
+                  Text(
+                    _damageGroups[i].toString(),
+                    key: ValueKey('damage_group_$i'),
+                    style: _formulaStyle(context),
                   ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '${_damageTotal ?? 0}',
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    if (_damageBreakdown != null)
-                      Text(
-                        _damageBreakdown!,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    // Desglose por grupo solo si hay más de un grupo de dados
-                    // (compuestos como 2d8+4d6, o base + escalado).
-                    if (_damageGroups.where((g) => g.dice.isNotEmpty).length > 1)
-                      for (var i = 0; i < _damageGroups.length; i++)
-                        Text(
-                          _damageGroups[i].toString(),
-                          key: ValueKey('damage_group_$i'),
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                  ],
-                ),
-              ],
-            ),
+            ],
           ),
         const SizedBox(height: 20),
         Row(
@@ -948,6 +1010,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
             const SizedBox(width: 10),
             Expanded(
               child: FilledButton(
+                style: _primaryActionStyle(context),
                 onPressed: _onConfirmDamage,
                 child: Text(showManualInput ? 'Ver daño' : 'Cerrar'),
               ),
@@ -965,7 +1028,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _SheetHeader(action: _action),
+        _SheetHeader(action: _action, tone: _tone),
         const SizedBox(height: AppSpacing.lg),
         _sectionLabel('Curación'),
         const SizedBox(height: AppSpacing.sm),
@@ -982,52 +1045,33 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
             ),
           )
         else
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg,
-              vertical: 14,
-            ),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest.withValues(
-                alpha: 0.4,
+          _ResultPanel(
+            tone: context.tactical.heal,
+            caption: Text(
+              'PG recuperados',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
               ),
-              borderRadius: BorderRadius.circular(AppRadii.md),
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'PG recuperados',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '${_healTotal ?? 0}',
-                      key: const ValueKey('heal_total'),
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: theme.colorScheme.tertiary,
-                      ),
-                    ),
-                    if (_healBreakdown != null)
-                      Text(
-                        _healBreakdown!,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                  ],
-                ),
-              ],
+            total: Text(
+              '${_healTotal ?? 0}',
+              key: const ValueKey('heal_total'),
+              style: theme.textTheme.displaySmall
+                  ?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    height: 1,
+                    color: context.tactical.heal,
+                  )
+                  .tabular,
             ),
+            details: [
+              if (_healBreakdown != null)
+                Text(_healBreakdown!, style: _formulaStyle(context)),
+            ],
           ),
         const SizedBox(height: 20),
         FilledButton(
+          style: _primaryActionStyle(context),
           onPressed: _onConfirmHeal,
           child: Text(showManualInput ? 'Ver curación' : 'Cerrar'),
         ),
@@ -1049,6 +1093,31 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
 
   static String _modLabel(int mod) => mod >= 0 ? '+$mod' : '$mod';
 
+  /// Botón protagonista de cada fase: más alto y con el texto más grande.
+  static ButtonStyle _primaryActionStyle(BuildContext context) {
+    return FilledButton.styleFrom(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: 14,
+      ),
+      textStyle: Theme.of(context).textTheme.titleSmall?.copyWith(
+        fontWeight: FontWeight.w800,
+        letterSpacing: 0.4,
+      ),
+    );
+  }
+
+  /// Fórmulas y desgloses de dados: monoespaciada con cifras tabulares.
+  static TextStyle? _formulaStyle(BuildContext context) {
+    final theme = Theme.of(context);
+    return theme.textTheme.bodySmall
+        ?.copyWith(
+          fontFamily: AppFonts.jetBrainsMono,
+          color: theme.colorScheme.onSurfaceVariant,
+        )
+        .tabular;
+  }
+
   static bool _hasText(String? value) =>
       value != null && value.trim().isNotEmpty;
 }
@@ -1058,9 +1127,10 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
 // ---------------------------------------------------------------------
 
 class _SheetHeader extends StatelessWidget {
-  const _SheetHeader({required this.action});
+  const _SheetHeader({required this.action, required this.tone});
 
   final RollAction action;
+  final Color tone;
 
   @override
   Widget build(BuildContext context) {
@@ -1073,34 +1143,226 @@ class _SheetHeader extends StatelessWidget {
         action.damageType!.trim(),
     ].join(' · ');
 
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        CircleAvatar(
-          backgroundColor: theme.colorScheme.primaryContainer,
-          foregroundColor: theme.colorScheme.onPrimaryContainer,
-          child: Icon(action.icon, size: 20),
+        Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: tone.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(AppRadii.md),
+                border: Border.all(color: tone.withValues(alpha: 0.55)),
+              ),
+              child: Icon(action.icon, size: 22, color: tone),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    action.name,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    detail,
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: theme.colorScheme.onSurfaceVariant)
+                        .tabular,
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: AppSpacing.md),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                action.name,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              Text(
-                detail,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
+        const SizedBox(height: AppSpacing.md),
+        // Filete del color de rol que se desvanece hacia la derecha.
+        Container(
+          height: 1,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [tone.withValues(alpha: 0.7), tone.withValues(alpha: 0)],
+            ),
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Medallón del resultado: la silueta de un d20 con el total adentro.
+/// Entra con un rebote corto; en crítico o pifia suma un halo más fuerte.
+class _DieMedallion extends StatelessWidget {
+  const _DieMedallion({
+    required this.color,
+    required this.child,
+    this.dramatic = false,
+  });
+
+  final Color color;
+  final Widget child;
+  final bool dramatic;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final tactical = context.tactical;
+
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 460),
+      curve: Curves.easeOutBack,
+      tween: Tween(begin: 0.55, end: 1),
+      builder: (context, scale, child) =>
+          Transform.scale(scale: scale, child: child),
+      child: SizedBox.square(
+        dimension: 148,
+        child: CustomPaint(
+          painter: _DiePainter(
+            color: color,
+            fillTop: tactical.surfaceRaised,
+            fillBottom: scheme.surface,
+            glow: dramatic ? 0.42 : 0.20,
+          ),
+          child: Center(child: child),
+        ),
+      ),
+    );
+  }
+}
+
+class _DiePainter extends CustomPainter {
+  const _DiePainter({
+    required this.color,
+    required this.fillTop,
+    required this.fillBottom,
+    required this.glow,
+  });
+
+  final Color color;
+  final Color fillTop;
+  final Color fillBottom;
+  final double glow;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = size.center(Offset.zero);
+    final r = size.shortestSide / 2;
+
+    Offset at(double angle, double radius) =>
+        center + Offset(cos(angle), sin(angle)) * radius;
+
+    // Halo.
+    canvas.drawCircle(
+      center,
+      r,
+      Paint()
+        ..shader = RadialGradient(
+          colors: [color.withValues(alpha: glow), color.withValues(alpha: 0)],
+        ).createShader(Rect.fromCircle(center: center, radius: r)),
+    );
+
+    // Contorno del d20: hexágono con un vértice arriba.
+    final vertices = [for (var i = 0; i < 6; i++) at(-pi / 2 + i * pi / 3, r * 0.78)];
+    final hex = Path()..addPolygon(vertices, true);
+    canvas.drawPath(
+      hex,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color.alphaBlend(color.withValues(alpha: 0.20), fillTop),
+            fillBottom,
+          ],
+        ).createShader(Rect.fromCircle(center: center, radius: r)),
+    );
+
+    // Facetas: cada vértice se une al anillo interior.
+    final facet = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = color.withValues(alpha: 0.22);
+    final inner = [for (var i = 0; i < 6; i++) at(-pi / 2 + i * pi / 3, r * 0.52)];
+    canvas.drawPath(Path()..addPolygon(inner, true), facet);
+    for (var i = 0; i < 6; i++) {
+      canvas.drawLine(vertices[i], inner[i], facet);
+    }
+
+    canvas.drawPath(
+      hex,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.2
+        ..strokeJoin = StrokeJoin.round
+        ..color = color,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_DiePainter oldDelegate) =>
+      oldDelegate.color != color ||
+      oldDelegate.fillTop != fillTop ||
+      oldDelegate.fillBottom != fillBottom ||
+      oldDelegate.glow != glow;
+}
+
+/// Panel de total (daño o curación): franja del color de rol, leyenda a
+/// la izquierda y el número grande con su desglose a la derecha.
+class _ResultPanel extends StatelessWidget {
+  const _ResultPanel({
+    required this.tone,
+    required this.caption,
+    required this.total,
+    this.details = const [],
+  });
+
+  final Color tone;
+  final Widget caption;
+  final Widget total;
+  final List<Widget> details;
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      duration: AppDurations.normal,
+      curve: Curves.easeOutBack,
+      tween: Tween(begin: 0.92, end: 1),
+      builder: (context, scale, child) =>
+          Transform.scale(scale: scale, child: child),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.lg,
+        ),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [tone.withValues(alpha: 0.16), tone.withValues(alpha: 0.05)],
+          ),
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+          border: Border.all(color: tone.withValues(alpha: 0.5)),
+        ),
+        child: Row(
+          children: [
+            Expanded(child: caption),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                total,
+                if (details.isNotEmpty) const SizedBox(height: AppSpacing.xs),
+                ...details,
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -1122,7 +1384,7 @@ class _Banner extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final color = error
-        ? theme.colorScheme.error
+        ? context.tactical.damage
         : highlight
         ? theme.colorScheme.primary
         : theme.colorScheme.onSurfaceVariant;
@@ -1173,10 +1435,10 @@ class _FixedSlotIndicator extends StatelessWidget {
         vertical: 10,
       ),
       decoration: BoxDecoration(
-        color: theme.colorScheme.primary.withValues(alpha: 0.08),
+        color: context.tactical.spell.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: theme.colorScheme.primary.withValues(alpha: 0.35),
+          color: context.tactical.spell.withValues(alpha: 0.35),
         ),
       ),
       child: Row(
@@ -1185,18 +1447,26 @@ class _FixedSlotIndicator extends StatelessWidget {
             child: Text(
               'Ranura de nivel $level',
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.primary,
+                color: context.tactical.spell,
                 fontWeight: FontWeight.w600,
               ),
             ),
           ),
+          ResourcePips(
+            current: current,
+            max: max,
+            color: context.tactical.spell,
+          ),
+          const SizedBox(width: AppSpacing.sm),
           Text(
             '$current/$max disponibles',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: current > 0
-                  ? theme.colorScheme.onSurfaceVariant
-                  : theme.colorScheme.error,
-            ),
+            style: theme.textTheme.bodySmall
+                ?.copyWith(
+                  color: current > 0
+                      ? theme.colorScheme.onSurfaceVariant
+                      : context.tactical.damage,
+                )
+                .tabular,
           ),
         ],
       ),
@@ -1209,11 +1479,13 @@ class _Verdict extends StatelessWidget {
     required this.label,
     required this.description,
     required this.color,
+    required this.icon,
   });
 
   final String label;
   final String description;
   final Color color;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
@@ -1223,17 +1495,28 @@ class _Verdict extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            color.withValues(alpha: 0.20),
+            color.withValues(alpha: 0.06),
+          ],
+        ),
         borderRadius: BorderRadius.circular(AppRadii.md),
-        border: Border.all(color: color.withValues(alpha: 0.4)),
+        border: Border.all(color: color.withValues(alpha: 0.6), width: 1.4),
       ),
       child: Column(
         children: [
+          Icon(icon, color: color, size: 22),
+          const SizedBox(height: AppSpacing.xs),
           Text(
             label,
-            style: theme.textTheme.titleMedium?.copyWith(
+            textAlign: TextAlign.center,
+            style: theme.textTheme.titleLarge?.copyWith(
               color: color,
               fontWeight: FontWeight.w800,
+              letterSpacing: 0.8,
             ),
           ),
           if (description.trim().isNotEmpty) ...[
@@ -1269,7 +1552,7 @@ class _Descriptions extends StatelessWidget {
           Text(
             'Si tiene éxito',
             style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.tertiary,
+              color: context.tactical.heal,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -1281,7 +1564,7 @@ class _Descriptions extends StatelessWidget {
           Text(
             'Si falla',
             style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.error,
+              color: context.tactical.damage,
               fontWeight: FontWeight.w700,
             ),
           ),

@@ -29,6 +29,8 @@ import '../../state/character_store.dart';
 import 'hud_resolution_sheet.dart';
 import 'hud_widgets.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/theme/tactical_palette.dart';
+import '../../core/theme/telemetry.dart';
 
 class HudActionsSection extends StatelessWidget {
   const HudActionsSection({super.key, required this.character, this.random});
@@ -58,6 +60,7 @@ class HudActionsSection extends StatelessWidget {
           HudSectionCard(
             icon: Icons.gavel_rounded,
             title: 'Armas',
+            tone: context.tactical.weapon,
             child: Column(
               children: [
                 for (final action in [
@@ -65,6 +68,7 @@ class HudActionsSection extends StatelessWidget {
                 ])
                   _ActionTile(
                     action: action,
+                    tone: context.tactical.weapon,
                     onTap: () => _open(context, action),
                   ),
               ],
@@ -143,7 +147,13 @@ class HudActionsSection extends StatelessWidget {
         saveDc: saveDc,
         store: store,
       );
-      return _ActionTile(action: action, onTap: () => _open(context, action));
+      return _ActionTile(
+        action: action,
+        tone: ability.isTrait
+            ? context.tactical.ability
+            : context.tactical.spell,
+        onTap: () => _open(context, action),
+      );
     }
 
     return HudSectionCard(
@@ -158,6 +168,7 @@ class HudActionsSection extends StatelessWidget {
                 icon: Icons.auto_awesome_outlined,
                 title: 'Trucos',
                 count: cantrips.length,
+                tone: context.tactical.spell,
               ),
             for (final ability in cantrips) buildTile(ability),
           ],
@@ -166,18 +177,47 @@ class HudActionsSection extends StatelessWidget {
               icon: Icons.auto_awesome_rounded,
               title: 'Conjuros de Nivel $lvl',
               count: leveledSpells.where((a) => a.baseLevel == lvl).length,
+              tone: context.tactical.spell,
             ),
             for (final ability in leveledSpells.where((a) => a.baseLevel == lvl))
               buildTile(ability),
           ],
-          if (traits.isNotEmpty) ...[
-            _SubCategoryHeader(
-              icon: Icons.flash_on_rounded,
-              title: 'Habilidades',
-              count: traits.length,
+          if (traits.isNotEmpty)
+            // El grupo de habilidades activas va en su propio panel
+            // tintado: es lo que más se consulta junto a los recursos.
+            Container(
+              margin: EdgeInsets.only(top: showHeaders ? AppSpacing.md : 0),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.xs,
+                0,
+                AppSpacing.xs,
+                AppSpacing.xs,
+              ),
+              decoration: BoxDecoration(
+                color: context.tactical.ability.withValues(alpha: 0.07),
+                borderRadius: BorderRadius.circular(AppRadii.md),
+                border: Border.all(
+                  color: context.tactical.ability.withValues(alpha: 0.38),
+                ),
+              ),
+              // Material propio: las filas pintan su tinta acá y no quedan
+              // tapadas por el fondo tintado del panel.
+              child: Material(
+                type: MaterialType.transparency,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _SubCategoryHeader(
+                      icon: Icons.flash_on_rounded,
+                      title: 'Habilidades',
+                      count: traits.length,
+                      tone: context.tactical.ability,
+                    ),
+                    for (final ability in traits) buildTile(ability),
+                  ],
+                ),
+              ),
             ),
-            for (final ability in traits) buildTile(ability),
-          ],
         ],
       ),
     );
@@ -279,49 +319,62 @@ class HudActionsSection extends StatelessWidget {
 /// Fila de una acción tirable: nombre, resumen mecánico, cargas restantes
 /// e ícono de dados. Es tappable en toda la fila.
 class _ActionTile extends StatelessWidget {
-  const _ActionTile({required this.action, required this.onTap});
+  const _ActionTile({
+    required this.action,
+    required this.onTap,
+    required this.tone,
+  });
 
   final RollAction action;
   final VoidCallback onTap;
 
+  /// Color de rol: arma, conjuro o habilidad activa.
+  final Color tone;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final subtitle = _subtitle();
-    final noCharges = (action.hasCharges && action.charges!.current <= 0) ||
+    final noCharges =
+        (action.hasCharges && action.charges!.current <= 0) ||
         (action.usesResource && action.resourceCurrent < action.resourceCost);
+    final color = noCharges ? scheme.outline : tone;
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadii.md),
       ),
-      leading: CircleAvatar(
-        radius: 18,
-        backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(
-          alpha: 0.6,
+      leading: AnimatedContainer(
+        duration: AppDurations.normal,
+        width: 38,
+        height: 38,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: noCharges ? 0.08 : 0.15),
+          borderRadius: BorderRadius.circular(AppRadii.sm + 2),
+          border: Border.all(
+            color: color.withValues(alpha: noCharges ? 0.30 : 0.50),
+          ),
         ),
-        foregroundColor: noCharges
-            ? theme.colorScheme.outline
-            : theme.colorScheme.primary,
-        child: Icon(action.icon, size: 18),
+        child: Icon(action.icon, size: 18, color: color),
       ),
       title: Text(
         action.name,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
-          color: noCharges ? theme.colorScheme.outline : null,
-          fontWeight: FontWeight.w600,
+          color: noCharges ? scheme.outline : null,
+          fontWeight: FontWeight.w700,
         ),
       ),
       subtitle: Text(
         subtitle,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: theme.textTheme.bodySmall?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
+        style: theme.textTheme.bodySmall
+            ?.copyWith(color: scheme.onSurfaceVariant)
+            .tabular,
       ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
@@ -331,6 +384,7 @@ class _ActionTile extends StatelessWidget {
               name: action.resourceName!,
               current: action.resourceCurrent,
               max: action.resourceMax,
+              tone: tone,
             ),
             const SizedBox(width: AppSpacing.sm),
           ],
@@ -338,16 +392,11 @@ class _ActionTile extends StatelessWidget {
             _ChargeBadge(
               current: action.charges!.current,
               max: action.charges!.max,
+              tone: tone,
             ),
             const SizedBox(width: AppSpacing.sm),
           ],
-          Icon(
-            Icons.casino_rounded,
-            size: 20,
-            color: noCharges
-                ? theme.colorScheme.outline
-                : theme.colorScheme.primary,
-          ),
+          Icon(Icons.casino_rounded, size: 20, color: color),
         ],
       ),
       onTap: onTap,
@@ -476,36 +525,38 @@ class _PassiveTile extends StatelessWidget {
 }
 
 class _ChargeBadge extends StatelessWidget {
-  const _ChargeBadge({required this.current, required this.max});
+  const _ChargeBadge({
+    required this.current,
+    required this.max,
+    required this.tone,
+  });
 
   final int current;
   final int max;
+  final Color tone;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final depleted = current <= 0;
+    final color = depleted ? context.tactical.damage : tone;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: 2,
-      ),
-      decoration: BoxDecoration(
-        color: depleted
-            ? theme.colorScheme.errorContainer
-            : theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(AppRadii.pill),
-      ),
-      child: Text(
-        '$current/$max',
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: depleted
-              ? theme.colorScheme.onErrorContainer
-              : theme.colorScheme.onSurfaceVariant,
-          fontWeight: FontWeight.w600,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Text(
+          '$current/$max',
+          style: theme.textTheme.labelSmall
+              ?.copyWith(color: color, fontWeight: FontWeight.w700)
+              .tabular,
         ),
-      ),
+        const SizedBox(height: 3),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 64),
+          child: ResourcePips(current: current, max: max, color: tone, size: 7),
+        ),
+      ],
     );
   }
 }
@@ -516,37 +567,44 @@ class _ResourceBadge extends StatelessWidget {
     required this.name,
     required this.current,
     required this.max,
+    required this.tone,
   });
 
   final String name;
   final int current;
   final int max;
+  final Color tone;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final depleted = current <= 0;
+    final color = depleted ? context.tactical.damage : tone;
 
-    return Container(
+    return AnimatedContainer(
+      duration: AppDurations.normal,
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.sm,
-        vertical: 2,
+        vertical: 3,
       ),
       decoration: BoxDecoration(
-        color: depleted
-            ? theme.colorScheme.errorContainer
-            : theme.colorScheme.secondaryContainer,
+        color: color.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(AppRadii.pill),
+        border: Border.all(color: color.withValues(alpha: 0.45)),
       ),
-      child: Text(
-        '$name $current/$max',
-        key: const ValueKey('resource_badge'),
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: depleted
-              ? theme.colorScheme.onErrorContainer
-              : theme.colorScheme.onSecondaryContainer,
-          fontWeight: FontWeight.w600,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.toll_rounded, size: 12, color: color),
+          const SizedBox(width: AppSpacing.xs),
+          Text(
+            '$name $current/$max',
+            key: const ValueKey('resource_badge'),
+            style: theme.textTheme.labelSmall
+                ?.copyWith(color: color, fontWeight: FontWeight.w700)
+                .tabular,
+          ),
+        ],
       ),
     );
   }
@@ -557,11 +615,13 @@ class _SubCategoryHeader extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.count,
+    required this.tone,
   });
 
   final IconData icon;
   final String title;
   final int count;
+  final Color tone;
 
   @override
   Widget build(BuildContext context) {
@@ -572,12 +632,12 @@ class _SubCategoryHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(AppSpacing.xs, 12, AppSpacing.xs, 4),
       child: Row(
         children: [
-          Icon(icon, size: 14, color: scheme.primary),
+          Icon(icon, size: 14, color: tone),
           const SizedBox(width: 6),
           Text(
             title.toUpperCase(),
             style: theme.textTheme.labelSmall?.copyWith(
-              color: scheme.primary,
+              color: tone,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.8,
             ),
@@ -586,13 +646,13 @@ class _SubCategoryHeader extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
             decoration: BoxDecoration(
-              color: scheme.primary.withValues(alpha: 0.14),
+              color: tone.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(AppRadii.pill),
             ),
             child: Text(
               '$count',
               style: theme.textTheme.labelSmall?.copyWith(
-                color: scheme.primary,
+                color: tone,
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
               ),

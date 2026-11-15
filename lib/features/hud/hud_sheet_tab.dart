@@ -17,6 +17,8 @@ import '../../domain/models/stats.dart';
 import '../../state/character_store.dart';
 import 'hud_widgets.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/theme/tactical_palette.dart';
+import '../../core/theme/telemetry.dart';
 
 class HudSheetTab extends StatelessWidget {
   const HudSheetTab({super.key, required this.character});
@@ -100,55 +102,61 @@ class _ScoreTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    final scheme = theme.colorScheme;
+
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
         vertical: 10,
       ),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(
-          alpha: 0.35,
-        ),
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.40),
         borderRadius: BorderRadius.circular(AppRadii.md),
-        border: Border.all(color: theme.colorScheme.outline),
+        border: Border.all(
+          color: context.tactical.metalBorder.withValues(alpha: 0.75),
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '${score.value}',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(AppRadii.pill),
-                ),
-                child: Text(
-                  score.modFormatted,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: theme.colorScheme.onPrimaryContainer,
-                    fontWeight: FontWeight.w700,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                    letterSpacing: 0.4,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 2),
+                Text(
+                  '${score.value}',
+                  style: theme.textTheme.headlineSmall
+                      ?.copyWith(fontWeight: FontWeight.w800, height: 1.1)
+                      .tabular,
+                ),
+              ],
+            ),
+          ),
+          // El modificador es lo que se suma a la tirada: va destacado.
+          Container(
+            constraints: const BoxConstraints(minWidth: 44),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: scheme.primary.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(AppRadii.sm),
+              border: Border.all(color: scheme.primary.withValues(alpha: 0.45)),
+            ),
+            child: Text(
+              score.modFormatted,
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(color: scheme.primary, fontWeight: FontWeight.w800)
+                  .tabular,
+            ),
           ),
         ],
       ),

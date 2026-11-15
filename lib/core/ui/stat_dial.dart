@@ -21,10 +21,15 @@ class StatDial extends StatelessWidget {
     this.tone,
     this.onTap,
     this.emphasized = false,
+    this.richValue = false,
   });
 
   final String label;
   final String value;
+
+  /// Pinta el valor como texto enriquecido. Para lecturas derivadas que
+  /// repiten un número ya visible en otra parte de la pantalla.
+  final bool richValue;
   final IconData? icon;
 
   /// Color de rol del instrumento. `null` = neutro.
@@ -80,13 +85,21 @@ class StatDial extends StatelessWidget {
                 ],
                 AnimatedSwitcher(
                   duration: AppDurations.fast,
-                  child: Text(
-                    value,
-                    key: ValueKey(value),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: valueStyle,
-                  ),
+                  child: richValue
+                      ? Text.rich(
+                          TextSpan(text: value),
+                          key: ValueKey(value),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: valueStyle,
+                        )
+                      : Text(
+                          value,
+                          key: ValueKey(value),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: valueStyle,
+                        ),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -246,4 +259,196 @@ class ResourcePips extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Barra de medidor animada (PG, movimiento): el relleno se desliza al
+/// nuevo valor y lleva un degradado sutil del color de rol. [value] va de
+/// 0 a 1.
+class VitalBar extends StatelessWidget {
+  const VitalBar({
+    super.key,
+    required this.value,
+    required this.color,
+    this.height = 12,
+  });
+
+  final double value;
+  final Color color;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final tactical = context.tactical;
+    final radius = BorderRadius.circular(height / 2);
+
+    return Container(
+      height: height,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: radius,
+        border: Border.all(color: tactical.metalBorder.withValues(alpha: 0.6)),
+      ),
+      child: TweenAnimationBuilder<double>(
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeOutCubic,
+        tween: Tween(end: value.clamp(0.0, 1.0)),
+        builder: (context, fraction, child) => FractionallySizedBox(
+          alignment: Alignment.centerLeft,
+          widthFactor: fraction,
+          child: child,
+        ),
+        child: AnimatedContainer(
+          duration: AppDurations.normal,
+          decoration: BoxDecoration(
+            borderRadius: radius,
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color.alphaBlend(
+                  tactical.metalHighlight.withValues(alpha: 0.28),
+                  color,
+                ),
+                color,
+                Color.alphaBlend(scheme.shadow.withValues(alpha: 0.22), color),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Escudo de Clase de Armadura: la silueta lleva el número adentro y la
+/// etiqueta debajo. Es el dato defensivo estrella de la cabecera vital.
+class ArmorShield extends StatelessWidget {
+  const ArmorShield({
+    super.key,
+    required this.value,
+    this.label = 'CA',
+    this.size = 64,
+  });
+
+  final String value;
+  final String label;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final tactical = context.tactical;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: size,
+          height: size * 1.12,
+          child: CustomPaint(
+            painter: _ShieldPainter(
+              fillTop: tactical.surfaceRaised,
+              fillBottom: scheme.surface,
+              border: scheme.primary,
+              highlight: tactical.metalHighlight,
+            ),
+            child: Center(
+              child: Padding(
+                padding: EdgeInsets.only(bottom: size * 0.10),
+                child: AnimatedSwitcher(
+                  duration: AppDurations.fast,
+                  child: Text(
+                    value,
+                    key: ValueKey(value),
+                    style: theme.textTheme.headlineSmall
+                        ?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: scheme.primary,
+                        )
+                        .tabular,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: scheme.onSurfaceVariant,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.2,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ShieldPainter extends CustomPainter {
+  const _ShieldPainter({
+    required this.fillTop,
+    required this.fillBottom,
+    required this.border,
+    required this.highlight,
+  });
+
+  final Color fillTop;
+  final Color fillBottom;
+  final Color border;
+  final Color highlight;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    final path = Path()
+      ..moveTo(w * 0.5, h * 0.02)
+      ..lineTo(w * 0.94, h * 0.16)
+      ..lineTo(w * 0.94, h * 0.50)
+      ..cubicTo(w * 0.94, h * 0.76, w * 0.72, h * 0.90, w * 0.5, h * 0.98)
+      ..cubicTo(w * 0.28, h * 0.90, w * 0.06, h * 0.76, w * 0.06, h * 0.50)
+      ..lineTo(w * 0.06, h * 0.16)
+      ..close();
+
+    canvas.drawPath(
+      path,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color.alphaBlend(border.withValues(alpha: 0.18), fillTop),
+            fillBottom,
+          ],
+        ).createShader(Offset.zero & size),
+    );
+    canvas.drawPath(
+      path,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..strokeJoin = StrokeJoin.round
+        ..color = border,
+    );
+    // Brillo del canto superior izquierdo.
+    canvas.drawLine(
+      Offset(w * 0.14, h * 0.20),
+      Offset(w * 0.5, h * 0.085),
+      Paint()
+        ..strokeWidth = 1
+        ..color = highlight.withValues(alpha: 0.5),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_ShieldPainter oldDelegate) =>
+      oldDelegate.fillTop != fillTop ||
+      oldDelegate.fillBottom != fillBottom ||
+      oldDelegate.border != border ||
+      oldDelegate.highlight != highlight;
 }

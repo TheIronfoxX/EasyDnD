@@ -20,6 +20,8 @@ import 'hud_actions_section.dart';
 import 'hud_dialogs.dart';
 import 'hud_widgets.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/theme/tactical_palette.dart';
+import '../../core/theme/telemetry.dart';
 
 class HudCombatTab extends StatelessWidget {
   const HudCombatTab({super.key, required this.character});
@@ -89,55 +91,83 @@ class _HealthSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final tactical = context.tactical;
     final info = character.basicInfo;
     final ratio = info.hpMax <= 0
         ? 0.0
         : (info.currentHp / info.hpMax).clamp(0.0, 1.0);
     final critical = info.currentHp <= 0 || ratio <= 0.25;
+    final hpColor = critical ? tactical.damage : tactical.heal;
+    final initiative = character.stats.modFor('dex');
+    final saveDc = info.spellSaveDc;
 
     return HudSectionCard(
       icon: Icons.favorite_rounded,
       title: 'Vida',
+      tone: hpColor,
       trailing: _HealthBadge(currentHp: info.currentHp, hpMax: info.hpMax),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(
-                '${info.currentHp}',
-                style: theme.textTheme.displaySmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: critical ? theme.colorScheme.error : null,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        AnimatedSwitcher(
+                          duration: AppDurations.fast,
+                          child: Text(
+                            '${info.currentHp}',
+                            key: ValueKey(info.currentHp),
+                            style: theme.textTheme.displaySmall
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  height: 1,
+                                  color: critical ? tactical.damage : null,
+                                )
+                                .tabular,
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(
+                            bottom: 4,
+                            left: AppSpacing.xs,
+                          ),
+                          child: Text(
+                            '/ ${info.hpMax} PG',
+                            style: theme.textTheme.titleMedium
+                                ?.copyWith(color: scheme.onSurfaceVariant)
+                                .tabular,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    VitalBar(value: ratio, color: hpColor, height: 14),
+                  ],
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6, left: AppSpacing.xs),
-                child: Text(
-                  '/ ${info.hpMax} PG',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
+              const SizedBox(width: AppSpacing.lg),
+              ArmorShield(value: '${info.ac}'),
             ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          LinearProgressIndicator(
-            value: ratio,
-            minHeight: 12,
-            borderRadius: BorderRadius.circular(6),
-            color: critical
-                ? theme.colorScheme.error
-                : theme.colorScheme.primary,
-            backgroundColor: theme.colorScheme.surfaceContainerHighest,
           ),
           const SizedBox(height: AppSpacing.md),
           Row(
             children: [
               Expanded(
                 child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: tactical.damage,
+                    side: BorderSide(
+                      color: tactical.damage.withValues(alpha: 0.6),
+                    ),
+                  ),
                   onPressed: () => _adjust(context, damage: true),
                   icon: const Icon(Icons.remove_rounded),
                   label: const Text('Daño'),
@@ -146,6 +176,10 @@ class _HealthSection extends StatelessWidget {
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: tactical.heal,
+                    foregroundColor: scheme.surface,
+                  ),
                   onPressed: () => _adjust(context, damage: false),
                   icon: const Icon(Icons.add_rounded),
                   label: const Text('Curación'),
@@ -158,9 +192,10 @@ class _HealthSection extends StatelessWidget {
             children: [
               Expanded(
                 child: HudStatTile(
-                  icon: Icons.shield_rounded,
-                  label: 'CA',
-                  value: '${info.ac}',
+                  icon: Icons.flash_on_rounded,
+                  label: 'Iniciativa',
+                  value: initiative >= 0 ? '+$initiative' : '$initiative',
+                  richValue: true,
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -171,6 +206,18 @@ class _HealthSection extends StatelessWidget {
                   value: '${info.speed} ft',
                 ),
               ),
+              if (saveDc != null) ...[
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: HudStatTile(
+                    icon: Icons.auto_awesome_rounded,
+                    label: 'CD conjuros',
+                    value: '$saveDc',
+                    tone: tactical.spell,
+                    richValue: true,
+                  ),
+                ),
+              ],
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: HudStatTile(
@@ -201,45 +248,17 @@ class _HealthBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    final (label, background, foreground) = switch (currentHp) {
-      <= 0 => (
-        'Inconsciente',
-        theme.colorScheme.errorContainer,
-        theme.colorScheme.onErrorContainer,
-      ),
-      _ when currentHp >= hpMax => (
-        'Ileso',
-        theme.colorScheme.tertiaryContainer,
-        theme.colorScheme.onTertiaryContainer,
-      ),
-      _ when currentHp * 2 >= hpMax => (
-        'Herido',
-        theme.colorScheme.secondaryContainer,
-        theme.colorScheme.onSecondaryContainer,
-      ),
-      _ => (
-        'Malherido',
-        theme.colorScheme.errorContainer,
-        theme.colorScheme.onErrorContainer,
-      ),
+    final tactical = context.tactical;
+    final (label, tone) = switch (currentHp) {
+      <= 0 => ('Inconsciente', tactical.damage),
+      _ when currentHp >= hpMax => ('Ileso', tactical.heal),
+      _ when currentHp * 2 >= hpMax => ('Herido', theme.colorScheme.primary),
+      _ => ('Malherido', tactical.damage),
     };
 
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: AppSpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(AppRadii.pill),
-      ),
-      child: Text(
-        label,
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: foreground,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
+    return AnimatedSwitcher(
+      duration: AppDurations.normal,
+      child: TonePill(key: ValueKey(label), label: label, tone: tone),
     );
   }
 }
@@ -317,36 +336,31 @@ class _TurnSection extends StatelessWidget {
                         const Spacer(),
                         Text(
                           '${status.movementRemaining} / $speed ft',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: theme.textTheme.bodyMedium
+                              ?.copyWith(fontWeight: FontWeight.w700)
+                              .tabular,
                         ),
                       ],
                     ),
                     const SizedBox(height: AppSpacing.xs),
-                    LinearProgressIndicator(
+                    VitalBar(
                       value: movementRatio,
-                      minHeight: 6,
-                      borderRadius: BorderRadius.circular(3),
-                      backgroundColor:
-                          theme.colorScheme.surfaceContainerHighest,
+                      color: theme.colorScheme.primary,
+                      height: 8,
                     ),
                   ],
                 ),
               ),
-              IconButton(
-                tooltip: 'Restar 5 ft de movimiento',
-                icon: const Icon(Icons.remove_circle_outline_rounded),
-                onPressed: status.movementRemaining <= 0
+              const SizedBox(width: AppSpacing.md),
+              TacticalStepper(
+                decrementTooltip: 'Restar 5 ft de movimiento',
+                incrementTooltip: 'Sumar 5 ft de movimiento',
+                onDecrement: status.movementRemaining <= 0
                     ? null
                     : () => store.setMovementRemaining(
                         status.movementRemaining - 5,
                       ),
-              ),
-              IconButton(
-                tooltip: 'Sumar 5 ft de movimiento',
-                icon: const Icon(Icons.add_circle_outline_rounded),
-                onPressed: status.movementRemaining >= speed
+                onIncrement: status.movementRemaining >= speed
                     ? null
                     : () => store.setMovementRemaining(
                         status.movementRemaining + 5,
@@ -378,18 +392,32 @@ class _TurnChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final foreground = used
-        ? theme.colorScheme.onErrorContainer
-        : theme.colorScheme.onSurface;
+    final scheme = theme.colorScheme;
+    // Disponible = encendida con el acento; gastada = apagada y tachada.
+    final foreground = used ? scheme.outline : scheme.onSurface;
 
     return FilterChip(
-      avatar: Icon(icon, size: 18, color: foreground),
+      avatar: Icon(
+        icon,
+        size: 18,
+        color: used ? scheme.outline : scheme.primary,
+      ),
       label: Text(label),
-      labelStyle: theme.textTheme.labelLarge?.copyWith(color: foreground),
+      labelStyle: theme.textTheme.labelLarge?.copyWith(
+        color: foreground,
+        fontWeight: used ? FontWeight.w500 : FontWeight.w700,
+        decoration: used ? TextDecoration.lineThrough : null,
+        decorationColor: foreground,
+      ),
       selected: used,
       onSelected: (_) => onToggle(),
-      selectedColor: theme.colorScheme.errorContainer,
-      checkmarkColor: theme.colorScheme.onErrorContainer,
+      backgroundColor: scheme.primary.withValues(alpha: 0.16),
+      selectedColor: scheme.surfaceContainerHighest.withValues(alpha: 0.35),
+      side: BorderSide(
+        color: used ? scheme.outline : scheme.primary.withValues(alpha: 0.75),
+        width: used ? 1 : 1.4,
+      ),
+      checkmarkColor: scheme.outline,
       showCheckmark: true,
     );
   }
@@ -475,6 +503,17 @@ class _ConditionsSection extends StatelessWidget {
               children: [
                 for (final name in active)
                   InputChip(
+                    avatar: Icon(
+                      Icons.coronavirus_outlined,
+                      size: 16,
+                      color: context.tactical.damage,
+                    ),
+                    side: BorderSide(
+                      color: context.tactical.damage.withValues(alpha: 0.55),
+                    ),
+                    backgroundColor: context.tactical.damage.withValues(
+                      alpha: 0.12,
+                    ),
                     label: Text(name),
                     onPressed: () => _showDetail(context, name),
                     onDeleted: () =>
@@ -490,7 +529,7 @@ class _ConditionsSection extends StatelessWidget {
                 Icon(
                   Icons.warning_amber_rounded,
                   size: 18,
-                  color: theme.colorScheme.error,
+                  color: context.tactical.damage,
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
@@ -498,7 +537,7 @@ class _ConditionsSection extends StatelessWidget {
                     'Desventaja en tiradas de ataque y pruebas de '
                     'característica.',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.error,
+                      color: context.tactical.damage,
                     ),
                   ),
                 ),
@@ -525,9 +564,12 @@ class _ResourcesSection extends StatelessWidget {
     final theme = Theme.of(context);
     final store = context.read<CharacterStore>();
 
+    final tone = context.tactical.ability;
+
     return HudSectionCard(
       icon: Icons.toll_rounded,
       title: 'Recursos',
+      tone: tone,
       trailing: IconButton(
         tooltip: 'Recargar recursos',
         icon: const Icon(Icons.refresh_rounded),
@@ -537,34 +579,46 @@ class _ResourcesSection extends StatelessWidget {
         children: [
           for (final resource in character.resources)
             Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
               child: Row(
                 children: [
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(resource.name),
+                        Text(
+                          resource.name,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
                         Text(
                           '${resource.current} de ${resource.max} usos',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
+                          style: theme.textTheme.bodySmall
+                              ?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              )
+                              .tabular,
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        ResourcePips(
+                          current: resource.current,
+                          max: resource.max,
+                          color: tone,
                         ),
                       ],
                     ),
                   ),
-                  IconButton(
-                    tooltip: 'Gastar un punto de ${resource.name}',
-                    icon: const Icon(Icons.remove_circle_outline_rounded),
-                    onPressed: resource.current <= 0
+                  const SizedBox(width: AppSpacing.sm),
+                  TacticalStepper(
+                    tone: tone,
+                    decrementTooltip: 'Gastar un punto de ${resource.name}',
+                    incrementTooltip: 'Recuperar un punto de ${resource.name}',
+                    onDecrement: resource.current <= 0
                         ? null
                         : () => store.decrementResource(resource.name),
-                  ),
-                  IconButton(
-                    tooltip: 'Recuperar un punto de ${resource.name}',
-                    icon: const Icon(Icons.add_circle_outline_rounded),
-                    onPressed: resource.current >= resource.max
+                    onIncrement: resource.current >= resource.max
                         ? null
                         : () => store.incrementResource(resource.name),
                   ),
@@ -593,9 +647,12 @@ class _SlotsSection extends StatelessWidget {
     final slots = [...character.spellSlots.slots]
       ..sort((a, b) => a.level.compareTo(b.level));
 
+    final tone = context.tactical.spell;
+
     return HudSectionCard(
       icon: Icons.layers_rounded,
       title: 'Ranuras de conjuro',
+      tone: tone,
       trailing: IconButton(
         tooltip: 'Recargar ranuras',
         icon: const Icon(Icons.refresh_rounded),
@@ -604,30 +661,45 @@ class _SlotsSection extends StatelessWidget {
       child: Column(
         children: [
           for (final slot in slots)
-            Row(
-              children: [
-                Expanded(child: Text('Nivel ${slot.level}')),
-                Text(
-                  '${slot.current}/${slot.max}',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: Row(
+                children: [
+                  SizedBox(width: 64, child: Text('Nivel ${slot.level}')),
+                  Expanded(
+                    child: ResourcePips(
+                      current: slot.current,
+                      max: slot.max,
+                      color: tone,
+                      size: 11,
+                    ),
                   ),
-                ),
-                IconButton(
-                  tooltip: 'Gastar ranura de nivel ${slot.level}',
-                  icon: const Icon(Icons.remove_circle_outline_rounded),
-                  onPressed: slot.current <= 0
-                      ? null
-                      : () => store.consumeSpellSlot(slot.level),
-                ),
-                IconButton(
-                  tooltip: 'Recuperar ranura de nivel ${slot.level}',
-                  icon: const Icon(Icons.add_circle_outline_rounded),
-                  onPressed: slot.current >= slot.max
-                      ? null
-                      : () => store.restoreSpellSlot(slot.level),
-                ),
-              ],
+                  const SizedBox(width: AppSpacing.sm),
+                  AnimatedSwitcher(
+                    duration: AppDurations.fast,
+                    child: Text(
+                      '${slot.current}/${slot.max}',
+                      key: ValueKey('${slot.level}:${slot.current}/${slot.max}'),
+                      style: theme.textTheme.bodyMedium
+                          ?.copyWith(fontWeight: FontWeight.w700)
+                          .tabular,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  TacticalStepper(
+                    tone: tone,
+                    decrementTooltip: 'Gastar ranura de nivel ${slot.level}',
+                    incrementTooltip:
+                        'Recuperar ranura de nivel ${slot.level}',
+                    onDecrement: slot.current <= 0
+                        ? null
+                        : () => store.consumeSpellSlot(slot.level),
+                    onIncrement: slot.current >= slot.max
+                        ? null
+                        : () => store.restoreSpellSlot(slot.level),
+                  ),
+                ],
+              ),
             ),
         ],
       ),

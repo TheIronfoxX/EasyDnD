@@ -19,6 +19,8 @@ import '../../state/character_store.dart';
 import 'hud_dialogs.dart';
 import 'hud_widgets.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/theme/tactical_palette.dart';
+import '../../core/theme/telemetry.dart';
 
 class HudInventoryTab extends StatelessWidget {
   const HudInventoryTab({super.key, required this.character});
@@ -61,6 +63,7 @@ class _WeaponsSection extends StatelessWidget {
     return HudSectionCard(
       icon: Icons.gavel_rounded,
       title: 'Armas',
+      tone: context.tactical.weapon,
       trailing: IconButton(
         icon: const Icon(Icons.add_rounded),
         tooltip: 'Agregar arma',
@@ -171,26 +174,31 @@ class _ChargePill extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final depleted = current <= 0;
+    final tone = depleted ? context.tactical.damage : context.tactical.weapon;
 
-    return Container(
+    return AnimatedContainer(
+      duration: AppDurations.normal,
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.sm,
-        vertical: 2,
+        vertical: 3,
       ),
       decoration: BoxDecoration(
-        color: depleted
-            ? theme.colorScheme.errorContainer
-            : theme.colorScheme.surfaceContainerHighest,
+        color: tone.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(AppRadii.pill),
+        border: Border.all(color: tone.withValues(alpha: 0.45)),
       ),
-      child: Text(
-        '$current/$max cargas',
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: depleted
-              ? theme.colorScheme.onErrorContainer
-              : theme.colorScheme.onSurfaceVariant,
-          fontWeight: FontWeight.w600,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '$current/$max cargas',
+            style: theme.textTheme.labelSmall
+                ?.copyWith(color: tone, fontWeight: FontWeight.w700)
+                .tabular,
+          ),
+          const SizedBox(width: 6),
+          ResourcePips(current: current, max: max, color: tone, size: 7),
+        ],
       ),
     );
   }
@@ -334,6 +342,8 @@ class _PurseSection extends StatelessWidget {
     final theme = Theme.of(context);
     final purse = character.purse;
 
+    final tactical = context.tactical;
+
     return HudSectionCard(
       icon: Icons.payments_rounded,
       title: 'Bolsa',
@@ -347,6 +357,7 @@ class _PurseSection extends StatelessWidget {
                   icon: Icons.monetization_on_rounded,
                   label: 'Oro',
                   value: '${purse.gold} po',
+                  tone: tactical.coinGold,
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -355,6 +366,7 @@ class _PurseSection extends StatelessWidget {
                   icon: Icons.circle_rounded,
                   label: 'Plata',
                   value: '${purse.silver} pp',
+                  tone: tactical.coinSilver,
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -363,6 +375,7 @@ class _PurseSection extends StatelessWidget {
                   icon: Icons.circle_outlined,
                   label: 'Cobre',
                   value: '${purse.copper} pc',
+                  tone: tactical.coinCopper,
                 ),
               ),
             ],
@@ -545,32 +558,21 @@ class _QuantityStepper extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IconButton(
-          tooltip: decrementTooltip,
-          visualDensity: VisualDensity.compact,
-          icon: const Icon(Icons.remove_circle_outline_rounded, size: 20),
-          onPressed: onDecrement,
+    return TacticalStepper(
+      decrementTooltip: decrementTooltip,
+      incrementTooltip: incrementTooltip,
+      onDecrement: onDecrement,
+      onIncrement: onIncrement,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minWidth: 30),
+        child: Text(
+          '×$value',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.titleSmall
+              ?.copyWith(fontWeight: FontWeight.w700)
+              .tabular,
         ),
-        ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 30),
-          child: Text(
-            '×$value',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-        IconButton(
-          tooltip: incrementTooltip,
-          visualDensity: VisualDensity.compact,
-          icon: const Icon(Icons.add_circle_outline_rounded, size: 20),
-          onPressed: onIncrement,
-        ),
-      ],
+      ),
     );
   }
 }
@@ -589,8 +591,11 @@ class _UnitBadge extends StatelessWidget {
         vertical: AppSpacing.xs,
       ),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(AppRadii.pill),
+        border: Border.all(
+          color: context.tactical.metalBorder.withValues(alpha: 0.7),
+        ),
       ),
       child: Text(
         label,
