@@ -58,7 +58,10 @@ Cada conjuro y truco del personaje = una habilidad dentro de "abilities_by_actio
 
 "reaction" → conjuros de reacción
 
-Los rasgos de clase/raza (no conjuros) van en "passive", salvo que sean reacciones activas (ej. "Suerte del Oscuro"), que van en "reaction".
+CLASIFICACIÓN DE PODERES ACTIVOS: un poder que el jugador DECIDE usar y que gasta acción, acción adicional o reacción NUNCA va en "passive", sea de clase, de raza, una dote o un objeto mágico (Furia, Tomar aliento, Imposición de manos, Canalizar Divinidad, Inspiración bárdica, Forma salvaje, Aliento de dragón, Oleada de acción, Suerte del Oscuro, el rayo de una varita, la habilidad activable de un anillo...). Clasifícalo según lo que gasta al usarse: "action", "bonus_action" o "reaction". En "passive" van SOLO los rasgos que funcionan siempre o sin gastar nada (Ataque Adicional, resistencias, Visión en la oscuridad, bonificadores permanentes...). Si dudas entre pasivo y activo, pregúntame.
+Los objetos mágicos con un poder activable (más allá de su bonificador de ataque o daño) añaden ese poder como una habilidad más, con "type": "item". El arma mágica en sí sigue en "inventory.weapons".
+
+"type": obligatorio en cada habilidad, con uno de estos valores EXACTOS (sin sinónimos ni variaciones): "spell" (conjuros y trucos), "class" (rasgos de clase y subclase), "racial" (rasgos de raza o linaje), "feat" (dotes), "item" (poder activable de un objeto mágico). La app usa este campo para mostrar de dónde viene cada poder.
 
 Cada pasiva (cada objeto dentro de "passive") debe incluir además el campo "tactical_role", clasificándola en una de estas tres categorías EXACTAS (respeta mayúsculas, sin variaciones ni sinónimos): "Ofensivo" (aumenta daño propio, habilita ataques o efectos ofensivos), "Defensivo" (resistencias, PG extra, protección propia o de aliados), "Utilidad" (recursos, exploración, rasgos base/definición que no encajan en las dos anteriores). Si una pasiva combina varios usos, elige la función PRINCIPAL, no inventes una cuarta categoría. Este campo es EXCLUSIVO de "passive": no lo añadas a habilidades de "action", "bonus_action" ni "reaction".
 
@@ -69,6 +72,12 @@ Cada pasiva (cada objeto dentro de "passive") debe incluir además el campo "tac
    - Si el conjuro tiene un daño/efecto principal automático (sin tirada) pero además dispara una salvación SECUNDARIA para un efecto extra (ej. "si impactas, el objetivo también debe salvar Fuerza o caer derribado"), usa el "attack_type" que corresponde al efecto PRINCIPAL y explica la salvación secundaria en "lore_description" y/o "tactical_summary" — no inventes un cuarto valor para esto.
    - Si después de leer el texto sigue sin estar claro cuál de los tres aplica, PREGÚNTAME antes de asumir; no adivines.
    - Las armas dentro de "inventory.weapons" NO llevan "attack_type" — ese campo no existe para ellas, siempre se resuelven como ataque.
+
+Campos de recursos, curación y concentración — SOLO en habilidades y conjuros de "action", "bonus_action" y "reaction" (NUNCA en "passive"):
+   - "resource_name": nombre del recurso de "resources" que gasta al usarse (Ki, Furia, Imposición de Manos...), EXACTAMENTE igual que en "resources". Si no gasta ningún recurso, usa "". Un conjuro que gasta espacios de conjuro NO lleva "resource_name": las ranuras ya se gestionan con "base_level".
+   - "resource_cost": número entero de puntos que gasta por uso (1 si no se indica; 1 como mínimo). Solo tiene sentido si hay "resource_name".
+   - "heal_dice": dado de la curación propia de la habilidad, con el mismo formato estricto que "damage_dice" (ej. "1d10+5"). Úsalo cuando el poder cura con un dado distinto de su daño (Tomar aliento, curaciones de dotes u objetos). Si no cura, o cura una cantidad que no es un dado (ej. "gasta puntos de la reserva"), usa "". En un conjuro de curación que escala con el nivel de espacio, mantén el dado en "damage_dice" y "scaling_formula" como siempre.
+   - "concentration": booleano. true si el conjuro o poder exige mantener concentración mientras dura; false si no. Es una propiedad de la duración, no de la tirada.
 
 "damage_dice": el dado BASE de daño o curación directa, al nivel mínimo del conjuro (base_level). Formato ESTRICTO, sin excepciones: notación de dado con o sin bono plano ("1d8", "2d6+3", "8d6-2"), o VARIOS grupos de dados sumados con bono opcional cuando el daño mezcla dados distintos ("2d8+4d6", "1d8+1d6+3"), o si el efecto no tira dado pero sí suma un número fijo, un plano puro ("+3"). NUNCA una frase, nunca texto explicativo, nunca notas entre paréntesis. Si el conjuro/truco/ataque no hace daño ni cura, usa "" (string vacío) — pero si SÍ hace daño o cura, este campo tiene que llevar el dado, aunque parezca redundante con lore_description o tactical_summary.
 
@@ -410,8 +419,31 @@ Devuélveme el JSON completo, sin comentarios ni texto fuera del bloque de códi
         "base_level": 1,
         "damage_dice": "1d8",
         "scaling_formula": "1d8",
+        "resource_name": "",
+        "resource_cost": 1,
+        "heal_dice": "",
+        "concentration": false,
         "lore_description": "Una criatura a la que tocas recupera puntos de golpe. Puedes lanzarlo con un espacio de nivel más alto para curar más si el aliado está muy malherido.",
         "tactical_summary": "No tienes que tirar nada, el objetivo se cura al tocarlo | Curación: 1d8 + Mod"
+      },
+      {
+        "id": "ability-imposicion-de-manos",
+        "name": "Imposición de Manos",
+        "type": "class",
+        "related_stat": "cha",
+        "attack_type": "none",
+        "success_description": "Tus manos brillan y las heridas se cierran.",
+        "failure_description": "",
+        "is_scalable": false,
+        "base_level": 0,
+        "damage_dice": "",
+        "scaling_formula": "",
+        "resource_name": "Imposición de Manos",
+        "resource_cost": 5,
+        "heal_dice": "",
+        "concentration": false,
+        "lore_description": "Tocas a una criatura y le transfieres parte de tu reserva de curación. Es tu botiquín de emergencia entre combates.",
+        "tactical_summary": "No tienes que tirar nada, el objetivo se cura al tocarlo | Curación: 5 PG por cada 5 puntos de la reserva que gastes | Gasta: acción y 5 puntos de Imposición de Manos"
       }
     ],
     "bonus_action": [
@@ -427,6 +459,10 @@ Devuélveme el JSON completo, sin comentarios ni texto fuera del bloque de códi
         "base_level": 1,
         "damage_dice": "2d6",
         "scaling_formula": "",
+        "resource_name": "",
+        "resource_cost": 1,
+        "heal_dice": "",
+        "concentration": true,
         "lore_description": "Encantas tu próximo golpe de arma para que estalle en trueno al impactar. Además del daño, el enemigo puede acabar tumbado en el suelo. Requiere concentración mientras esperas ese golpe.",
         "tactical_summary": "No tienes que tirar nada, el trueno estalla solo al golpear con el arma; además el enemigo tira un d20 y si no supera tu CD (14) cae al suelo | Daño: 2d6 Trueno"
       }
@@ -436,7 +472,7 @@ Devuélveme el JSON completo, sin comentarios ni texto fuera del bloque de códi
       {
         "id": "ability-castigo-divino",
         "name": "Castigo Divino",
-        "type": "class_feature",
+        "type": "class",
         "lore_description": "Cuando golpeas a un enemigo cuerpo a cuerpo, puedes sacrificar un espacio de conjuro para que el golpe arda con luz divina y haga más daño. Es aún más potente contra muertos vivientes o demonios.",
         "tactical_summary": "No tienes que tirar nada extra: si acabas de golpear con el arma, puedes gastar un espacio de conjuro para sumar 2d8 de daño Radiante (nivel 1), +1d8 por cada nivel de espacio adicional, y +1d8 más si el enemigo es un muerto viviente o infernal.",
         "tactical_role": "Ofensivo"
@@ -444,7 +480,7 @@ Devuélveme el JSON completo, sin comentarios ni texto fuera del bloque de códi
       {
         "id": "ability-ataque-adicional",
         "name": "Ataque Adicional",
-        "type": "trait",
+        "type": "class",
         "lore_description": "Tu entrenamiento te permite golpear más de una vez en el mismo turno.",
         "tactical_summary": "Cuando ataques, hazlo 2 veces en vez de 1.",
         "tactical_role": "Ofensivo"
@@ -452,7 +488,7 @@ Devuélveme el JSON completo, sin comentarios ni texto fuera del bloque de códi
       {
         "id": "ability-salud-divina",
         "name": "Salud Divina",
-        "type": "trait",
+        "type": "class",
         "lore_description": "La magia divina que fluye por ti te protege de cualquier enfermedad.",
         "tactical_summary": "No puedes enfermar nunca.",
         "tactical_role": "Defensivo"
@@ -571,7 +607,10 @@ Devuélveme el JSON completo, sin comentarios ni texto fuera del bloque de códi
         '1. "classified_features": lista con un objeto por cada rasgo o '
         'acción casera de arriba: { "name" (EXACTO como en el texto), '
         '"category": "action" | "bonus_action" | "reaction" | "passive" '
-        '(según lo que gasta), "tactical_summary", "lore_description" }. '
+        '(según lo que gasta), "type": "class" | "racial" | "feat" | '
+        '"item" (de dónde viene: clase o subclase, raza, dote u objeto '
+        'mágico; un poder activable de un objeto mágico es "item"), '
+        '"tactical_summary", "lore_description" }. '
         'Los poderes de clase, raza o dotes que se ACTIVAN (Furia, Tomar '
         'aliento, Inspiración bárdica, Aliento de dragón, Ki...) y no son '
         'conjuros NO son pasivos: clasifícalos en "action", '
@@ -579,8 +618,9 @@ Devuélveme el JSON completo, sin comentarios ni texto fuera del bloque de códi
         'Si consumen un recurso de "resources" (punto 2), añade '
         '"resource_name" (EXACTO como en "resources") y "resource_cost" '
         '(puntos por uso, 1 si no se indica); si curan, añade "heal_dice" '
-        '(ej. "1d10+5"). Estos tres campos solo en activas, NUNCA en '
-        'pasivas. '
+        '(ej. "1d10+5"); si exige mantener concentración mientras dura, '
+        'añade "concentration": true. Estos cuatro campos solo en '
+        'activas, NUNCA en pasivas. '
         'Si category es "passive" añade "tactical_role": "Ofensivo", '
         '"Defensivo" o "Utilidad" (y NUNCA "attack_type"). Si es '
         '"action", "bonus_action" o "reaction" añade "attack_type": '
@@ -617,10 +657,10 @@ Devuélveme el JSON completo, sin comentarios ni texto fuera del bloque de códi
         'clave.\n\n'
         'Ejemplo del formato:\n'
         '{"classified_features":[{"name":"Ataque furtivo","category":'
-        '"passive","tactical_role":"Ofensivo","tactical_summary":"...",'
+        '"passive","type":"class","tactical_role":"Ofensivo","tactical_summary":"...",'
         '"lore_description":"..."},{"name":"Paso nublado","category":'
-        '"bonus_action","attack_type":"none","resource_name":"Forma '
-        'cambiante","resource_cost":1,"tactical_summary":"...",'
+        '"bonus_action","type":"racial","attack_type":"none","resource_name":"Forma '
+        'cambiante","resource_cost":1,"concentration":false,"tactical_summary":"...",'
         '"lore_description":"..."}],"resources":[{"name":"Forma '
         'cambiante","current":2,"max":2}],"inventory":{"mundane_items":'
         '[{"name":"Cuerda de cáñamo","description":"15 m","quantity":1}]},'

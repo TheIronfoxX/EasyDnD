@@ -51,6 +51,89 @@ void main() {
       }
     });
 
+    test('el prompt maestro clasifica poderes activos y pide los campos nuevos',
+        () {
+      final variants = [
+        AiPrompt.forEmptySheet(),
+        AiPrompt.forEmbeddedSource('x'),
+        AiPrompt.forNivel20Link('https://nivel20.com/games/g/characters/1-x'),
+      ];
+
+      for (final prompt in variants) {
+        // Los poderes activos no son pasivos, vengan de donde vengan.
+        expect(prompt, contains('CLASIFICACIÓN DE PODERES ACTIVOS'));
+        expect(prompt, contains('NUNCA va en "passive"'));
+        // Origen con los cinco valores exactos.
+        for (final type in ['"spell"', '"class"', '"racial"', '"feat"', '"item"']) {
+          expect(prompt, contains(type));
+        }
+        // Recursos, curación y concentración.
+        expect(prompt, contains('"resource_name"'));
+        expect(prompt, contains('"resource_cost"'));
+        expect(prompt, contains('"heal_dice"'));
+        expect(prompt, contains('"concentration"'));
+        // Y el ejemplo los enseña (la IA no puede usar campos que el
+        // ejemplo no muestre).
+        final example = prompt.substring(prompt.indexOf('"Kaelen el Luminoso"'));
+        expect(example, contains('"resource_name": "Imposición de Manos"'));
+        expect(example, contains('"concentration": true'));
+        expect(example, contains('"type": "class"'));
+      }
+    });
+
+    test('el ejemplo no deja campos de activas dentro de las pasivas', () {
+      final prompt = AiPrompt.forEmbeddedSource('fuente');
+      const header =
+          'FORMATO EXACTO A SEGUIR (ejemplo mínimo con todos los campos):';
+      final example = jsonDecode(
+        prompt.substring(prompt.indexOf(header) + header.length).trim(),
+      ) as Map<String, dynamic>;
+      final abilities = example['abilities_by_action'] as Map<String, dynamic>;
+
+      for (final passive in abilities['passive'] as List) {
+        for (final field in [
+          'resource_name',
+          'resource_cost',
+          'heal_dice',
+          'concentration',
+          'attack_type',
+        ]) {
+          expect((passive as Map).containsKey(field), isFalse, reason: field);
+        }
+      }
+      // El recurso del ejemplo existe en "resources" con el MISMO nombre.
+      final names = [
+        for (final r in example['resources'] as List) (r as Map)['name'],
+      ];
+      for (final category in ['action', 'bonus_action', 'reaction']) {
+        for (final a in abilities[category] as List) {
+          final resource = (a as Map)['resource_name'] as String?;
+          if (resource != null && resource.isNotEmpty) {
+            expect(names, contains(resource));
+          }
+        }
+      }
+    });
+
+    test('forNivel20Enrichment pide origen, recursos, curación y concentración',
+        () {
+      final prompt = AiPrompt.forNivel20Enrichment(
+        name: 'Rook',
+        characterClass: 'Bárbaro',
+        level: 5,
+        feats: 'Furia: ...',
+      );
+
+      expect(prompt, contains('"type": "class" | "racial" | "feat" | "item"'));
+      expect(prompt, contains('"resource_name"'));
+      expect(prompt, contains('"resource_cost"'));
+      expect(prompt, contains('"heal_dice"'));
+      expect(prompt, contains('"concentration": true'));
+      expect(prompt, contains('NO son pasivos'));
+      // Los campos de activas siguen prohibidos en pasivas.
+      expect(prompt, contains('NUNCA en pasivas'));
+    });
+
     test('forEmbeddedSource incrusta la fuente ARRIBA de las reglas', () {
       final prompt = AiPrompt.forEmbeddedSource('  FICHA-FUENTE  ');
 
