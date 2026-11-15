@@ -20,7 +20,29 @@ class DamageRoll {
   /// Fórmula usada, ej. "8d6" o "8d6 + 2 × 1d6". Informativo.
   final String breakdown;
 
-  const DamageRoll({required this.total, required this.breakdown});
+  /// Desglose por grupo de dados ("2d8 [5, 3] = 8", "4d6 [...] = 14",
+  /// "Bono +3"). Vacío si la fórmula es un plano puro.
+  final List<DamageGroupBreakdown> groups;
+
+  const DamageRoll({
+    required this.total,
+    required this.breakdown,
+    this.groups = const [],
+  });
+}
+
+/// Una línea del desglose de una [DamageRoll].
+class DamageGroupBreakdown {
+  /// "2d8", "4d6", "2 × 1d8 (escalado)" o "Bono".
+  final String label;
+  final List<int> dice;
+  final int subtotal;
+
+  const DamageGroupBreakdown(this.label, this.dice, this.subtotal);
+
+  @override
+  String toString() =>
+      dice.isEmpty ? '$label = $subtotal' : '$label [${dice.join(', ')}] = $subtotal';
 }
 
 /// Resuelve el daño base más el escalado por nivel de lanzamiento.
@@ -42,23 +64,52 @@ DamageRoll? resolveDamageRoll({
   int maxExtraLevels = 20,
 }) {
   if (baseDice == null) return null;
-  final base = DiceFormula.tryParse(baseDice);
+  final base = DiceExpression.tryParse(baseDice);
   if (base == null) return null;
 
   final rng = random ?? Random();
-  var total = base.roll(random: rng);
+  final baseRoll = base.rollDetailed(random: rng);
+  var total = baseRoll.total;
+  final groups = <DamageGroupBreakdown>[
+    for (final g in baseRoll.groups)
+      DamageGroupBreakdown(
+          '${g.group.negative ? '-' : ''}${g.group.notation}', g.dice, g.subtotal),
+    if (baseRoll.bonus != 0 || baseRoll.groups.isEmpty)
+      DamageGroupBreakdown('Bono', const [], baseRoll.bonus),
+  ];
   var extraLevels = 0;
 
   if (isScalable && scalingFormula != null) {
     extraLevels = (selectedLevel - baseLevel).clamp(0, maxExtraLevels);
     if (extraLevels > 0) {
-      final scale = DiceFormula.tryParse(scalingFormula);
+      final scale = DiceExpression.tryParse(scalingFormula);
       if (scale != null) {
         // Una tirada de escalado por nivel extra: sirve igual para dados
-        // ("1d6" por nivel) que para planos ("+2" por nivel).
+        // ("1d6" por nivel), compuestos ("1d8+1d6") o planos ("+2").
+        final perGroup = List.generate(scale.groups.length, (_) => <int>[]);
+        var flat = 0;
         for (var i = 0; i < extraLevels; i++) {
-          total += scale.roll(random: rng);
+          final r = scale.rollDetailed(random: rng);
+          for (var k = 0; k < r.groups.length; k++) {
+            perGroup[k].addAll(r.groups[k].dice);
+          }
+          flat += r.bonus;
         }
+        for (var k = 0; k < scale.groups.length; k++) {
+          final g = scale.groups[k];
+          final sum = perGroup[k].fold<int>(0, (a, b) => a + b);
+          groups.add(DamageGroupBreakdown(
+            '$extraLevels × ${g.negative ? '-' : ''}${g.notation} (escalado)',
+            perGroup[k],
+            g.negative ? -sum : sum,
+          ));
+        }
+        if (flat != 0) {
+          groups.add(DamageGroupBreakdown('Escalado plano', const [], flat));
+        }
+        total += groups
+            .skip(groups.length - scale.groups.length - (flat != 0 ? 1 : 0))
+            .fold<int>(0, (a, g) => a + g.subtotal);
       }
     }
   }
@@ -68,5 +119,6 @@ DamageRoll? resolveDamageRoll({
     breakdown: extraLevels > 0
         ? '$baseDice + $extraLevels × $scalingFormula'
         : baseDice,
+    groups: groups,
   );
 }

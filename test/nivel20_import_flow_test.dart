@@ -13,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:easydnd/data/roster_repository.dart';
 import 'package:easydnd/domain/ai_prompt.dart';
 import 'package:easydnd/domain/nivel20_mapper.dart';
+import 'package:easydnd/domain/nivel20_patch.dart';
 import 'package:easydnd/features/import/import_wizard_screen.dart';
 import 'package:easydnd/features/import/nivel20_import.dart';
 import 'package:easydnd/state/character_store.dart';
@@ -59,12 +60,12 @@ void main() {
     late String prompt;
     setUpAll(() => prompt = Nivel20Import.enrichedPrompt(raw));
 
-    test('incluye la ficha base pre-calculada', () {
-      final base = jsonEncode(Nivel20Mapper.toJson(raw));
-      expect(base, contains('"hp_max":125'));
-      expect(prompt, contains('"hp_max": 125'));
-      expect(prompt, contains('"spell_save_dc": 18'));
-      expect(prompt, contains('"speed": 30'));
+    test('envía solo contexto mínimo: ni ficha base ni conjuros ni números', () {
+      expect(prompt, contains('Nombre: Kael`nar Ardinys'));
+      expect(prompt, contains('Nivel:'));
+      for (final prohibido in ['"hp_max"', '"spell_save_dc"', '"attack_bonus"', '"base_dice"', 'Tormenta de hielo', 'Bastón']) {
+        expect(prompt, isNot(contains(prohibido)));
+      }
     });
 
     test('incluye los textos crudos de rasgos, acciones caseras y equipo', () {
@@ -74,15 +75,13 @@ void main() {
       expect(prompt, contains('Una aguja que nunca se dobla.'));
     });
 
-    test('prohíbe tocar números y pide solo las tareas de enriquecimiento', () {
-      expect(prompt, contains('NO MODIFIQUES'));
-      for (final campo in ['hp_max', 'ac', 'speed', 'spell_slots', 'spell_save_dc']) {
-        expect(prompt, contains(campo));
+    test('pide un parche con solo las cuatro claves opcionales', () {
+      for (final clave in Nivel20Patch.patchKeys) {
+        expect(prompt, contains('"$clave"'));
       }
       expect(prompt, contains('"Ofensivo", "Defensivo" o "Utilidad"'));
-      expect(prompt, contains('"resources"'));
       expect(prompt, contains('mundane_items'));
-      expect(prompt, contains('"tactical_summary" y "lore_description"'));
+      expect(prompt, contains('NO añadas ninguna otra clave'));
     });
 
     test('es compacto: no arrastra el ejemplo maestro ni las reglas largas', () {
@@ -91,7 +90,7 @@ void main() {
     });
 
     test('secciones vacías se marcan "(sin datos)"', () {
-      expect(AiPrompt.forNivel20Enrichment('{}'), contains('(sin datos)'));
+      expect(AiPrompt.forNivel20Enrichment(), contains('(sin datos)'));
     });
   });
 
@@ -167,7 +166,7 @@ void main() {
       await tester.ensureVisible(find.text('Preparar prompt de IA (enriquecido)'));
       await tester.tap(find.text('Preparar prompt de IA (enriquecido)'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('NO MODIFIQUES', findRichText: true), findsOneWidget);
+      expect(find.textContaining('DEVUELVE un único objeto JSON', findRichText: true), findsOneWidget);
     });
 
     testWidgets('Atrás desde la revisión tras pegar la respuesta de la IA también conserva el Paso 1', (tester) async {
@@ -203,13 +202,13 @@ void main() {
       final store = await boot();
       await pumpWizard(tester, store);
 
-      expect(find.textContaining('NO MODIFIQUES', findRichText: true), findsNothing);
+      expect(find.textContaining('DEVUELVE un único objeto JSON', findRichText: true), findsNothing);
       await tester.ensureVisible(find.text('Preparar prompt de IA (enriquecido)'));
       await tester.tap(find.text('Preparar prompt de IA (enriquecido)'));
       await tester.pumpAndSettle();
 
       expect(find.text('Prompt enriquecido listo (abajo)'), findsOneWidget);
-      expect(find.textContaining('NO MODIFIQUES', findRichText: true), findsOneWidget);
+      expect(find.textContaining('DEVUELVE un único objeto JSON', findRichText: true), findsOneWidget);
     });
 
     testWidgets('texto que no es Nivel20: no ofrece importación directa', (tester) async {

@@ -39,7 +39,7 @@ class SpellScaling {
   /// JSON de la IA no falla al importar — falla en silencio a mitad de
   /// combate; esto permite detectarlo antes, al importar.
   bool get hasResolvableScaling =>
-      isScalable && formula != null && DiceFormula.tryParse(formula!) != null;
+      isScalable && formula != null && DiceExpression.tryParse(formula!) != null;
 
   SpellScaling copyWith({bool? isScalable, int? baseLevel, String? formula}) {
     return SpellScaling(
@@ -169,7 +169,15 @@ class Ability {
   /// LA serialización de Ability (ver comentario de archivo: es la
   /// única — no hay extensiones paralelas). Incluye magic_charges,
   /// que era justo lo que la versión vieja perdía.
-  Map<String, dynamic> toJson() {
+  ///
+  /// [category] ('action' | 'bonus_action' | 'reaction' | 'passive') aplica
+  /// el esquema estricto: las pasivas omiten attack_type y damage_dice
+  /// (conservan tactical_role) y las activas omiten tactical_role. Sin
+  /// categoría (null) se escribe todo, para quien serializa una
+  /// habilidad suelta.
+  Map<String, dynamic> toJson({String? category}) {
+    final isPassive = category == 'passive';
+    final isActive = category != null && !isPassive;
     return {
       'id': id,
       'name': name,
@@ -177,11 +185,11 @@ class Ability {
       'related_stat': relatedStat,
       'success_description': successDescription,
       'failure_description': failureDescription,
-      'attack_type': attackType,
-      'damage_dice': damageDice,
+      if (!isPassive) 'attack_type': attackType,
+      if (!isPassive) 'damage_dice': damageDice,
       'lore_description': loreDescription,
       'tactical_summary': tacticalSummary,
-      'tactical_role': tacticalRole,
+      if (!isActive) 'tactical_role': tacticalRole,
       'is_scalable': isScalable,
       'base_level': baseLevel,
       'scaling_formula': scalingFormula,
@@ -224,10 +232,11 @@ class AbilitiesByAction {
 
   Map<String, dynamic> toJson() {
     return {
-      'action': action.map((a) => a.toJson()).toList(),
-      'bonus_action': bonusAction.map((a) => a.toJson()).toList(),
-      'reaction': reaction.map((a) => a.toJson()).toList(),
-      'passive': passive.map((a) => a.toJson()).toList(),
+      'action': action.map((a) => a.toJson(category: 'action')).toList(),
+      'bonus_action':
+          bonusAction.map((a) => a.toJson(category: 'bonus_action')).toList(),
+      'reaction': reaction.map((a) => a.toJson(category: 'reaction')).toList(),
+      'passive': passive.map((a) => a.toJson(category: 'passive')).toList(),
     };
   }
 

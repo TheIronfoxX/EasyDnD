@@ -114,7 +114,7 @@ class RollAction {
   /// rota se comporta como "sin daño" en vez de reventar a mitad de
   /// combate.
   bool get hasDamage =>
-      damageDice != null && DiceFormula.tryParse(damageDice!) != null;
+      damageDice != null && DiceExpression.tryParse(damageDice!) != null;
 
   bool get hasCharges => charges != null;
 }
@@ -174,6 +174,9 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
   List<int> _dice = const [];
   int? _damageTotal;
   String? _damageBreakdown;
+
+  /// Desglose por grupo de dados de la última tirada digital.
+  List<DamageGroupBreakdown> _damageGroups = const [];
   bool _manualDamageConfirmed = false;
   bool _slotConsumed = false;
   bool _chargeConsumed = false;
@@ -294,6 +297,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
     );
     _damageTotal = result?.total;
     _damageBreakdown = result?.breakdown;
+    _damageGroups = result?.groups ?? const [];
   }
 
   void _onFail() => Navigator.of(context).pop();
@@ -343,6 +347,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
         _manualError = null;
         _damageTotal = value;
         _damageBreakdown = null;
+        _damageGroups = const [];
         _manualDamageConfirmed = true;
       });
       return;
@@ -360,14 +365,16 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
     final extra = _selectedLevel - _action.baseLevel;
     if (extra <= 0) return base;
 
-    final scale = DiceFormula.tryParse(_action.scalingFormula!);
+    final scale = DiceExpression.tryParse(_action.scalingFormula!);
     if (scale == null) return base;
-    if (scale.isFlat) {
-      final flat = scale.bonus * extra;
-      if (flat == 0) return base;
-      return '$base ${flat > 0 ? '+' : ''}$flat';
-    }
-    return '$base + ${scale.count * extra}d${scale.sides}';
+    final parts = <String>[
+      for (final g in scale.groups)
+        '${g.negative ? '-' : '+'} ${g.count * extra}d${g.sides}',
+    ];
+    final flat = scale.bonus * extra;
+    if (flat != 0) parts.add('${flat > 0 ? '+' : '-'} ${flat.abs()}');
+    if (parts.isEmpty) return base;
+    return '$base ${parts.join(' ')}';
   }
 
   // -------------------------------------------------------------------
@@ -810,6 +817,17 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
+                    // Desglose por grupo solo si hay más de un grupo de dados
+                    // (compuestos como 2d8+4d6, o base + escalado).
+                    if (_damageGroups.where((g) => g.dice.isNotEmpty).length > 1)
+                      for (var i = 0; i < _damageGroups.length; i++)
+                        Text(
+                          _damageGroups[i].toString(),
+                          key: ValueKey('damage_group_$i'),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
                   ],
                 ),
               ],

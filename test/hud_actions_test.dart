@@ -330,6 +330,33 @@ void main() {
       expect(slots.forLevel(2)!.current, 1);
     });
 
+    testWidgets('dado compuesto 2d8+4d6: tira todos los grupos y muestra el desglose', (
+      tester,
+    ) async {
+      final character = buildCharacter(id: 'char_ice', name: 'Rook');
+      character.abilitiesByAction.action.add(
+        Ability.fromJson({
+          'id': 'a_ice',
+          'name': 'Tormenta de hielo',
+          'type': 'spell',
+          'related_stat': 'int',
+          'attack_type': 'save',
+          'base_level': 1,
+          'damage_dice': '2d8+4d6',
+        }),
+      );
+      final store = await bootWith(character);
+      await pumpActions(tester, store, random: FakeRandom([0]));
+
+      await tapText(tester, 'Tormenta de hielo');
+      await tapText(tester, 'El objetivo falla · tirar daño');
+
+      expect(find.text('DAÑO / EFECTO'), findsOneWidget);
+      expect(find.text('2d8 [1, 1] = 2'), findsOneWidget);
+      expect(find.text('4d6 [1, 1, 1, 1] = 4'), findsOneWidget);
+      expect(find.text('6'), findsOneWidget); // 2 + 4
+    });
+
     testWidgets('"Usar" resuelve un efecto sin tirada y gasta la carga', (
       tester,
     ) async {

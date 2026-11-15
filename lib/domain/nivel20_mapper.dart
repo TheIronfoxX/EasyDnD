@@ -14,21 +14,30 @@
 // - Las tiradas de salvación y el bonificador de competencia no tienen
 //   campo en el modelo (se derivan del nivel), así que no se importan.
 // - El texto "attack" de los conjuros de Nivel20 a veces trae dados
-//   erróneos; se usa tal cual viene, solo como mejor esfuerzo.
+//   erróneos. Por eso cada conjuro se cruza por nombre normalizado con el
+//   catálogo SRD local (parámetro `srd`): si coincide, hereda sus datos
+//   limpios (dado, escalado, tipo de ataque, descripción). Solo los
+//   conjuros que no están en el SRD (homebrew) usan el texto de Nivel20,
+//   como mejor esfuerzo. Excepción: en los trucos el dado se queda con el
+//   ya escalado al nivel del personaje que da Nivel20 (el catálogo guarda
+//   el dado base de nivel 1).
 
 import 'models/character.dart';
+import 'models/srd_spell.dart';
 
 class Nivel20Mapper {
   Nivel20Mapper._(); // clase estática: no se instancia.
 
   /// Construye el [CharacterModel]. Lanza [FormatException] si el JSON no
   /// parece una ficha de Nivel20 (sin "info" ni nombre).
-  static CharacterModel map(Map<String, dynamic> raw) =>
-      CharacterModel.fromJson(toJson(raw));
+  static CharacterModel map(Map<String, dynamic> raw,
+          {List<SrdSpell> srd = const []}) =>
+      CharacterModel.fromJson(toJson(raw, srd: srd));
 
   /// Igual que [map] pero devuelve el JSON en formato EasyDnD, útil para
   /// pasarlo por CharacterValidator.validateMap o para inspeccionarlo.
-  static Map<String, dynamic> toJson(Map<String, dynamic> raw) {
+  static Map<String, dynamic> toJson(Map<String, dynamic> raw,
+      {List<SrdSpell> srd = const []}) {
     final root = _unwrap(raw);
     final info = _map(root['info']);
     final name = info['name'];
@@ -44,6 +53,10 @@ class Nivel20Mapper {
     final spellDc = _int(spellBook['spell_save_dc']);
     final spellAtk = _int(spellBook['spell_attack_bonus']);
     final castStat = _statKey(spellBook['spell_ability_slug']);
+    final srdIndex = <String, SrdSpell>{
+      for (final sp in srd) normalizeSpellName(sp.englishName): sp,
+      for (final sp in srd) normalizeSpellName(sp.name): sp,
+    }..remove('');
 
     return {
       'schema_version': 2,
@@ -82,6 +95,7 @@ class Nivel20Mapper {
         spellAtk: spellAtk,
         castStat: castStat,
         actionDice: actionDice,
+        srdIndex: srdIndex,
       ),
       'lore_info': _lore(root),
     };
@@ -157,6 +171,9 @@ class Nivel20Mapper {
     }
 
     return Nivel20Sources(
+      name: _str(info['name']),
+      characterClass: _classText(info, professions),
+      level: level,
       feats: feats.toString().trim(),
       customActions: custom.toString().trim(),
       equipment: equipment.toString().trim(),
@@ -312,6 +329,7 @@ class Nivel20Mapper {
     required int? spellAtk,
     required String castStat,
     required Map<String, String> actionDice,
+    required Map<String, SrdSpell> srdIndex,
   }) {
     final buckets = _emptyBuckets();
     final usedIds = <String>{};
@@ -344,6 +362,7 @@ class Nivel20Mapper {
             spellAtk: spellAtk,
             castStat: castStat,
             actionDice: actionDice,
+            srd: srdIndex[normalizeSpellName(_str(spell['name']))],
           ));
         }
       }
@@ -423,6 +442,7 @@ class Nivel20Mapper {
     required int? spellAtk,
     required String castStat,
     required Map<String, String> actionDice,
+    SrdSpell? srd,
   }) {
     final name = _str(spell['name']);
     final level = _int(spell['level']) ?? 0;
@@ -430,7 +450,8 @@ class Nivel20Mapper {
     final saveText = _str(spell['saving_throw']);
     final description = _str(spell['description']);
 
-    final attackType = _attackType(attackText, saveText);
+    // Datos crudos de Nivel20 (fallback para homebrew fuera del SRD).
+    var attackType = _attackType(attackText, saveText);
 
     // Dado: el del texto "attack"; los trucos prefieren el dado ya
     // escalado de actions[] si existe.
@@ -445,8 +466,30 @@ class Nivel20Mapper {
       if (m != null) scaling = m.group(1)!.replaceAll(RegExp(r'\s+'), '');
     }
 
-    final damageType = _damageType(attackText);
+    var damageType = _damageType(attackText);
     final summary = _str(spell['summary']);
+    var loreOverride = '';
+
+    // Cruce con el SRD: sus datos limpios mandan sobre los de Nivel20.
+    var spellLevel = level;
+    if (srd != null) {
+      attackType = srd.attackType;
+      spellLevel = srd.level;
+      final srdType = srd.damageType ?? '';
+      if (srdType.isNotEmpty) {
+        damageType = srdType[0].toUpperCase() + srdType.substring(1);
+      }
+      if (level == 0) {
+        // Truco: se conserva el dado ya escalado al nivel del personaje
+        // (si Nivel20 lo da); el SRD solo aporta el dado base.
+        if (dice.isEmpty) dice = srd.damageDice ?? '';
+        scaling = '';
+      } else {
+        dice = srd.damageDice ?? '';
+        scaling = srd.isScalable ? (srd.scalingFormula ?? '') : '';
+      }
+      loreOverride = srd.description;
+    }
 
     return {
       'id': id,
@@ -457,10 +500,12 @@ class Nivel20Mapper {
       'success_description': '',
       'failure_description': '',
       'is_scalable': scaling.isNotEmpty,
-      'base_level': level,
+      'base_level': spellLevel,
       'damage_dice': dice,
       'scaling_formula': scaling,
-      'lore_description': summary.isNotEmpty ? summary : _firstSentence(description),
+      'lore_description': loreOverride.isNotEmpty
+          ? loreOverride
+          : (summary.isNotEmpty ? summary : _firstSentence(description)),
       'tactical_summary': _spellTactics(
         attackType: attackType,
         saveText: saveText,
@@ -571,9 +616,9 @@ class Nivel20Mapper {
       final conditional = <Map<String, dynamic>>[
         if (versatil != null)
           {
-            'condition': 'Ataque a dos manos',
-            'damage_dice': '${versatil.split(RegExp(r'[+-]')).first}$flat',
-            'damage_type': type.toLowerCase(),
+            'trigger': 'Ataque a dos manos',
+            'dice': '${versatil.split(RegExp(r'[+-]')).first}$flat',
+            'type': type.toLowerCase(),
           },
       ];
 
@@ -601,7 +646,7 @@ class Nivel20Mapper {
             'Tiras un d20 y sumas $bonusText; le dices el resultado al máster '
             'y él te dice si le has dado | Daño: $dice'
             '${type.isNotEmpty ? ' $type' : ''}'
-            '${versatil != null ? ' (${conditional.first['damage_dice']} a dos manos)' : ''}',
+            '${versatil != null ? ' (${conditional.first['dice']} a dos manos)' : ''}',
         'is_unique': false,
       });
     }
@@ -703,10 +748,18 @@ class Nivel20Mapper {
 /// Textos crudos de una ficha de Nivel20 para el prompt de enriquecimiento.
 class Nivel20Sources {
   const Nivel20Sources({
+    required this.name,
+    required this.characterClass,
+    required this.level,
     required this.feats,
     required this.customActions,
     required this.equipment,
   });
+
+  /// Contexto mínimo del personaje para el prompt de parche.
+  final String name;
+  final String characterClass;
+  final int level;
 
   /// Rasgos de clase, subclase, raza y personalizados (uno por línea).
   final String feats;

@@ -105,7 +105,11 @@ void main() {
       expect(w['name'], 'Bastón');
       expect(w['attack_bonus'], 4);
       expect(w['damage'], {'base_dice': '1d6-1', 'base_type': 'contundente'});
-      expect((w['conditional_damage'] as List).single['damage_dice'], '1d8-1');
+      expect((w['conditional_damage'] as List).single, {
+        'trigger': 'Ataque a dos manos',
+        'dice': '1d8-1',
+        'type': 'contundente',
+      });
       expect(w['properties'], ['Versátil']);
       expect(w['tactical_summary'], contains('+4'));
     });

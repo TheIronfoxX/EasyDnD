@@ -227,7 +227,7 @@ class _AddWeaponDialogState extends State<_AddWeaponDialog> {
                 hintText: 'Ej.: 1d8+3',
                 border: OutlineInputBorder(),
               ),
-              validator: (value) => DiceFormula.tryParse(value ?? '') == null
+              validator: (value) => DiceExpression.tryParse(value ?? '') == null
                   ? 'Escribí un dado válido, ej. 1d8+3.'
                   : null,
             ),

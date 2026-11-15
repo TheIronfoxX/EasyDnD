@@ -430,5 +430,19 @@
     "range": "Personal",
     "attack_type": "none",
     "description": "El conjuro mortal más poderoso. Su uso básico es duplicar cualquier otro conjuro de nivel 8 o menor sin necesidad de cumplir sus requisitos."
+  },
+  {
+    "name": "Tormenta de hielo",
+    "english_name": "Ice Storm",
+    "level": 4,
+    "school": "Evocación",
+    "casting_time": "1 acción",
+    "range": "90 m / 300 pies",
+    "attack_type": "save",
+    "damage_dice": "2d8+4d6",
+    "damage_type": "contundente y frío",
+    "is_scalable": true,
+    "scaling_formula": "1d8",
+    "description": "Una lluvia de granizo helado cae sobre un cilindro de 6 metros de radio. Salvación de Destreza para mitad de daño: 2d8 contundente más 4d6 frío. El terreno del área queda como terreno difícil hasta el final de tu siguiente turno. Cada nivel de ranura por encima del 4 suma 1d8 de daño contundente."
   }
 ]

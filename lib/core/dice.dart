@@ -87,6 +87,125 @@ class DiceFormula {
   }
 }
 
+/// Un grupo de dados dentro de una [DiceExpression]: "4d6", o "-1d4"
+/// si [negative] (resta el subtotal).
+class DiceGroup {
+  final int count;
+  final int sides;
+  final bool negative;
+
+  const DiceGroup(this.count, this.sides, {this.negative = false});
+
+  /// "4d6" (sin signo; el signo lo pone la expresión).
+  String get notation => '${count}d$sides';
+
+  double get average => (negative ? -1 : 1) * count * (sides + 1) / 2;
+}
+
+/// Resultado de tirar un [DiceGroup]: los dados sueltos y su subtotal
+/// (ya con signo), para mostrar el desglose por grupo.
+class DiceGroupRoll {
+  final DiceGroup group;
+  final List<int> dice;
+
+  const DiceGroupRoll(this.group, this.dice);
+
+  int get subtotal {
+    final sum = dice.fold<int>(0, (a, b) => a + b);
+    return group.negative ? -sum : sum;
+  }
+}
+
+/// Resultado completo de tirar una [DiceExpression].
+class DiceExpressionRoll {
+  final List<DiceGroupRoll> groups;
+  final int bonus;
+
+  const DiceExpressionRoll(this.groups, this.bonus);
+
+  int get total => groups.fold<int>(bonus, (a, g) => a + g.subtotal);
+}
+
+/// Expresión con VARIOS grupos de dados y un bonificador plano opcional:
+/// "2d8+4d6" (Tormenta de hielo), "1d8+1d6+3", "2d6-1", "+3".
+/// Generaliza a [DiceFormula] (que sigue existiendo para el caso de un
+/// único grupo); las tiradas consumen el [Random] en orden de grupos, así
+/// que una expresión de un solo grupo tira exactamente igual que antes.
+class DiceExpression {
+  final List<DiceGroup> groups;
+  final int bonus;
+
+  const DiceExpression(this.groups, this.bonus);
+
+  /// Sin dados: siempre vale [bonus].
+  bool get isFlat => groups.isEmpty;
+
+  /// true si hay más de un grupo de dados.
+  bool get isCompound => groups.length > 1;
+
+  static final RegExp _term = RegExp(r'([+-])?\s*(\d+)(?:d(\d+))?');
+
+  /// Null si no es una expresión válida. Tolera espacios.
+  static DiceExpression? tryParse(String raw) {
+    final text = raw.trim();
+    if (text.isEmpty) return null;
+    if (!RegExp(r'^[+-]?\s*\d+(?:d\d+)?(?:\s*[+-]\s*\d+(?:d\d+)?)*$')
+        .hasMatch(text)) {
+      return null;
+    }
+    final groups = <DiceGroup>[];
+    var bonus = 0;
+    for (final m in _term.allMatches(text)) {
+      final negative = m.group(1) == '-';
+      final n = int.parse(m.group(2)!);
+      final sidesRaw = m.group(3);
+      if (sidesRaw == null) {
+        bonus += negative ? -n : n;
+      } else {
+        final sides = int.parse(sidesRaw);
+        // "0d0" es válido (valor por defecto del modelo) pero no tira nada.
+        if (n > 0 && sides > 0) {
+          groups.add(DiceGroup(n, sides, negative: negative));
+        }
+      }
+    }
+    return DiceExpression(groups, bonus);
+  }
+
+  /// Notación canónica: "2d8+4d6", "1d8+1d6+3", "2d6-1", "+3".
+  String get notation {
+    if (isFlat) return bonus >= 0 ? '+$bonus' : '$bonus';
+    final b = StringBuffer();
+    for (var i = 0; i < groups.length; i++) {
+      final g = groups[i];
+      if (g.negative) {
+        b.write('-');
+      } else if (i > 0) {
+        b.write('+');
+      }
+      b.write(g.notation);
+    }
+    if (bonus != 0) b.write(bonus > 0 ? '+$bonus' : '$bonus');
+    return b.toString();
+  }
+
+  double get average => groups.fold<double>(bonus.toDouble(), (a, g) => a + g.average);
+
+  /// Tira todos los grupos a la vez y conserva el desglose por grupo.
+  DiceExpressionRoll rollDetailed({Random? random}) {
+    final rng = random ?? Random();
+    return DiceExpressionRoll(
+      [
+        for (final g in groups)
+          DiceGroupRoll(g, [for (var i = 0; i < g.count; i++) rng.nextInt(g.sides) + 1]),
+      ],
+      bonus,
+    );
+  }
+
+  int roll({Random? random}) => rollDetailed(random: random).total;
+}
+
 /// Resultado de una tirada de d20. Guarda TODOS los dados tirados para
 /// que la UI pueda mostrar el detalle ("tiraste 14 y 7 — con ventaja
 /// cuenta el 14") sin repetir la lógica de selección.

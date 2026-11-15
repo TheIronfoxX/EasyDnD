@@ -257,7 +257,7 @@ class CharacterValidator {
       final damage = raw['damage'];
       final baseDice = damage is Map ? damage['base_dice'] : null;
       if (baseDice is String && baseDice.isNotEmpty) {
-        if (DiceFormula.tryParse(baseDice) == null) {
+        if (DiceExpression.tryParse(baseDice) == null) {
           warn('$label.damage.base_dice',
               '"$name": el dado de daño "$baseDice" no es una notación válida; el HUD no podrá tirarlo.');
         }
@@ -305,7 +305,7 @@ class CharacterValidator {
 
         final damageDice = raw['damage_dice'];
         if (damageDice is String && damageDice.isNotEmpty) {
-          if (DiceFormula.tryParse(damageDice) == null) {
+          if (DiceExpression.tryParse(damageDice) == null) {
             warn('$label.damage_dice',
                 '"$name": el dado "$damageDice" no es una notación válida; el HUD no podrá tirarlo.');
           }
@@ -316,7 +316,7 @@ class CharacterValidator {
         if (raw['is_scalable'] == true) {
           final formula = raw['scaling_formula'];
           final resolvable =
-              formula is String && DiceFormula.tryParse(formula) != null;
+              formula is String && DiceExpression.tryParse(formula) != null;
           if (!resolvable) {
             warn('$label.scaling_formula',
                 '"$name" es escalable pero su fórmula ("$formula") no es resoluble; no escalará en combate.');

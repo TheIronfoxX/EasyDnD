@@ -19,6 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../data/nivel20_extractor.dart';
+import '../../data/spell_catalog.dart';
 import 'nivel20_import.dart';
 import '../../domain/ai_prompt.dart';
 import '../../domain/character_validator.dart';
@@ -56,6 +57,7 @@ class WizardStepSource extends StatefulWidget {
     this.currentSheet,
     this.onNivel20LinkResolved,
     this.onDirectImport,
+    this.onEnrichedChanged,
   });
 
   /// True cuando el wizard corre en modo corrección (reemplaza una ficha
@@ -75,6 +77,11 @@ class WizardStepSource extends StatefulWidget {
   /// Importación directa de Nivel20 (sin IA): entrega la ficha ya
   /// validada para saltar al Paso 3.
   final void Function(CharacterValidationResult result)? onDirectImport;
+
+  /// Avisa a la pantalla de la ficha de Nivel20 cuyo prompt de parche
+  /// está listo (para fusionar después la respuesta de la IA), o null si
+  /// el texto de origen cambió y ese prompt ya no vale.
+  final void Function(Map<String, dynamic>? raw)? onEnrichedChanged;
 
   @override
   State<WizardStepSource> createState() => _WizardStepSourceState();
@@ -114,6 +121,7 @@ class _WizardStepSourceState extends State<WizardStepSource> {
 
   void _onSourceChanged() {
     if (!mounted) return;
+    if (_enriched) widget.onEnrichedChanged?.call(null);
     setState(() {
       _enriched = false;
       _directError = null;
@@ -235,10 +243,12 @@ class _WizardStepSourceState extends State<WizardStepSource> {
     }
   }
 
-  void _importDirect() {
+  Future<void> _importDirect() async {
     final raw = _nivel20Raw;
     if (raw == null) return;
-    final result = Nivel20Import.direct(raw);
+    final srd = await SpellCatalog.load();
+    if (!mounted) return;
+    final result = Nivel20Import.direct(raw, srd: srd);
     if (result.isOk) {
       setState(() => _directError = null);
       widget.onDirectImport?.call(result);
@@ -247,10 +257,13 @@ class _WizardStepSourceState extends State<WizardStepSource> {
     }
   }
 
-  void _prepareEnriched() => setState(() {
-    _enriched = true;
-    _copied = false;
-  });
+  void _prepareEnriched() {
+    widget.onEnrichedChanged?.call(_nivel20Raw);
+    setState(() {
+      _enriched = true;
+      _copied = false;
+    });
+  }
 
   Future<void> _copyPrompt() async {
     final prompt = _prompt;
@@ -316,6 +329,7 @@ class _WizardStepSourceState extends State<WizardStepSource> {
           selected: {_mode},
           onSelectionChanged: (selection) {
             // Nada de copiar un prompt que ya no corresponde a lo visible.
+            if (_enriched) widget.onEnrichedChanged?.call(null);
             setState(() {
               _mode = selection.first;
               _copied = false;

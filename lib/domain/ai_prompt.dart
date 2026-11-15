@@ -70,11 +70,11 @@ Cada pasiva (cada objeto dentro de "passive") debe incluir además el campo "tac
    - Si después de leer el texto sigue sin estar claro cuál de los tres aplica, PREGÚNTAME antes de asumir; no adivines.
    - Las armas dentro de "inventory.weapons" NO llevan "attack_type" — ese campo no existe para ellas, siempre se resuelven como ataque.
 
-"damage_dice": el dado BASE de daño o curación directa, al nivel mínimo del conjuro (base_level). Formato ESTRICTO, sin excepciones: notación de dado con o sin bono plano ("1d8", "2d6+3", "8d6-2"), o si el efecto no tira dado pero sí suma un número fijo, un plano puro ("+3"). NUNCA una frase, nunca texto explicativo, nunca notas entre paréntesis. Si el conjuro/truco/ataque no hace daño ni cura, usa "" (string vacío) — pero si SÍ hace daño o cura, este campo tiene que llevar el dado, aunque parezca redundante con lore_description o tactical_summary.
+"damage_dice": el dado BASE de daño o curación directa, al nivel mínimo del conjuro (base_level). Formato ESTRICTO, sin excepciones: notación de dado con o sin bono plano ("1d8", "2d6+3", "8d6-2"), o VARIOS grupos de dados sumados con bono opcional cuando el daño mezcla dados distintos ("2d8+4d6", "1d8+1d6+3"), o si el efecto no tira dado pero sí suma un número fijo, un plano puro ("+3"). NUNCA una frase, nunca texto explicativo, nunca notas entre paréntesis. Si el conjuro/truco/ataque no hace daño ni cura, usa "" (string vacío) — pero si SÍ hace daño o cura, este campo tiene que llevar el dado, aunque parezca redundante con lore_description o tactical_summary.
 
 "is_scalable": true si el conjuro mejora al lanzarse con un espacio de nivel superior o al subir de nivel de personaje; false si no escala nunca.
 
-"scaling_formula": SOLO rellenar si is_scalable es true. Mismo formato estricto que damage_dice: un único término de dado con o sin bono plano ("1d8", "2d4+1"), o un plano puro ("+2"). Es lo que se SUMA por cada nivel por encima de base_level — el motor de la app lo parsea con una expresión regular exacta, así que una frase como "+1d8 por nivel de conjuro superior" o "sube con el nivel del lanzador" NO funciona: el motor lo descarta en silencio y el conjuro no escala nada en combate. Si is_scalable es false, deja "scaling_formula": "".
+"scaling_formula": SOLO rellenar si is_scalable es true. Mismo formato estricto que damage_dice: un dado (o varios grupos sumados, ej. "1d8+1d6") con o sin bono plano ("1d8", "2d4+1"), o un plano puro ("+2"). Es lo que se SUMA por cada nivel por encima de base_level — el motor de la app lo parsea con una expresión regular exacta, así que una frase como "+1d8 por nivel de conjuro superior" o "sube con el nivel del lanzador" NO funciona: el motor lo descarta en silencio y el conjuro no escala nada en combate. Si is_scalable es false, deja "scaling_formula": "".
    - Toda la explicación en prosa de CÓMO o CUÁNDO escala (radiante extra a muertos vivientes, condiciones especiales, etc.) va en "lore_description" y/o "tactical_summary", nunca en "scaling_formula".
    - Ejemplo correcto para un conjuro de curación que sube 1d8 por nivel de espacio: "damage_dice": "1d8", "scaling_formula": "1d8". Ejemplo INCORRECTO (no uses esto): "damage_dice": "", "scaling_formula": "+1d8 por nivel de conjuro superior."
 
@@ -189,9 +189,9 @@ Devuélveme el JSON completo, sin comentarios ni texto fuera del bloque de códi
         },
         "conditional_damage": [
           {
-            "condition": "Ataque a dos manos",
-            "damage_dice": "1d10+4",
-            "damage_type": "cortante"
+            "trigger": "Ataque a dos manos",
+            "dice": "1d10+4",
+            "type": "cortante"
           }
         ],
         "properties": [
@@ -531,12 +531,16 @@ Devuélveme el JSON completo, sin comentarios ni texto fuera del bloque de códi
         '$_exampleHeader\n$_exampleJson';
   }
 
-  /// Enriquecimiento de una ficha de Nivel20 ya mapeada de forma
-  /// determinista: la IA recibe el JSON base (con atributos, PG, CA,
-  /// velocidad, ranuras y CD ya calculados por la app) más los textos
-  /// crudos que la app no sabe clasificar, y se limita a completarlos.
-  static String forNivel20Enrichment(
-    String baseJson, {
+  /// Enriquecimiento de una ficha de Nivel20 por "parche". La app ya
+  /// construyó la ficha de forma determinista (atributos, PG, CA, ranuras,
+  /// armas y conjuros del SRD), así que la IA NO la recibe ni la devuelve:
+  /// solo ve contexto mínimo (nombre, clase, nivel) y los textos crudos
+  /// que la app no sabe clasificar, y responde con un JSON parche de
+  /// cuatro claves opcionales (ver Nivel20Patch).
+  static String forNivel20Enrichment({
+    String name = '',
+    String characterClass = '',
+    int? level,
     String feats = '',
     String customActions = '',
     String equipment = '',
@@ -544,48 +548,60 @@ Devuélveme el JSON completo, sin comentarios ni texto fuera del bloque de códi
     String section(String title, String body) =>
         '$title\n${body.trim().isEmpty ? '(sin datos)' : body.trim()}';
 
-    return 'Actúa como experto en D&D 5e. Te paso una ficha de personaje '
-        'ya convertida automáticamente al formato JSON de mi app. Los '
-        'números ya están calculados y son correctos: tu trabajo es SOLO '
-        'completar lo que la app no puede deducir.\n\n'
-        'FICHA BASE (JSON):\n\n${baseJson.trim()}\n\n'
+    final context = [
+      if (name.trim().isNotEmpty) 'Nombre: ${name.trim()}',
+      if (characterClass.trim().isNotEmpty) 'Clase: ${characterClass.trim()}',
+      if (level != null) 'Nivel: $level',
+    ].join('\n');
+
+    return 'Actúa como experto en D&D 5e. Mi app ya ha importado '
+        'automáticamente los números de este personaje (atributos, PG, CA, '
+        'velocidad, ranuras, armas y conjuros). NO te los paso y NO debes '
+        'inventarlos ni devolverlos. Tu trabajo es SOLO clasificar y '
+        'redactar lo que la app no puede deducir, y devolverlo como un '
+        'JSON "parche" pequeño.\n\n'
+        'PERSONAJE:\n${context.isEmpty ? '(sin datos)' : context}\n\n'
         '${section('RASGOS (texto original de Nivel20):', feats)}\n\n'
         '${section('ACCIONES CASERAS DEL JUGADOR (texto original):', customActions)}\n\n'
         '${section('EQUIPO (texto original):', equipment)}\n\n'
-        'NO MODIFIQUES, bajo ningún concepto: "basic_info" (nombre, raza, '
-        'clase, nivel, hp_max, hp_current, ac, speed, spell_save_dc, dados '
-        'de golpe), "stats", "skills", "spell_slots", "purse", ni el '
-        '"attack_bonus" y el "damage" de las armas. Tampoco cambies ni '
-        'borres ningún campo existente, ni añadas campos que no estén en '
-        'la ficha base. Si crees que algún número está mal, ignóralo y '
-        'avísame fuera del JSON.\n\n'
-        'LO ÚNICO QUE DEBES HACER:\n\n'
-        '1. Clasificar las habilidades de "abilities_by_action" según lo '
-        'que gastan: "action", "bonus_action", "reaction" o "passive" '
-        '(mueve cada una a su categoría correcta, sin duplicarlas ni '
-        'perder ninguna). Las pasivas llevan "tactical_role" con uno de '
-        'estos valores EXACTOS: "Ofensivo", "Defensivo" o "Utilidad". '
-        'Las de action, bonus_action y reaction llevan "attack_type" '
-        '("save", "attack" o "none") y NUNCA "tactical_role"; las pasivas '
-        'NUNCA llevan "attack_type".\n'
-        '2. Rellenar "resources" con los rasgos de usos limitados (Forma '
-        'cambiante, Recuperación arcana, Supernova, etc.) como '
-        '{ "name", "current", "max" }, con "current" igual a "max". Si '
-        'no hay ninguno, deja [].\n'
-        '3. Desglosar el EQUIPO en objetos individuales dentro de '
-        '"inventory.mundane_items" ({ "name", "description", "quantity" }), '
-        'reemplazando el objeto genérico "Equipo" si existe. No inventes '
-        'objetos que no aparezcan en el texto.\n'
-        '4. Redactar "tactical_summary" y "lore_description" de cada '
-        'habilidad que los tenga vacíos o pobres, en lenguaje llano y sin '
-        'jerga de D&D, como si se lo explicaras a quien nunca ha jugado: '
-        '"tactical_summary" dice qué hacer con los dados (formato "[frase '
-        'sobre la tirada] | Daño/Curación: [dado] [Tipo]", con la CD real '
-        'de la ficha) y qué gasta (acción, acción adicional, reacción, '
-        'movimiento o recursos); "lore_description" explica en un par de '
-        'frases qué hace en la ficción y cuándo conviene usarlo.\n\n'
-        'No toques "user_tactics" ni "adventure_notes". Si algo es '
-        'ambiguo, PREGÚNTAME antes de asumir. Devuélveme el JSON '
-        'completo, sin comentarios ni texto fuera del bloque de código.';
+        'DEVUELVE un único objeto JSON con ESTAS cuatro claves, todas '
+        'opcionales (omite las que no apliquen). NO añadas ninguna otra '
+        'clave: nada de "basic_info", "stats", "spell_slots", conjuros ni '
+        'armas.\n\n'
+        '1. "classified_features": lista con un objeto por cada rasgo o '
+        'acción casera de arriba: { "name" (EXACTO como en el texto), '
+        '"category": "action" | "bonus_action" | "reaction" | "passive" '
+        '(según lo que gasta), "tactical_summary", "lore_description" }. '
+        'Si category es "passive" añade "tactical_role": "Ofensivo", '
+        '"Defensivo" o "Utilidad" (y NUNCA "attack_type"). Si es '
+        '"action", "bonus_action" o "reaction" añade "attack_type": '
+        '"save" (el objetivo tira salvación), "attack" (tiras tú para '
+        'impactar) o "none" (sin tirada enfrentada), y NUNCA '
+        '"tactical_role". "tactical_summary" (1-2 frases, lenguaje llano '
+        'sin jerga de D&D) dice qué hacer con los dados y qué gasta '
+        '(acción, acción adicional, reacción, movimiento o recursos); '
+        '"lore_description" explica en un par de frases qué hace en la '
+        'ficción y cuándo conviene usarlo.\n'
+        '2. "resources": lista de rasgos de usos limitados (Forma '
+        'cambiante, Recuperación arcana, Supernova...) como { "name", '
+        '"current", "max" }, con "current" igual a "max". Solo si el '
+        'texto lo indica; no inventes.\n'
+        '3. "inventory": { "mundane_items": [ { "name", "description", '
+        '"quantity" } ] } con el EQUIPO desglosado en objetos '
+        'individuales. No inventes objetos que no aparezcan en el texto.\n'
+        '4. "lore_info": { "tactical_summary", "lore_description" } con '
+        'un resumen táctico corto del personaje y un par de frases de '
+        'sabor, ambos en lenguaje llano.\n\n'
+        'Ejemplo del formato:\n'
+        '{"classified_features":[{"name":"Ataque furtivo","category":'
+        '"passive","tactical_role":"Ofensivo","tactical_summary":"...",'
+        '"lore_description":"..."},{"name":"Paso nublado","category":'
+        '"bonus_action","attack_type":"none","tactical_summary":"...",'
+        '"lore_description":"..."}],"resources":[{"name":"Forma '
+        'cambiante","current":2,"max":2}],"inventory":{"mundane_items":'
+        '[{"name":"Cuerda de cáñamo","description":"15 m","quantity":1}]},'
+        '"lore_info":{"tactical_summary":"...","lore_description":"..."}}\n\n'
+        'Si algo es ambiguo, PREGÚNTAME antes de asumir. Devuélveme solo el '
+        'JSON, sin comentarios ni texto fuera del bloque de código.';
   }
 }

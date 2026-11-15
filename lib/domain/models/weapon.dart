@@ -49,10 +49,13 @@ class ConditionalDamage {
   });
 
   factory ConditionalDamage.fromJson(Map<String, dynamic> json) {
+    // Acepta también las claves "condition"/"damage_dice"/"damage_type":
+    // es el shape que el prompt de IA y el Nivel20Mapper escribían antes,
+    // y que degradaba el daño a "0d0"/"desconocido" al leerlo.
     return ConditionalDamage(
-      trigger: json['trigger'] ?? '',
-      dice: json['dice'] ?? '0d0',
-      type: json['type'] ?? 'desconocido',
+      trigger: (json['trigger'] ?? json['condition'] ?? '') as String,
+      dice: (json['dice'] ?? json['damage_dice'] ?? '0d0') as String,
+      type: (json['type'] ?? json['damage_type'] ?? 'desconocido') as String,
     );
   }
 

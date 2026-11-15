@@ -5,8 +5,9 @@
 // pegado, el jugador elige entre:
 //
 // - Importar directo (sin IA): Nivel20Mapper + validador, salto al Paso 3.
-// - Preparar prompt enriquecido: la ficha base ya mapeada viaja a la IA,
-//   que solo completa lo que el mapeador no puede deducir.
+// - Preparar prompt enriquecido: la IA NO recibe la ficha, solo contexto
+//   mínimo y los textos crudos, y devuelve un "parche" (Nivel20Patch) que
+//   se fusiona sobre la ficha base del mapeador.
 
 import 'dart:convert';
 
@@ -16,7 +17,9 @@ import '../../core/theme/design_tokens.dart';
 import '../../data/nivel20_extractor.dart';
 import '../../domain/ai_prompt.dart';
 import '../../domain/character_validator.dart';
+import '../../domain/models/srd_spell.dart';
 import '../../domain/nivel20_mapper.dart';
+import '../../domain/nivel20_patch.dart';
 
 /// Lógica pura (sin widgets) del camino Nivel20 del wizard.
 class Nivel20Import {
@@ -39,30 +42,65 @@ class Nivel20Import {
 
   /// Opción a): mapea y valida por el mismo camino que la respuesta de la
   /// IA (parseAndValidate), para que el Paso 3 reciba lo de siempre.
-  static CharacterValidationResult direct(Map<String, dynamic> raw) {
+  ///
+  /// [srd] es el catálogo de conjuros SRD con el que se cruzan los
+  /// conjuros importados (ver Nivel20Mapper).
+  static CharacterValidationResult direct(
+    Map<String, dynamic> raw, {
+    List<SrdSpell> srd = const [],
+  }) {
     try {
-      final json = Nivel20Mapper.toJson(raw);
+      final json = Nivel20Mapper.toJson(raw, srd: srd);
       return CharacterValidator.parseAndValidate(jsonEncode(json));
     } on FormatException catch (e) {
-      return CharacterValidationResult(
+      return _error(e.message);
+    }
+  }
+
+  /// Opción b), segunda mitad: fusiona la respuesta de la IA ([patchText],
+  /// un parche) sobre la ficha base del mapeador y valida el resultado.
+  /// Si el texto no es un parche válido devuelve un error bloqueante.
+  static CharacterValidationResult applyPatch(
+    Map<String, dynamic> raw,
+    String patchText, {
+    List<SrdSpell> srd = const [],
+  }) {
+    final patch = Nivel20Patch.tryDecode(patchText);
+    if (patch == null) {
+      return _error(
+        'La respuesta no es un parche válido: pega el JSON con '
+        '"classified_features", "resources", "inventory" y/o "lore_info".',
+      );
+    }
+    try {
+      final base = Nivel20Mapper.map(raw, srd: srd);
+      final merged = Nivel20Patch.apply(base, patch);
+      return CharacterValidator.validateMap(merged.toJson());
+    } on FormatException catch (e) {
+      return _error(e.message);
+    }
+  }
+
+  static CharacterValidationResult _error(String message) =>
+      CharacterValidationResult(
         character: null,
         issues: [
           ValidationIssue(
             severity: ValidationSeverity.error,
             field: 'nivel20',
-            message: e.message,
+            message: message,
           ),
         ],
       );
-    }
-  }
 
-  /// Opción b): prompt con la ficha base pre-calculada + textos crudos.
+  /// Opción b): prompt de parche con contexto mínimo + textos crudos
+  /// (sin la ficha ni los conjuros).
   static String enrichedPrompt(Map<String, dynamic> raw) {
-    final base = const JsonEncoder.withIndent('  ').convert(Nivel20Mapper.toJson(raw));
     final sources = Nivel20Mapper.enrichmentSources(raw);
     return AiPrompt.forNivel20Enrichment(
-      base,
+      name: sources.name,
+      characterClass: sources.characterClass,
+      level: sources.level,
       feats: sources.feats,
       customActions: sources.customActions,
       equipment: sources.equipment,
@@ -102,8 +140,8 @@ class Nivel20ImportChoice extends StatelessWidget {
         Text(
           'Puedes importarla directamente, sin IA: los números '
           '(atributos, PG, CA, ranuras, conjuros, armas) se leen tal cual. '
-          'O bien pedirle a tu IA que complete lo que Nivel20 no trae '
-          '(rasgos, recursos, equipo y textos).',
+          'O bien pedirle a tu IA un parche con lo que Nivel20 no trae '
+          '(rasgos, recursos, equipo y textos): no ve ni toca tus números.',
           style: theme.textTheme.bodySmall,
         ),
         const SizedBox(height: AppSpacing.md),

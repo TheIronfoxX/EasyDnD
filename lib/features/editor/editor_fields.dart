@@ -186,8 +186,8 @@ class _EditorDiceFieldState extends State<EditorDiceField> {
 
   String? _validate(String text) {
     if (text.trim().isEmpty) return null;
-    if (DiceFormula.tryParse(text) == null) {
-      return 'Notación de dado inválida. Ejemplos: "2d6+3", "1d8", "+5".';
+    if (DiceExpression.tryParse(text) == null) {
+      return 'Notación de dado inválida. Ejemplos: "2d6+3", "1d8", "2d8+4d6", "+5".';
     }
     return null;
   }

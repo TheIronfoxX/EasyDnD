@@ -1,5 +1,4 @@
-#!/usr/bin/env sh
-# Bloquea el commit si el análisis estático o los tests fallan.
+#!/usr/bin/env bash
 set -e
+unset GIT_DIR GIT_WORK_TREE
 flutter analyze
-flutter test

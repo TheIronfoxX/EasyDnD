@@ -23,8 +23,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../data/spell_catalog.dart';
+import '../../domain/nivel20_patch.dart';
 import '../../domain/character_validator.dart';
 import '../../state/character_store.dart';
+import 'nivel20_import.dart';
 import 'wizard_step_paste.dart';
 import 'wizard_step_preview.dart';
 import 'wizard_step_source.dart';
@@ -66,6 +69,12 @@ class _ImportWizardScreenState extends State<ImportWizardScreen> {
   /// botón Atrás vuelve al Paso 1, no al de pegar la respuesta.
   bool _directImport = false;
 
+  /// Ficha de Nivel20 cuyo prompt de parche se preparó en el Paso 1. Si
+  /// está, la respuesta pegada en el Paso 2 se interpreta como parche y se
+  /// fusiona sobre la ficha base; si pegan una ficha completa se valida
+  /// como siempre (modo clásico).
+  Map<String, dynamic>? _patchBase;
+
   @override
   void dispose() {
     _responseController.dispose();
@@ -86,6 +95,8 @@ class _ImportWizardScreenState extends State<ImportWizardScreen> {
     _directImport = false;
   });
 
+  void _onEnrichedChanged(Map<String, dynamic>? raw) => _patchBase = raw;
+
   void _onNivel20LinkResolved(String link) {
     _nivel20Link = link;
   }
@@ -93,7 +104,7 @@ class _ImportWizardScreenState extends State<ImportWizardScreen> {
   /// "Continuar" del paso 2: valida el texto pegado. Si pasó, avanza al
   /// paso 3 con la ficha construida; si no, queda en el paso 2 con los
   /// errores visibles y el roster intacto.
-  void _validateAndAdvance() {
+  Future<void> _validateAndAdvance() async {
     final text = _responseController.text.trim();
     if (text.isEmpty) {
       setState(
@@ -110,7 +121,15 @@ class _ImportWizardScreenState extends State<ImportWizardScreen> {
       return;
     }
 
-    final result = CharacterValidator.parseAndValidate(text);
+    final patchBase = _patchBase;
+    CharacterValidationResult result;
+    if (patchBase != null && Nivel20Patch.tryDecode(text) != null) {
+      final srd = await SpellCatalog.load();
+      if (!mounted) return;
+      result = Nivel20Import.applyPatch(patchBase, text, srd: srd);
+    } else {
+      result = CharacterValidator.parseAndValidate(text);
+    }
     if (result.isOk) {
       setState(() {
         _result = result;
@@ -184,6 +203,7 @@ class _ImportWizardScreenState extends State<ImportWizardScreen> {
                           isReplace ? store.roster[replaceIndex] : null,
                       onNivel20LinkResolved: _onNivel20LinkResolved,
                       onDirectImport: _onDirectImport,
+                      onEnrichedChanged: _onEnrichedChanged,
                     ),
                   ),
                 ),
