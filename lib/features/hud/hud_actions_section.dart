@@ -128,22 +128,57 @@ class HudActionsSection extends StatelessWidget {
     required int? saveDc,
     required CharacterStore store,
   }) {
+    final cantrips = abilities.where((a) => a.isCantrip).toList();
+    final leveledSpells = abilities.where((a) => a.isLeveledSpell).toList();
+    final traits = abilities.where((a) => a.isTrait).toList();
+    final spellLevels = leveledSpells.map((a) => a.baseLevel).toSet().toList()..sort();
+
+    final showHeaders = cantrips.isNotEmpty || spellLevels.isNotEmpty;
+
+    Widget buildTile(Ability ability) {
+      final action = _abilityAction(
+        ability,
+        stats: stats,
+        proficiency: proficiency,
+        saveDc: saveDc,
+        store: store,
+      );
+      return _ActionTile(action: action, onTap: () => _open(context, action));
+    }
+
     return HudSectionCard(
       icon: icon,
       title: title,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          for (final action in [
-            for (final ability in abilities)
-              _abilityAction(
-                ability,
-                stats: stats,
-                proficiency: proficiency,
-                saveDc: saveDc,
-                store: store,
+          if (cantrips.isNotEmpty) ...[
+            if (showHeaders)
+              _SubCategoryHeader(
+                icon: Icons.auto_awesome_outlined,
+                title: 'Trucos',
+                count: cantrips.length,
               ),
-          ])
-            _ActionTile(action: action, onTap: () => _open(context, action)),
+            for (final ability in cantrips) buildTile(ability),
+          ],
+          for (final lvl in spellLevels) ...[
+            _SubCategoryHeader(
+              icon: Icons.auto_awesome_rounded,
+              title: 'Conjuros de Nivel $lvl',
+              count: leveledSpells.where((a) => a.baseLevel == lvl).length,
+            ),
+            for (final ability in leveledSpells.where((a) => a.baseLevel == lvl))
+              buildTile(ability),
+          ],
+          if (traits.isNotEmpty) ...[
+            if (showHeaders)
+              _SubCategoryHeader(
+                icon: Icons.shield_outlined,
+                title: 'Rasgos y Habilidades',
+                count: traits.length,
+              ),
+            for (final ability in traits) buildTile(ability),
+          ],
         ],
       ),
     );
@@ -436,6 +471,65 @@ class _ChargeBadge extends StatelessWidget {
               : theme.colorScheme.onSurfaceVariant,
           fontWeight: FontWeight.w600,
         ),
+      ),
+    );
+  }
+}
+
+class _SubCategoryHeader extends StatelessWidget {
+  const _SubCategoryHeader({
+    required this.icon,
+    required this.title,
+    required this.count,
+  });
+
+  final IconData icon;
+  final String title;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.xs, 12, AppSpacing.xs, 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 14, color: scheme.primary),
+          const SizedBox(width: 6),
+          Text(
+            title.toUpperCase(),
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: scheme.primary,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+            decoration: BoxDecoration(
+              color: scheme.primary.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(AppRadii.pill),
+            ),
+            child: Text(
+              '$count',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: scheme.primary,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Divider(
+              color: scheme.outline.withValues(alpha: 0.4),
+              height: 1,
+            ),
+          ),
+        ],
       ),
     );
   }

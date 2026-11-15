@@ -16,6 +16,7 @@ import 'package:provider/provider.dart';
 import '../../domain/models/character.dart';
 import '../../domain/models/weapon.dart';
 import '../../state/character_store.dart';
+import 'hud_dialogs.dart';
 import 'hud_widgets.dart';
 import '../../core/theme/design_tokens.dart';
 
@@ -60,6 +61,11 @@ class _WeaponsSection extends StatelessWidget {
     return HudSectionCard(
       icon: Icons.gavel_rounded,
       title: 'Armas',
+      trailing: IconButton(
+        icon: const Icon(Icons.add_rounded),
+        tooltip: 'Agregar arma',
+        onPressed: () => _showAddWeaponDialog(context, store),
+      ),
       child: weapons.isEmpty
           ? const HudEmptyHint('La ficha no trae armas.')
           : Column(
@@ -136,6 +142,11 @@ class _WeaponRow extends StatelessWidget {
                   : null,
               onIncrement: () => store.incrementQuantity(weapon.id),
             ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline_rounded, size: 20),
+            tooltip: 'Eliminar arma',
+            onPressed: () => _removeWeaponWithUndo(context, weapon, store),
+          ),
         ],
       ),
     );
@@ -183,6 +194,35 @@ class _ChargePill extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<void> _showAddWeaponDialog(
+  BuildContext context,
+  CharacterStore store,
+) async {
+  final weapon = await showAddWeaponDialog(context);
+  if (weapon == null) return;
+  store.addNewWeapon(weapon);
+}
+
+/// Sin confirmación previa (a diferencia de borrar una ficha): el
+/// snackbar con "Deshacer" es la red de seguridad para una acción que
+/// se revierte con un toque.
+void _removeWeaponWithUndo(
+  BuildContext context,
+  Weapon weapon,
+  CharacterStore store,
+) {
+  store.removeWeapon(weapon.id);
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text('Se eliminó "${weapon.name}".'),
+      action: SnackBarAction(
+        label: 'Deshacer',
+        onPressed: () => store.addNewWeapon(weapon),
+      ),
+    ),
+  );
 }
 
 // ---------------------------------------------------------------------

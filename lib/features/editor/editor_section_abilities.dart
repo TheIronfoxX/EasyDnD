@@ -14,6 +14,7 @@ import '../../domain/models/ability.dart';
 import '../../domain/models/character.dart';
 import 'editor_ability_page.dart';
 import 'editor_fields.dart';
+import 'spell_picker_sheet.dart';
 import '../../core/theme/design_tokens.dart';
 
 class EditorSectionAbilities extends StatefulWidget {
@@ -26,6 +27,16 @@ class EditorSectionAbilities extends StatefulWidget {
 }
 
 class _EditorSectionAbilitiesState extends State<EditorSectionAbilities> {
+  Future<void> _addSpellFromCatalog() async {
+    final result = await showSpellPickerSheet(context);
+    if (!mounted || result == null) return;
+    final (ability, category) = result;
+    setState(
+      () => widget.draft.abilitiesByAction.listFor(category).add(ability),
+    );
+    _open(category: category, ability: ability, isNew: false);
+  }
+
   void _add() {
     final ability = Ability(
       // Id estable y único: la identidad de la habilidad NUNCA se
@@ -75,6 +86,17 @@ class _EditorSectionAbilitiesState extends State<EditorSectionAbilities> {
       onAdd: _add,
       addLabel: 'Agregar habilidad',
       children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.xs,
+          ),
+          child: OutlinedButton.icon(
+            onPressed: _addSpellFromCatalog,
+            icon: const Icon(Icons.auto_awesome_rounded),
+            label: const Text('Añadir conjuro del catálogo (SRD 5e)'),
+          ),
+        ),
         if (abilities.all.isEmpty)
           const EditorEmptyHint('La ficha no trae habilidades todavía.'),
         for (final entry in kAbilityCategoryLabels.entries)

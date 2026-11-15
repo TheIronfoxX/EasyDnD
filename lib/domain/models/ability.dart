@@ -69,6 +69,12 @@ class Ability {
   /// CD de Salvación.
   bool get isSavingThrowType => attackType == 'save';
 
+  /// Clasificación semántica de la habilidad.
+  bool get isSpell => type == 'spell';
+  bool get isCantrip => isSpell && baseLevel == 0;
+  bool get isLeveledSpell => isSpell && baseLevel > 0;
+  bool get isTrait => !isSpell;
+
   String successDescription;
   String failureDescription;
 

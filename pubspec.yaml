@@ -52,6 +52,8 @@ flutter:
     # Ícono de la app (lo usaba la pantalla de bienvenida vieja y lo va a
     # seguir usando la nueva).
     - assets/icon/icon.png
+    # Catálogo offline de conjuros SRD 5e.
+    - assets/srd/spells_5e.json
 
   # Tipografía propia (Etapa 8a). Empaquetada, no descargada: la app es
   # offline y en la web CanvasKit no resuelve las familias genéricas.

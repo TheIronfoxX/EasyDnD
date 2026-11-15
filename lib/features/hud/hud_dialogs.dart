@@ -8,8 +8,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/dice.dart';
 import '../../core/dnd_rules.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../domain/models/weapon.dart';
 
 /// Lo que el jugador marcó en el descanso personalizado.
 class CustomRestChoice {
@@ -137,9 +139,123 @@ Future<String?> showConditionPicker(
   );
 }
 
+/// Alta rápida de arma desde el HUD: solo nombre, dado de daño y tipo —
+/// no es el editor completo (EditorWeaponPage), que pide cada campo del
+/// arma por separado. El resto queda en los mismos defaults "en blanco"
+/// que usa EditorSectionWeapons._add(). Devuelve el [Weapon] armado, o
+/// null al cancelar.
+Future<Weapon?> showAddWeaponDialog(BuildContext context) {
+  return showDialog<Weapon>(
+    context: context,
+    builder: (_) => const _AddWeaponDialog(),
+  );
+}
+
 // ---------------------------------------------------------------------
 // Implementaciones privadas.
 // ---------------------------------------------------------------------
+
+class _AddWeaponDialog extends StatefulWidget {
+  const _AddWeaponDialog();
+
+  @override
+  State<_AddWeaponDialog> createState() => _AddWeaponDialogState();
+}
+
+class _AddWeaponDialogState extends State<_AddWeaponDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _diceController = TextEditingController(text: '1d6');
+  final _typeController = TextEditingController(text: 'cortante');
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _diceController.dispose();
+    _typeController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (!_formKey.currentState!.validate()) return;
+    final weapon = Weapon(
+      // Id estable y único: mismo esquema que EditorSectionWeapons._add,
+      // nunca se recalcula del nombre.
+      id: 'weapon_${DateTime.now().microsecondsSinceEpoch}',
+      name: _nameController.text.trim(),
+      attackBonus: 0,
+      damage: WeaponDamage(
+        baseDice: _diceController.text.trim(),
+        baseType: _typeController.text.trim(),
+      ),
+      conditionalDamage: [],
+      properties: [],
+      homebrewEffect: '',
+      magicCharges: MagicCharges(hasCharges: false, max: 0, current: 0),
+      successDescription: '',
+      failureDescription: '',
+    );
+    Navigator.of(context).pop(weapon);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Agregar arma'),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextFormField(
+              controller: _nameController,
+              autofocus: true,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: const InputDecoration(
+                labelText: 'Nombre',
+                border: OutlineInputBorder(),
+              ),
+              validator: (value) =>
+                  (value ?? '').trim().isEmpty ? 'Escribí un nombre.' : null,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            TextFormField(
+              controller: _diceController,
+              decoration: const InputDecoration(
+                labelText: 'Dado de daño',
+                hintText: 'Ej.: 1d8+3',
+                border: OutlineInputBorder(),
+              ),
+              validator: (value) => DiceFormula.tryParse(value ?? '') == null
+                  ? 'Escribí un dado válido, ej. 1d8+3.'
+                  : null,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            TextFormField(
+              controller: _typeController,
+              decoration: const InputDecoration(
+                labelText: 'Tipo de daño',
+                hintText: 'Ej.: cortante',
+                border: OutlineInputBorder(),
+              ),
+              validator: (value) => (value ?? '').trim().isEmpty
+                  ? 'Escribí un tipo de daño.'
+                  : null,
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(null),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(onPressed: _submit, child: const Text('Agregar')),
+      ],
+    );
+  }
+}
 
 class _AmountDialog extends StatefulWidget {
   const _AmountDialog({
