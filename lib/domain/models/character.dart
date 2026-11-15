@@ -357,7 +357,7 @@ class SpellSlots {
 /// Los tres tipos de moneda de la bolsa. Stacks independientes (sin
 /// conversión automática) para no imponer reglas de casa que el
 /// jugador no pidió.
-enum CurrencyType { gold, silver, copper }
+enum CurrencyType { platinum, gold, electrum, silver, copper }
 
 /// Bolsa de monedas del personaje. Cada denominación es un contador
 /// independiente y nunca baja de cero (ver el store).
@@ -366,8 +366,8 @@ class Purse {
   int silver;
   int copper;
 
-  /// Platino y electro: solo los edita el taller de fichas; el HUD de
-  /// combate sigue mostrando oro, plata y cobre.
+  /// Platino y electro: el HUD los muestra solo cuando hay saldo, pero
+  /// se pueden agregar y gastar como cualquier otra denominación.
   int platinum;
   int electrum;
 

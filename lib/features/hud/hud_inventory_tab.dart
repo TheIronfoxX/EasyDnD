@@ -17,6 +17,8 @@ import '../../domain/models/character.dart';
 import '../../domain/models/weapon.dart';
 import '../../state/character_store.dart';
 import 'hud_dialogs.dart';
+import 'hud_purse_dialog.dart';
+import '../editor/editor_dialog_item.dart';
 import 'hud_widgets.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../core/theme/tactical_theme_tokens.dart';
@@ -250,6 +252,12 @@ class _ItemsSection extends StatelessWidget {
     return HudSectionCard(
       icon: Icons.backpack_rounded,
       title: 'Objetos',
+      trailing: TextButton.icon(
+        key: const Key('hud-add-item'),
+        onPressed: () => _addItem(context, store),
+        icon: const Icon(Icons.add_rounded, size: 18),
+        label: const Text('Agregar objeto'),
+      ),
       child: items.isEmpty
           ? const HudEmptyHint('La ficha no trae objetos.')
           : Column(
@@ -260,6 +268,21 @@ class _ItemsSection extends StatelessWidget {
             ),
     );
   }
+}
+
+Future<void> _addItem(BuildContext context, CharacterStore store) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final item = await showDialog<MundaneItem>(
+    context: context,
+    builder: (_) => const MundaneItemDialog(),
+  );
+  if (item == null) return;
+  store.addMundaneItem(
+    name: item.name,
+    description: item.description,
+    quantity: item.quantity,
+  );
+  messenger.showSnackBar(SnackBar(content: Text('Agregaste "${item.name}".')));
 }
 
 class _ItemRow extends StatelessWidget {
@@ -380,6 +403,35 @@ class _PurseSection extends StatelessWidget {
               ),
             ],
           ),
+          if (purse.platinum > 0 || purse.electrum > 0) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [
+                Expanded(
+                  child: purse.platinum > 0
+                      ? HudStatTile(
+                          icon: Icons.diamond_outlined,
+                          label: 'Platino',
+                          value: '${purse.platinum} pp',
+                          tone: tactical.coinPlatinum,
+                        )
+                      : const SizedBox.shrink(),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: purse.electrum > 0
+                      ? HudStatTile(
+                          icon: Icons.hexagon_outlined,
+                          label: 'Electro',
+                          value: '${purse.electrum} pe',
+                          tone: tactical.coinElectrum,
+                        )
+                      : const SizedBox.shrink(),
+                ),
+                const Expanded(child: SizedBox.shrink()),
+              ],
+            ),
+          ],
           const SizedBox(height: 10),
           Text(
             'Equivale a ${_formatGold(purse.totalInGold)} po',
@@ -387,7 +439,55 @@ class _PurseSection extends StatelessWidget {
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  key: const Key('hud-spend-money'),
+                  onPressed: () => _change(context, spend: true),
+                  icon: const Icon(Icons.remove_rounded),
+                  label: const Text('Gastar dinero'),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: FilledButton.icon(
+                  key: const Key('hud-add-money'),
+                  onPressed: () => _change(context, spend: false),
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text('Agregar dinero'),
+                ),
+              ),
+            ],
+          ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _change(BuildContext context, {required bool spend}) async {
+    final store = context.read<CharacterStore>();
+    final messenger = ScaffoldMessenger.of(context);
+    final choice = await showPurseDialog(
+      context,
+      spend: spend,
+      purse: character.purse,
+    );
+    if (choice == null) return;
+
+    final (name, suffix) = kCurrencyLabels[choice.type]!;
+    if (spend) {
+      store.spendCurrency(choice.type, choice.amount);
+    } else {
+      store.addCurrency(choice.type, choice.amount);
+    }
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          '${spend ? 'Gastaste' : 'Agregaste'} ${choice.amount} $suffix '
+          '($name).',
+        ),
       ),
     );
   }

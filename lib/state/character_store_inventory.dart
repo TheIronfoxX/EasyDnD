@@ -17,6 +17,10 @@ extension CharacterStoreInventory on CharacterStore {
     final purse = activeCharacter?.purse;
     if (purse == null || amount <= 0) return;
     switch (type) {
+      case CurrencyType.platinum:
+        purse.platinum += amount;
+      case CurrencyType.electrum:
+        purse.electrum += amount;
       case CurrencyType.gold:
         purse.gold += amount;
       case CurrencyType.silver:
@@ -32,6 +36,10 @@ extension CharacterStoreInventory on CharacterStore {
     final purse = activeCharacter?.purse;
     if (purse == null || amount <= 0) return;
     switch (type) {
+      case CurrencyType.platinum:
+        purse.platinum = (purse.platinum - amount).clamp(0, purse.platinum);
+      case CurrencyType.electrum:
+        purse.electrum = (purse.electrum - amount).clamp(0, purse.electrum);
       case CurrencyType.gold:
         purse.gold = (purse.gold - amount).clamp(0, purse.gold);
       case CurrencyType.silver:
@@ -49,6 +57,10 @@ extension CharacterStoreInventory on CharacterStore {
     if (purse == null) return;
     final safeValue = value < 0 ? 0 : value;
     switch (type) {
+      case CurrencyType.platinum:
+        purse.platinum = safeValue;
+      case CurrencyType.electrum:
+        purse.electrum = safeValue;
       case CurrencyType.gold:
         purse.gold = safeValue;
       case CurrencyType.silver:
