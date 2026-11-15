@@ -16,6 +16,8 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import '../../core/ui/tactical_card.dart';
+import '../../core/theme/tactical_theme_tokens.dart';
 import 'package:flutter/services.dart';
 
 import '../../data/nivel20_extractor.dart';
@@ -386,11 +388,7 @@ class _ReplaceBanner extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: scheme.secondaryContainer,
-        borderRadius: BorderRadius.circular(AppRadii.md),
-        border: Border.all(color: scheme.secondary),
-      ),
+      decoration: ShapeDecoration(color: scheme.secondaryContainer, shape: context.tactical.insetBorder(scheme.secondary)),
       child: Row(
         children: [
           Icon(
@@ -422,7 +420,7 @@ class _EmptySheetHint extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
+    return TacticalCard(padding: EdgeInsets.zero, 
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
@@ -642,7 +640,7 @@ class _CurrentSheetCard extends StatelessWidget {
       );
     }
 
-    return Card(
+    return TacticalCard(padding: EdgeInsets.zero, 
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
@@ -695,11 +693,7 @@ class _StatusCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(AppRadii.md),
-        border: Border.all(color: color.withValues(alpha: 0.4)),
-      ),
+      decoration: ShapeDecoration(color: color.withValues(alpha: 0.08), shape: context.tactical.insetBorder(color.withValues(alpha: 0.4))),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -740,11 +734,7 @@ class _PromptPreview extends StatelessWidget {
           width: double.infinity,
           constraints: const BoxConstraints(maxHeight: 280),
           padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: scheme.surfaceContainerLowest,
-            borderRadius: BorderRadius.circular(AppRadii.md),
-            border: Border.all(color: scheme.outlineVariant),
-          ),
+          decoration: ShapeDecoration(color: scheme.surfaceContainerLowest, shape: context.tactical.insetBorder(scheme.outlineVariant)),
           child: prompt == null
               ? Center(
                   child: Padding(

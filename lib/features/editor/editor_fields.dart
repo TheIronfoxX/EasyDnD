@@ -16,8 +16,9 @@ import '../../core/dice.dart';
 import '../../domain/models/weapon.dart';
 import '../../core/theme/app_fonts.dart';
 import '../../core/theme/design_tokens.dart';
-import '../../core/theme/tactical_palette.dart';
+import '../../core/theme/tactical_theme_tokens.dart';
 import '../../core/theme/telemetry.dart';
+import '../../core/ui/pip_shape.dart';
 
 // Reexportado para las secciones del editor que ya lo importaban desde
 // acá; la fuente de verdad vive en core/dnd_rules.dart.
@@ -405,12 +406,11 @@ class EditorEmptyHint extends StatelessWidget {
         vertical: AppSpacing.lg,
         horizontal: AppSpacing.md,
       ),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppRadii.md),
-        border: Border.all(
-          color: context.tactical.metalBorder.withValues(alpha: 0.6),
-        ),
+      decoration: ShapeDecoration(
         color: scheme.surfaceContainerHighest.withValues(alpha: 0.22),
+        shape: context.tactical.insetBorder(
+          context.tactical.metalBorder.withValues(alpha: 0.6),
+        ),
       ),
       child: Text(
         text,
@@ -505,9 +505,7 @@ class _EditorStepperFieldState extends State<EditorStepperField> {
           foregroundColor: primary,
           backgroundColor: primary.withValues(alpha: 0.12),
           disabledBackgroundColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadii.sm),
-          ),
+          shape: context.tactical.insetShape,
         ),
         icon: Icon(icon, size: 20),
         onPressed: onTap,
@@ -563,9 +561,11 @@ class EditorBlockTitle extends StatelessWidget {
       padding: const EdgeInsets.only(top: AppSpacing.lg, bottom: AppSpacing.sm),
       child: Row(
         children: [
-          Transform.rotate(
-            angle: 0.785398,
-            child: Container(width: 6, height: 6, color: primary),
+          PipGlyph(
+            shape: context.tactical.pipShape,
+            filled: true,
+            color: primary,
+            size: 9,
           ),
           const SizedBox(width: AppSpacing.sm),
           Text(
@@ -653,10 +653,9 @@ class EditorIconPlate extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: tone.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(AppRadii.sm + 2),
-        border: Border.all(color: tone.withValues(alpha: 0.5)),
+        shape: context.tactical.insetBorder(tone.withValues(alpha: 0.5)),
       ),
       child: Icon(icon, size: size * 0.5, color: tone),
     );

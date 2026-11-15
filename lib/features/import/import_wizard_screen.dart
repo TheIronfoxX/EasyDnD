@@ -32,8 +32,9 @@ import 'nivel20_import.dart';
 import 'wizard_step_paste.dart';
 import 'wizard_step_preview.dart';
 import 'wizard_step_source.dart';
+import '../../core/ui/tactical_background.dart';
 import '../../core/theme/design_tokens.dart';
-import '../../core/theme/tactical_palette.dart';
+import '../../core/theme/tactical_theme_tokens.dart';
 import '../../core/theme/telemetry.dart';
 
 class ImportWizardScreen extends StatefulWidget {
@@ -192,67 +193,70 @@ class _ImportWizardScreenState extends State<ImportWizardScreen> {
       appBar: AppBar(
         title: Text(isReplace ? 'Corregir ficha con IA' : 'Importar ficha'),
       ),
-      body: Column(
-        children: [
-          _StepIndicator(current: _step, labels: _stepLabels),
-          const Divider(height: 1),
-          Expanded(
-            // El Paso 1 se mantiene montado (Offstage) aunque se avance:
-            // así "Atrás" devuelve al jugador su JSON o enlace tal como
-            // lo dejó, y puede elegir la otra vía sin volver a pegarlo.
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                Offstage(
-                  offstage: _step != 0,
-                  child: TickerMode(
-                    enabled: _step == 0,
-                    child: WizardStepSource(
-                      key: const ValueKey('wizard-step-source'),
-                      isReplace: isReplace,
-                      replacedName: replacedName,
-                      currentSheet:
-                          isReplace ? store.roster[replaceIndex] : null,
-                      onNivel20LinkResolved: _onNivel20LinkResolved,
-                      onDirectImport: _onDirectImport,
-                      onEnrichedChanged: _onEnrichedChanged,
-                    ),
-                  ),
-                ),
-                if (_step != 0)
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 180),
-                    switchInCurve: Curves.easeOut,
-                    switchOutCurve: Curves.easeIn,
-                    child: switch (_step) {
-                      1 => WizardStepPaste(
-                        key: const ValueKey('wizard-step-paste'),
-                        controller: _responseController,
-                        errors: _responseErrors,
-                      ),
-                      _ => WizardStepPreview(
-                        key: const ValueKey('wizard-step-preview'),
-                        result: _result!,
+      body: TacticalScaffoldBackground(
+        child: Column(
+          children: [
+            _StepIndicator(current: _step, labels: _stepLabels),
+            const Divider(height: 1),
+            Expanded(
+              // El Paso 1 se mantiene montado (Offstage) aunque se avance:
+              // así "Atrás" devuelve al jugador su JSON o enlace tal como
+              // lo dejó, y puede elegir la otra vía sin volver a pegarlo.
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Offstage(
+                    offstage: _step != 0,
+                    child: TickerMode(
+                      enabled: _step == 0,
+                      child: WizardStepSource(
+                        key: const ValueKey('wizard-step-source'),
                         isReplace: isReplace,
                         replacedName: replacedName,
-                        onConfirm: _confirmImport,
+                        currentSheet: isReplace
+                            ? store.roster[replaceIndex]
+                            : null,
+                        onNivel20LinkResolved: _onNivel20LinkResolved,
+                        onDirectImport: _onDirectImport,
+                        onEnrichedChanged: _onEnrichedChanged,
                       ),
-                    },
+                    ),
                   ),
-              ],
+                  if (_step != 0)
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 180),
+                      switchInCurve: Curves.easeOut,
+                      switchOutCurve: Curves.easeIn,
+                      child: switch (_step) {
+                        1 => WizardStepPaste(
+                          key: const ValueKey('wizard-step-paste'),
+                          controller: _responseController,
+                          errors: _responseErrors,
+                        ),
+                        _ => WizardStepPreview(
+                          key: const ValueKey('wizard-step-preview'),
+                          result: _result!,
+                          isReplace: isReplace,
+                          replacedName: replacedName,
+                          onConfirm: _confirmImport,
+                        ),
+                      },
+                    ),
+                ],
+              ),
             ),
-          ),
-          const Divider(height: 1),
-          _BottomBar(
-            step: _step,
-            isReplace: isReplace,
-            replacedName: replacedName,
-            onBack: _onBack,
-            onContinue: () => setState(() => _step = 1),
-            onValidateAndAdvance: _validateAndAdvance,
-            onConfirm: _confirmImport,
-          ),
-        ],
+            const Divider(height: 1),
+            _BottomBar(
+              step: _step,
+              isReplace: isReplace,
+              replacedName: replacedName,
+              onBack: _onBack,
+              onContinue: () => setState(() => _step = 1),
+              onValidateAndAdvance: _validateAndAdvance,
+              onConfirm: _confirmImport,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -387,9 +391,7 @@ class _StepIndicator extends StatelessWidget {
                         ? scheme.primary
                         : i == current
                         ? scheme.primary.withValues(alpha: 0.16)
-                        : scheme.surfaceContainerHighest.withValues(
-                            alpha: 0.5,
-                          ),
+                        : scheme.surfaceContainerHighest.withValues(alpha: 0.5),
                     border: Border.all(
                       color: i <= current
                           ? scheme.primary

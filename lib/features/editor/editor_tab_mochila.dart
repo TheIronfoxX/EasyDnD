@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/design_tokens.dart';
-import '../../core/theme/tactical_palette.dart';
+import '../../core/theme/tactical_theme_tokens.dart';
 import '../../core/theme/telemetry.dart';
 import '../../core/ui/tactical_card.dart';
 import '../../domain/models/character.dart';

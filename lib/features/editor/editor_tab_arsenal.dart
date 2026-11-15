@@ -13,7 +13,7 @@ import '../../domain/models/ability.dart';
 import '../../domain/models/character.dart';
 import '../../domain/models/weapon.dart';
 import '../../core/theme/design_tokens.dart';
-import '../../core/theme/tactical_palette.dart';
+import '../../core/theme/tactical_theme_tokens.dart';
 import '../../core/ui/tactical_card.dart';
 import 'editor_ability_page.dart';
 import 'editor_ability_templates.dart';

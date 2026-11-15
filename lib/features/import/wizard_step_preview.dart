@@ -23,7 +23,7 @@ import '../../domain/character_validator.dart';
 import '../../domain/models/character.dart';
 import '../../core/theme/app_fonts.dart';
 import '../../core/theme/design_tokens.dart';
-import '../../core/theme/tactical_palette.dart';
+import '../../core/theme/tactical_theme_tokens.dart';
 import '../../core/theme/telemetry.dart';
 import '../../core/ui/tactical_card.dart';
 
@@ -217,11 +217,12 @@ class _StatChip extends StatelessWidget {
         vertical: AppSpacing.sm,
       ),
       constraints: const BoxConstraints(minWidth: 76),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-        borderRadius: BorderRadius.circular(AppRadii.md),
-        border: Border.all(
-          color: context.tactical.metalBorder.withValues(alpha: 0.75),
+      decoration: ShapeDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(
+          alpha: 0.45,
+        ),
+        shape: context.tactical.insetBorder(
+          context.tactical.metalBorder.withValues(alpha: 0.75),
         ),
       ),
       child: Column(
@@ -263,18 +264,15 @@ class _NoWarningsCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: context.tactical.heal.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppRadii.md),
-        border: Border.all(color: context.tactical.heal.withValues(alpha: 0.5)),
+        shape: context.tactical.insetBorder(
+          context.tactical.heal.withValues(alpha: 0.5),
+        ),
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.verified_rounded,
-            color: context.tactical.heal,
-            size: 20,
-          ),
+          Icon(Icons.verified_rounded, color: context.tactical.heal, size: 20),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -382,7 +380,7 @@ class _CorrectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
+    return TacticalCard(padding: EdgeInsets.zero, 
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(

@@ -10,8 +10,9 @@
 
 import 'package:flutter/material.dart';
 
+import '../../core/ui/tactical_background.dart';
 import '../../core/theme/design_tokens.dart';
-import '../../core/theme/tactical_palette.dart';
+import '../../core/theme/tactical_theme_tokens.dart';
 import '../../core/ui/arcane_emblem.dart';
 import '../../core/ui/tactical_card.dart';
 import '../editor/character_editor_screen.dart';
@@ -55,126 +56,128 @@ class WelcomeScreen extends StatelessWidget {
             colors: [tactical.headerStart, theme.scaffoldBackgroundColor],
           ),
         ),
-        child: SafeArea(
-          child: Stack(
-            children: [
-              Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(AppSpacing.xl),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 520),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const Center(child: ArcaneEmblem()),
-                        const SizedBox(height: AppSpacing.lg),
-                        Text(
-                          'EasyDnD',
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.displaySmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 2.5,
+        child: TacticalScaffoldBackground(
+          child: SafeArea(
+            child: Stack(
+              children: [
+                Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(AppSpacing.xl),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 520),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const Center(child: ArcaneEmblem()),
+                          const SizedBox(height: AppSpacing.lg),
+                          Text(
+                            'EasyDnD',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.displaySmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 2.5,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        const _TitleRule(),
-                        const SizedBox(height: AppSpacing.md),
-                        Text(
-                          'Tu hoja de personaje viva para la mesa. '
-                          'Combate, inventario y dados, sin perder de vista '
-                          'lo importante.',
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                            height: 1.45,
+                          const SizedBox(height: AppSpacing.sm),
+                          const _TitleRule(),
+                          const SizedBox(height: AppSpacing.md),
+                          Text(
+                            'Tu hoja de personaje viva para la mesa. '
+                            'Combate, inventario y dados, sin perder de vista '
+                            'lo importante.',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                              height: 1.45,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: AppSpacing.xxl),
-                        // Vía principal: la que usa casi todo el mundo.
-                        TacticalCard(
-                          tone: scheme.primary,
-                          padding: const EdgeInsets.all(AppSpacing.lg),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Text(
-                                'Traé tu personaje ya armado: pegá el enlace '
-                                'o los datos y la ficha queda lista para '
-                                'jugar.',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: scheme.onSurfaceVariant,
+                          const SizedBox(height: AppSpacing.xxl),
+                          // Vía principal: la que usa casi todo el mundo.
+                          TacticalCard(
+                            tone: scheme.primary,
+                            padding: const EdgeInsets.all(AppSpacing.lg),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Text(
+                                  'Traé tu personaje ya armado: pegá el enlace '
+                                  'o los datos y la ficha queda lista para '
+                                  'jugar.',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: scheme.onSurfaceVariant,
+                                  ),
                                 ),
+                                const SizedBox(height: AppSpacing.md),
+                                FilledButton.icon(
+                                  onPressed: () => _openImport(context),
+                                  icon: const Icon(Icons.auto_awesome_rounded),
+                                  label: const Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 6),
+                                    child: Text('Importar desde Nivel20'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          // Vía secundaria: empezar de cero en el taller.
+                          OutlinedButton.icon(
+                            onPressed: () => _openEditor(context),
+                            icon: const Icon(Icons.person_add_rounded),
+                            label: const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 4),
+                              child: Text('Ficha en blanco'),
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.xl),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.cloud_off_rounded,
+                                size: 14,
+                                color: scheme.onSurfaceVariant,
                               ),
-                              const SizedBox(height: AppSpacing.md),
-                              FilledButton.icon(
-                                onPressed: () => _openImport(context),
-                                icon: const Icon(Icons.auto_awesome_rounded),
-                                label: const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 6),
-                                  child: Text('Importar desde Nivel20'),
+                              const SizedBox(width: AppSpacing.sm),
+                              Flexible(
+                                child: Text(
+                                  'Todo queda guardado en este dispositivo: la '
+                                  'app funciona sin conexión.',
+                                  textAlign: TextAlign.center,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: scheme.onSurfaceVariant,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        // Vía secundaria: empezar de cero en el taller.
-                        OutlinedButton.icon(
-                          onPressed: () => _openEditor(context),
-                          icon: const Icon(Icons.person_add_rounded),
-                          label: const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 4),
-                            child: Text('Ficha en blanco'),
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.xl),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.cloud_off_rounded,
-                              size: 14,
-                              color: scheme.onSurfaceVariant,
-                            ),
-                            const SizedBox(width: AppSpacing.sm),
-                            Flexible(
-                              child: Text(
-                                'Todo queda guardado en este dispositivo: la '
-                                'app funciona sin conexión.',
-                                textAlign: TextAlign.center,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: scheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-              Positioned(
-                top: AppSpacing.xs,
-                right: AppSpacing.xs,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      tooltip: 'Temas',
-                      icon: const Icon(Icons.auto_awesome_mosaic_rounded),
-                      onPressed: () => showThemePickerSheet(context),
-                    ),
-                    IconButton(
-                      tooltip: 'Apariencia',
-                      icon: const Icon(Icons.palette_outlined),
-                      onPressed: () => _openSkin(context),
-                    ),
-                  ],
+                Positioned(
+                  top: AppSpacing.xs,
+                  right: AppSpacing.xs,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        tooltip: 'Temas',
+                        icon: const Icon(Icons.auto_awesome_mosaic_rounded),
+                        onPressed: () => showThemePickerSheet(context),
+                      ),
+                      IconButton(
+                        tooltip: 'Apariencia',
+                        icon: const Icon(Icons.palette_outlined),
+                        onPressed: () => _openSkin(context),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

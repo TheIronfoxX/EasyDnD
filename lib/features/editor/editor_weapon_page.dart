@@ -16,6 +16,7 @@
 // homebrew sin problema.
 
 import 'package:flutter/material.dart';
+import '../../core/ui/tactical_card.dart';
 
 import '../../domain/models/weapon.dart';
 import 'editor_fields.dart';
@@ -163,7 +164,7 @@ class _EditorWeaponPageState extends State<EditorWeaponPage> {
             'Sin daño condicional: el arma solo hace su daño base.',
           ),
         for (final conditional in weapon.conditionalDamage)
-          Card(
+          TacticalCard(padding: EdgeInsets.zero,
             // Por IDENTIDAD: si se borra una tarjeta del medio, las
             // demás conservan su texto (con keys por índice se
             // pisarían entre sí).

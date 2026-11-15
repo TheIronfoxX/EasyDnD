@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 
 import '../../core/theme/design_tokens.dart';
-import '../../core/theme/tactical_palette.dart';
+import '../../core/theme/tactical_theme_tokens.dart';
 import '../../core/theme/telemetry.dart';
 import '../../core/ui/stat_dial.dart';
 import '../../core/ui/tactical_card.dart';
@@ -393,11 +393,10 @@ class _SlotCell extends StatelessWidget {
         AppSpacing.sm,
         AppSpacing.sm,
       ),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: tone.withValues(alpha: active ? 0.09 : 0.03),
-        borderRadius: BorderRadius.circular(AppRadii.md),
-        border: Border.all(
-          color: active
+        shape: context.tactical.insetBorder(
+          active
               ? tone.withValues(alpha: 0.5)
               : context.tactical.metalBorder.withValues(alpha: 0.5),
         ),

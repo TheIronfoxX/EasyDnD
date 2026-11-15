@@ -31,6 +31,7 @@ import 'editor_tab_arsenal.dart';
 import 'editor_tab_core.dart';
 import 'editor_tab_grimorio.dart';
 import 'editor_tab_mochila.dart';
+import '../../core/ui/tactical_background.dart';
 import '../../core/theme/design_tokens.dart';
 
 class CharacterEditorScreen extends StatefulWidget {
@@ -227,30 +228,35 @@ class _CharacterEditorScreenState extends State<CharacterEditorScreen> {
               ],
             ),
           ),
-          body: TabBarView(
-            children: [
-              _KeepAlive(
-                child: EditorTabCore(draft: _draft, onChanged: _onDraftChanged),
-              ),
-              _KeepAlive(
-                child: EditorTabArsenal(
-                  draft: _draft,
-                  onChanged: _onDraftChanged,
+          body: TacticalScaffoldBackground(
+            child: TabBarView(
+              children: [
+                _KeepAlive(
+                  child: EditorTabCore(
+                    draft: _draft,
+                    onChanged: _onDraftChanged,
+                  ),
                 ),
-              ),
-              _KeepAlive(
-                child: EditorTabGrimorio(
-                  draft: _draft,
-                  onChanged: _onDraftChanged,
+                _KeepAlive(
+                  child: EditorTabArsenal(
+                    draft: _draft,
+                    onChanged: _onDraftChanged,
+                  ),
                 ),
-              ),
-              _KeepAlive(
-                child: EditorTabMochila(
-                  draft: _draft,
-                  onChanged: _onDraftChanged,
+                _KeepAlive(
+                  child: EditorTabGrimorio(
+                    draft: _draft,
+                    onChanged: _onDraftChanged,
+                  ),
                 ),
-              ),
-            ],
+                _KeepAlive(
+                  child: EditorTabMochila(
+                    draft: _draft,
+                    onChanged: _onDraftChanged,
+                  ),
+                ),
+              ],
+            ),
           ),
           bottomNavigationBar: DecoratedBox(
             decoration: BoxDecoration(

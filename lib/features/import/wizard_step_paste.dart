@@ -18,7 +18,7 @@ import 'package:flutter/material.dart';
 import '../../domain/character_validator.dart';
 import '../../core/theme/app_fonts.dart';
 import '../../core/theme/design_tokens.dart';
-import '../../core/theme/tactical_palette.dart';
+import '../../core/theme/tactical_theme_tokens.dart';
 import '../../core/ui/tactical_card.dart';
 
 class WizardStepPaste extends StatefulWidget {

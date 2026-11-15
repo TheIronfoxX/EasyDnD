@@ -5,7 +5,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/design_tokens.dart';
-import '../../core/theme/tactical_palette.dart';
+import '../../core/theme/tactical_theme_tokens.dart';
 import '../../core/theme/telemetry.dart';
 import '../../core/ui/tactical_card.dart';
 import '../../core/ui/character_avatar.dart';
@@ -452,11 +452,10 @@ class _ScoreCard extends StatelessWidget {
                   horizontal: AppSpacing.md,
                   vertical: 2,
                 ),
-                decoration: BoxDecoration(
+                decoration: ShapeDecoration(
                   color: theme.colorScheme.primary.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(AppRadii.sm),
-                  border: Border.all(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.45),
+                  shape: context.tactical.insetBorder(
+                    theme.colorScheme.primary.withValues(alpha: 0.45),
                   ),
                 ),
                 child: Text(
