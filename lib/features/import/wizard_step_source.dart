@@ -19,6 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../data/nivel20_extractor.dart';
+import 'nivel20_import.dart';
 import '../../domain/ai_prompt.dart';
 import '../../domain/character_validator.dart';
 import '../../domain/models/character.dart';
@@ -54,6 +55,7 @@ class WizardStepSource extends StatefulWidget {
     this.replacedName,
     this.currentSheet,
     this.onNivel20LinkResolved,
+    this.onDirectImport,
   });
 
   /// True cuando el wizard corre en modo corrección (reemplaza una ficha
@@ -69,6 +71,10 @@ class WizardStepSource extends StatefulWidget {
   /// Avisa a la pantalla que se resolvió un enlace de Nivel20, para
   /// guardarlo en la ficha al confirmar.
   final void Function(String link)? onNivel20LinkResolved;
+
+  /// Importación directa de Nivel20 (sin IA): entrega la ficha ya
+  /// validada para saltar al Paso 3.
+  final void Function(CharacterValidationResult result)? onDirectImport;
 
   @override
   State<WizardStepSource> createState() => _WizardStepSourceState();
@@ -87,11 +93,31 @@ class _WizardStepSourceState extends State<WizardStepSource> {
 
   bool _copied = false;
 
+  /// True si el usuario pidió el prompt enriquecido de Nivel20.
+  bool _enriched = false;
+  String? _directError;
+
+  // Caché del JSON de Nivel20 decodificado (evita re-parsear 60 KB en
+  // cada build): se invalida cuando cambia el texto fuente.
+  String? _rawKey;
+  Map<String, dynamic>? _rawCache;
+
   @override
   void initState() {
     super.initState();
     // "Vacía" no tiene sentido corrigiendo una ficha que ya existe.
     if (widget.isReplace) _mode = ImportSourceMode.pastedText;
+    // El prompt y las acciones de Nivel20 dependen del texto pegado: el
+    // paso entero debe reconstruirse al escribir, no solo el campo.
+    _sourceController.addListener(_onSourceChanged);
+  }
+
+  void _onSourceChanged() {
+    if (!mounted) return;
+    setState(() {
+      _enriched = false;
+      _directError = null;
+    });
   }
 
   @override
@@ -117,6 +143,9 @@ class _WizardStepSourceState extends State<WizardStepSource> {
         if (text.isEmpty) return null;
         // Si pegó el JSON crudo de Nivel20, se limpia de HTML antes de
         // incrustarlo: la IA recibe texto legible en vez de sopa de tags.
+        if (_nivel20Raw != null && _enriched) {
+          return Nivel20Import.enrichedPrompt(_nivel20Raw!);
+        }
         if (text.startsWith('{')) {
           try {
             return AiPrompt.forEmbeddedSource(
@@ -131,6 +160,9 @@ class _WizardStepSourceState extends State<WizardStepSource> {
       case ImportSourceMode.nivel20Link:
         final ficha = _extractedFicha;
         if (ficha == null || ficha.isEmpty) return null;
+        if (_nivel20Raw != null && _enriched) {
+          return Nivel20Import.enrichedPrompt(_nivel20Raw!);
+        }
         return AiPrompt.forEmbeddedSource(ficha);
 
       case ImportSourceMode.currentSheet:
@@ -143,6 +175,22 @@ class _WizardStepSourceState extends State<WizardStepSource> {
           problems,
         );
     }
+  }
+
+  /// JSON de Nivel20 disponible en el modo actual (pegado o descargado),
+  /// o null si no hay ficha de Nivel20 lista.
+  Map<String, dynamic>? get _nivel20Raw {
+    final String? source = switch (_mode) {
+      ImportSourceMode.pastedText => _sourceController.text,
+      ImportSourceMode.nivel20Link => _extractedFicha,
+      _ => null,
+    };
+    if (source == null || source.trim().isEmpty) return null;
+    if (source != _rawKey) {
+      _rawKey = source;
+      _rawCache = Nivel20Import.parseRaw(source);
+    }
+    return _rawCache;
   }
 
   /// Problemas detectables HOY en la ficha guardada (la revalidamos
@@ -186,6 +234,23 @@ class _WizardStepSourceState extends State<WizardStepSource> {
       });
     }
   }
+
+  void _importDirect() {
+    final raw = _nivel20Raw;
+    if (raw == null) return;
+    final result = Nivel20Import.direct(raw);
+    if (result.isOk) {
+      setState(() => _directError = null);
+      widget.onDirectImport?.call(result);
+    } else {
+      setState(() => _directError = result.errors.map((e) => e.message).join('\n'));
+    }
+  }
+
+  void _prepareEnriched() => setState(() {
+    _enriched = true;
+    _copied = false;
+  });
 
   Future<void> _copyPrompt() async {
     final prompt = _prompt;
@@ -254,6 +319,8 @@ class _WizardStepSourceState extends State<WizardStepSource> {
             setState(() {
               _mode = selection.first;
               _copied = false;
+              _enriched = false;
+              _directError = null;
             });
           },
         ),
@@ -275,6 +342,15 @@ class _WizardStepSourceState extends State<WizardStepSource> {
             problems: _currentSheetProblems,
           ),
         },
+        if (_nivel20Raw != null) ...[
+          const SizedBox(height: AppSpacing.lg),
+          Nivel20ImportChoice(
+            enriched: _enriched,
+            error: _directError,
+            onDirect: _importDirect,
+            onEnrich: _prepareEnriched,
+          ),
+        ],
         const SizedBox(height: AppSpacing.lg),
 
         _PromptPreview(prompt: _prompt, copied: _copied, onCopy: _copyPrompt),

@@ -62,11 +62,29 @@ class _ImportWizardScreenState extends State<ImportWizardScreen> {
   /// vuelva a pegar a mano.
   String? _nivel20Link;
 
+  /// True si el Paso 3 se alcanzó por "Importar directo (sin IA)": el
+  /// botón Atrás vuelve al Paso 1, no al de pegar la respuesta.
+  bool _directImport = false;
+
   @override
   void dispose() {
     _responseController.dispose();
     super.dispose();
   }
+
+  void _onDirectImport(CharacterValidationResult result) {
+    setState(() {
+      _result = result;
+      _responseErrors = const [];
+      _directImport = true;
+      _step = 2;
+    });
+  }
+
+  void _onBack() => setState(() {
+    _step = (_step == 2 && _directImport) ? 0 : _step - 1;
+    _directImport = false;
+  });
 
   void _onNivel20LinkResolved(String link) {
     _nivel20Link = link;
@@ -97,6 +115,7 @@ class _ImportWizardScreenState extends State<ImportWizardScreen> {
       setState(() {
         _result = result;
         _responseErrors = const [];
+        _directImport = false;
         _step = 2;
       });
     } else {
@@ -158,6 +177,7 @@ class _ImportWizardScreenState extends State<ImportWizardScreen> {
                   replacedName: replacedName,
                   currentSheet: isReplace ? store.roster[replaceIndex] : null,
                   onNivel20LinkResolved: _onNivel20LinkResolved,
+                  onDirectImport: _onDirectImport,
                 ),
                 1 => WizardStepPaste(
                   key: const ValueKey('wizard-step-paste'),
@@ -179,7 +199,7 @@ class _ImportWizardScreenState extends State<ImportWizardScreen> {
             step: _step,
             isReplace: isReplace,
             replacedName: replacedName,
-            onBack: () => setState(() => _step = _step - 1),
+            onBack: _onBack,
             onContinue: () => setState(() => _step = 1),
             onValidateAndAdvance: _validateAndAdvance,
             onConfirm: _confirmImport,
