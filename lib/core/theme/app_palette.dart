@@ -1,13 +1,16 @@
-// Paleta semántica de EasyDnD (Etapa 6).
+// Paleta semántica de EasyDnD (Etapa 6; dirección "pergamino" en 8b).
 //
 // Los nombres describen ROLES, no colores: background, surface,
 // textPrimary... Así un skin futuro puede cambiar los valores sin que
-// ningún widget se entere. Los valores oscuros son los de la app vieja
-// ("panel táctico" azul-grisáceo); los claros son su contrapartida
-// exacta para el modo día.
+// ningún widget se entere.
 //
-// danger y success se mantienen iguales en ambos modos: ya tienen
-// contraste suficiente sobre fondo oscuro y claro.
+// La identidad es "pergamino oscuro": superficies cálidas (marrón/oliva
+// apagado, no azul-grisáceo), tinta crema y bordes gastados, con el oro
+// sepia del acento como firma. El modo claro es la cara de papel: crema
+// envejecida y tinta marrón.
+//
+// danger y success se mantienen reconocibles en ambos modos (terracota y
+// musgo), pero templados para no romper la calidez del conjunto.
 
 import 'package:flutter/material.dart';
 
@@ -34,25 +37,25 @@ class AppPalette {
   final Color success;
 
   static const AppPalette dark = AppPalette(
-    background: Color(0xFF0A0E17),
-    surface: Color(0xFF171E28),
-    surfaceElevated: Color(0xFF1F2733),
-    border: Color(0xFF2A3441),
-    textPrimary: Color(0xFFEDEFF3),
-    textSecondary: Color(0xFF8C96A6),
-    danger: Color(0xFFD9534F),
-    success: Color(0xFF5CB88A),
+    background: Color(0xFF131009),
+    surface: Color(0xFF1D1810),
+    surfaceElevated: Color(0xFF282117),
+    border: Color(0xFF3B3223),
+    textPrimary: Color(0xFFEDE3D0),
+    textSecondary: Color(0xFFA08F74),
+    danger: Color(0xFFC9553F),
+    success: Color(0xFF7FA968),
   );
 
   static const AppPalette light = AppPalette(
-    background: Color(0xFFF7F8FA),
-    surface: Color(0xFFFFFFFF),
-    surfaceElevated: Color(0xFFEFF1F4),
-    border: Color(0xFFD9DEE5),
-    textPrimary: Color(0xFF1A1D23),
-    textSecondary: Color(0xFF5B6472),
-    danger: Color(0xFFD9534F),
-    success: Color(0xFF5CB88A),
+    background: Color(0xFFF3E9D5),
+    surface: Color(0xFFFBF6EA),
+    surfaceElevated: Color(0xFFEDE0C7),
+    border: Color(0xFFD8C6A4),
+    textPrimary: Color(0xFF2A2216),
+    textSecondary: Color(0xFF6D5D45),
+    danger: Color(0xFFB23E2E),
+    success: Color(0xFF4F7A38),
   );
 
   static AppPalette of(Brightness brightness) =>

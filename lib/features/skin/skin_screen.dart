@@ -220,6 +220,7 @@ class _TypographySample extends StatelessWidget {
           alpha: 0.35,
         ),
         borderRadius: BorderRadius.circular(AppRadii.md),
+        border: Border.all(color: theme.colorScheme.outline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

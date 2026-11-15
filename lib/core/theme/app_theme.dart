@@ -1,12 +1,16 @@
-// Tema de EasyDnD (Etapa 6): tokens de diseño, paleta semántica y
-// tipografía.
+// Tema de EasyDnD (Etapa 6; estética "pergamino oscuro" en 8b).
 //
 // Reemplaza el andamio de la Etapa 1. La fuente de verdad de los colores
 // es [AppPalette]; el acento (primary/secondary) y la familia tipográfica
 // los elige el jugador vía [SkinController]. Material 3 arma el resto de
 // la paleta a partir del acento con `ColorScheme.fromSeed`, y después
 // pisamos las superficies con nuestros roles para conservar el look de
-// panel táctico.
+// panel cálido.
+//
+// La 8b suma la capa "pergamino": tarjetas con borde gastado, campos
+// rellenos, diálogos y snackbars con el mismo tratamiento, y títulos con
+// algo de tracking para que la serif respire. Todo sigue saliendo de la
+// paleta y del acento; acá no hay colores sueltos.
 //
 // Regla de siempre: los widgets NO hardcodean colores ni fuentes. Leen
 // `Theme.of(context)` o `context.appColors` y este archivo decide.
@@ -21,7 +25,7 @@ import 'font_presets.dart';
 class AppTheme {
   AppTheme._(); // clase estática: no se instancia.
 
-  /// Acento de fábrica: el sepia de la app vieja. Es el valor inicial
+  /// Acento de fábrica: el oro sepia de la app vieja. Es el valor inicial
   /// del skin hasta que el jugador elija otro.
   static const Color defaultAccent = Color(0xFFC9A227);
 
@@ -74,6 +78,7 @@ class AppTheme {
           surfaceContainerHighest: palette.surfaceElevated,
           onSurfaceVariant: palette.textSecondary,
           outline: palette.border,
+          outlineVariant: palette.border,
           error: palette.danger,
         );
 
@@ -83,6 +88,12 @@ class AppTheme {
       colorScheme: scheme,
     );
 
+    final hairline = BorderSide(color: palette.border);
+    final cardShape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(AppRadii.lg),
+      side: hairline,
+    );
+
     return base.copyWith(
       scaffoldBackgroundColor: palette.background,
       appBarTheme: AppBarTheme(
@@ -90,13 +101,59 @@ class AppTheme {
         foregroundColor: palette.textPrimary,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        shape: Border(bottom: hairline),
       ),
       cardTheme: CardThemeData(
         color: palette.surface,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
+        shape: cardShape,
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: palette.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: cardShape,
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: palette.surface,
+        surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadii.lg),
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(AppRadii.lg),
+          ),
+          side: hairline,
+        ),
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: palette.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: cardShape,
+      ),
+      inputDecorationTheme: InputDecorationThemeData(
+        filled: true,
+        fillColor: palette.surfaceElevated.withValues(alpha: 0.45),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          borderSide: hairline,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          borderSide: hairline,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          borderSide: BorderSide(color: accent, width: 1.5),
+        ),
+      ),
+      dividerTheme: DividerThemeData(color: palette.border),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: palette.surfaceElevated,
+        contentTextStyle: TextStyle(color: palette.textPrimary),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          side: hairline,
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
@@ -131,37 +188,28 @@ class AppTheme {
   /// el TextTheme, después pisa los títulos con la familia de display
   /// (en "Diario", Cinzel arriba e Inter abajo). `null` en cualquiera de
   /// las dos significa la familia por defecto de la plataforma.
+  ///
+  /// Los títulos llevan un poco de tracking: la serif gana aire y se lee
+  /// como grabado en piedra, que es la intención del look pergamino.
   static TextTheme _typography(TextTheme base, FontPreset preset) {
     final withBody = base.apply(fontFamily: preset.bodyFamily);
 
+    TextStyle? display(TextStyle? style, {double tracking = 0.4}) =>
+        style?.copyWith(
+          fontFamily: preset.displayFamily,
+          letterSpacing: tracking,
+        );
+
     return withBody.copyWith(
-      displayLarge: withBody.displayLarge?.copyWith(
-        fontFamily: preset.displayFamily,
-      ),
-      displayMedium: withBody.displayMedium?.copyWith(
-        fontFamily: preset.displayFamily,
-      ),
-      displaySmall: withBody.displaySmall?.copyWith(
-        fontFamily: preset.displayFamily,
-      ),
-      headlineLarge: withBody.headlineLarge?.copyWith(
-        fontFamily: preset.displayFamily,
-      ),
-      headlineMedium: withBody.headlineMedium?.copyWith(
-        fontFamily: preset.displayFamily,
-      ),
-      headlineSmall: withBody.headlineSmall?.copyWith(
-        fontFamily: preset.displayFamily,
-      ),
-      titleLarge: withBody.titleLarge?.copyWith(
-        fontFamily: preset.displayFamily,
-      ),
-      titleMedium: withBody.titleMedium?.copyWith(
-        fontFamily: preset.displayFamily,
-      ),
-      titleSmall: withBody.titleSmall?.copyWith(
-        fontFamily: preset.displayFamily,
-      ),
+      displayLarge: display(withBody.displayLarge),
+      displayMedium: display(withBody.displayMedium),
+      displaySmall: display(withBody.displaySmall),
+      headlineLarge: display(withBody.headlineLarge),
+      headlineMedium: display(withBody.headlineMedium),
+      headlineSmall: display(withBody.headlineSmall),
+      titleLarge: display(withBody.titleLarge, tracking: 0.3),
+      titleMedium: display(withBody.titleMedium, tracking: 0.3),
+      titleSmall: display(withBody.titleSmall, tracking: 0.3),
     );
   }
 }

@@ -9,10 +9,12 @@
 // reconstruya con la ficha activa cuando cambie de personaje.
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/dnd_rules.dart';
 import '../../domain/models/character.dart';
 import '../../domain/models/stats.dart';
+import '../../state/character_store.dart';
 import 'hud_widgets.dart';
 import '../../core/theme/design_tokens.dart';
 
@@ -33,7 +35,7 @@ class HudSheetTab extends StatelessWidget {
       children: [
         _AttributesSection(stats: character.stats),
         _SkillsSection(skills: character.skills),
-        _LoreSection(lore: character.loreInfo),
+        _LoreSection(character: character),
         _CodexSection(character: character),
       ],
     );
@@ -108,6 +110,7 @@ class _ScoreTile extends StatelessWidget {
           alpha: 0.35,
         ),
         borderRadius: BorderRadius.circular(AppRadii.md),
+        border: Border.all(color: theme.colorScheme.outline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,7 +157,7 @@ class _ScoreTile extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------
-// Competencias: modificador final ya calculado por la ficha.
+// Competencias: cuadrícula de 2 columnas con indicador, atributo y modificador.
 // ---------------------------------------------------------------------
 
 class _SkillsSection extends StatelessWidget {
@@ -164,70 +167,124 @@ class _SkillsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return HudSectionCard(
       icon: Icons.military_tech_rounded,
       title: 'Competencias',
       child: skills.isEmpty
           ? const HudEmptyHint('La ficha no trae competencias.')
-          : Column(
-              children: [
-                for (final skill in skills)
-                  ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.xs,
-                    ),
-                    leading: CircleAvatar(
-                      radius: 16,
-                      backgroundColor: theme.colorScheme.secondaryContainer,
-                      foregroundColor: theme.colorScheme.onSecondaryContainer,
-                      child: Text(
-                        skill.relatedStat.toUpperCase(),
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                final isWide = constraints.maxWidth > 340;
+                final width = isWide
+                    ? (constraints.maxWidth - 10) / 2
+                    : constraints.maxWidth;
+
+                return Wrap(
+                  spacing: 10,
+                  runSpacing: 8,
+                  children: [
+                    for (final skill in skills)
+                      SizedBox(
+                        width: width,
+                        child: _SkillTile(skill: skill),
                       ),
-                    ),
-                    title: Text(
-                      skill.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    subtitle: Text(_skillSubtitle(skill)),
-                    trailing: Text(
-                      skill.modifierFormatted,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: theme.colorScheme.primary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-              ],
+                  ],
+                );
+              },
             ),
     );
   }
+}
 
-  /// "Sabiduría" cuando el atributo es conocido; si una ficha vieja
-  /// trae una clave rara, se muestra cruda en vez de romper.
-  static String _skillSubtitle(Skill skill) {
-    final label = kStatLabels[skill.relatedStat];
-    if (label != null) return label;
-    return skill.relatedStat.isEmpty ? 'Sin atributo' : skill.relatedStat;
+class _SkillTile extends StatelessWidget {
+  const _SkillTile({required this.skill});
+
+  final Skill skill;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final statLabel = kStatLabels[skill.relatedStat] ??
+        (skill.relatedStat.isEmpty ? '—' : skill.relatedStat);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 8),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.28),
+        borderRadius: BorderRadius.circular(AppRadii.sm),
+        border: Border.all(color: scheme.outline.withValues(alpha: 0.6)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: scheme.primary,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  skill.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  statLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+            decoration: BoxDecoration(
+              color: scheme.primary.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(AppRadii.pill),
+              border: Border.all(color: scheme.primary.withValues(alpha: 0.35)),
+            ),
+            child: Text(
+              skill.modifierFormatted,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: scheme.primary,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
 // ---------------------------------------------------------------------
-// Historia y personalidad (cinco campos narrativos).
+// Historia y personalidad (cinco campos narrativos + foto del personaje).
 // ---------------------------------------------------------------------
 
 class _LoreSection extends StatelessWidget {
-  const _LoreSection({required this.lore});
+  const _LoreSection({required this.character});
 
-  final LoreInfo lore;
+  final CharacterModel character;
 
   @override
   Widget build(BuildContext context) {
+    final lore = character.loreInfo;
     final entries = <(String, String)>[
       ('Trasfondo', lore.backstory),
       ('Rasgos de personalidad', lore.personalityTraits),
@@ -236,18 +293,59 @@ class _LoreSection extends StatelessWidget {
       ('Defectos', lore.flaws),
     ].where((entry) => entry.$2.trim().isNotEmpty).toList();
 
+    final portraitPath = character.loreAvatarPath ?? character.avatarPath;
+
     return HudSectionCard(
       icon: Icons.auto_stories_rounded,
       title: 'Historia y personalidad',
-      child: entries.isEmpty
-          ? const HudEmptyHint('La ficha no trae historia ni personalidad.')
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (final entry in entries)
-                  _ReadOnlyField(label: entry.$1, text: entry.$2),
-              ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.md),
+              child: Stack(
+                alignment: Alignment.bottomRight,
+                children: [
+                  CharacterAvatar(
+                    size: 96,
+                    avatarPath: portraitPath,
+                    name: character.basicInfo.name,
+                    onTap: () {
+                      final store = context.read<CharacterStore?>();
+                      if (store == null) return;
+                      AvatarPickerHelper.showAvatarOptions(
+                        context,
+                        currentPath: character.loreAvatarPath ?? character.avatarPath,
+                        onSelected: store.setLoreAvatarPath,
+                      );
+                    },
+                  ),
+                  IgnorePointer(
+                    child: Container(
+                      padding: const EdgeInsets.all(5),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.camera_alt_rounded,
+                        size: 14,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
+          ),
+          if (entries.isEmpty)
+            const HudEmptyHint('La ficha no trae historia ni personalidad.')
+          else
+            for (final entry in entries)
+              _ReadOnlyField(label: entry.$1, text: entry.$2),
+        ],
+      ),
     );
   }
 }

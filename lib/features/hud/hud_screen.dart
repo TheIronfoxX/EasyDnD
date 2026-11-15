@@ -23,6 +23,7 @@ import 'hud_combat_tab.dart';
 import 'hud_dialogs.dart';
 import 'hud_inventory_tab.dart';
 import 'hud_sheet_tab.dart';
+import 'hud_widgets.dart';
 import 'welcome_screen.dart';
 import '../../core/theme/design_tokens.dart';
 
@@ -124,6 +125,8 @@ class _HudScreenState extends State<HudScreen> {
     if (character == null) return const WelcomeScreen();
 
     final info = character.basicInfo;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final identity = [
       if (info.race.trim().isNotEmpty) info.race.trim(),
       if (info.characterClass.trim().isNotEmpty) info.characterClass.trim(),
@@ -132,14 +135,30 @@ class _HudScreenState extends State<HudScreen> {
     return Scaffold(
       appBar: AppBar(
         leadingWidth: 60,
+        // El degradé sale del acento del skin, no de un color fijo: así
+        // el header acompaña cualquier preset sin tocar nada acá.
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                scheme.primary.withValues(alpha: 0.16),
+                scheme.surface,
+              ],
+            ),
+          ),
+        ),
         leading: Padding(
           padding: const EdgeInsets.only(left: AppSpacing.md),
-          child: CircleAvatar(
-            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-            foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
-            child: Text(
-              _initials(info.name),
-              style: const TextStyle(fontWeight: FontWeight.w700),
+          child: CharacterAvatar(
+            avatarPath: character.avatarPath,
+            name: info.name,
+            size: 40,
+            onTap: () => AvatarPickerHelper.showAvatarOptions(
+              context,
+              currentPath: character.avatarPath,
+              onSelected: store.setAvatarPath,
             ),
           ),
         ),
@@ -151,17 +170,17 @@ class _HudScreenState extends State<HudScreen> {
               info.name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
             if (identity.isNotEmpty)
               Text(
                 identity,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
                 ),
               ),
           ],
@@ -255,19 +274,7 @@ class _HudScreenState extends State<HudScreen> {
     );
   }
 
-  /// "Rook" → "R", "Rook el Intacto" → "RI". Sin paquete de caracteres:
-  /// alcanza con la primera letra de la primera y la última palabra.
-  static String _initials(String name) {
-    final words = name
-        .trim()
-        .split(RegExp(r'\s+'))
-        .where((word) => word.isNotEmpty)
-        .toList();
-    if (words.isEmpty) return '?';
-    if (words.length == 1) return words.first.substring(0, 1).toUpperCase();
-    return (words.first.substring(0, 1) + words.last.substring(0, 1))
-        .toUpperCase();
-  }
+
 }
 
 /// Selector de personaje activo. Lista el roster completo con una tilde

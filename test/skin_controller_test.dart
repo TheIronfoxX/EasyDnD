@@ -12,6 +12,7 @@ import 'package:easydnd/core/theme/app_fonts.dart';
 import 'package:easydnd/core/theme/app_palette.dart';
 import 'package:easydnd/core/theme/app_theme.dart';
 import 'package:easydnd/core/theme/app_theme_colors.dart';
+import 'package:easydnd/core/theme/design_tokens.dart';
 import 'package:easydnd/core/theme/font_presets.dart';
 import 'package:easydnd/state/skin_controller.dart';
 
@@ -78,6 +79,54 @@ void main() {
       final lightAccent = AppTheme.dark(accent: const Color(0xFFFFF59D));
       expect(lightAccent.colorScheme.onPrimary, Colors.black);
     });
+  });
+
+  group('estética pergamino (8b)', () {
+    test(
+      'los componentes clave tienen forma con borde hairline de la paleta',
+      () async {
+        final skin = await boot();
+        final theme = skin.themeData;
+        const palette = AppPalette.dark;
+
+        // Card
+        final cardShape = theme.cardTheme.shape as RoundedRectangleBorder?;
+        expect(cardShape?.side.color, palette.border);
+        expect(cardShape?.borderRadius, BorderRadius.circular(AppRadii.lg));
+
+        // Dialog
+        final dialogShape = theme.dialogTheme.shape as RoundedRectangleBorder?;
+        expect(dialogShape?.side.color, palette.border);
+
+        // PopupMenu
+        final menuShape = theme.popupMenuTheme.shape as RoundedRectangleBorder?;
+        expect(menuShape?.side.color, palette.border);
+
+        // BottomSheet
+        final sheetShape =
+            theme.bottomSheetTheme.shape as RoundedRectangleBorder?;
+        expect(sheetShape?.side.color, palette.border);
+        expect(
+          sheetShape?.borderRadius,
+          const BorderRadius.vertical(top: Radius.circular(AppRadii.lg)),
+        );
+
+        // Inputs
+        expect(theme.inputDecorationTheme.filled, isTrue);
+        expect(
+          (theme.inputDecorationTheme.border as OutlineInputBorder?)
+              ?.borderSide
+              .color,
+          palette.border,
+        );
+
+        // Tracking en títulos para el look grabado en piedra
+        expect(theme.textTheme.titleLarge?.letterSpacing, 0.3);
+        expect(theme.textTheme.titleMedium?.letterSpacing, 0.3);
+        expect(theme.textTheme.titleSmall?.letterSpacing, 0.3);
+        expect(theme.textTheme.displayLarge?.letterSpacing, 0.4);
+      },
+    );
   });
 
   group('persistencia', () {

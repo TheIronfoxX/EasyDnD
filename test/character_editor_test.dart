@@ -246,6 +246,13 @@ void main() {
         'Clérigo 4',
       );
       await tester.pump();
+      // El avatar (8b) empuja este campo debajo del pliegue: el
+      // ListView de la sección es lazy, hay que scrollearlo.
+      await tester.scrollUntilVisible(
+        find.widgetWithText(TextFormField, 'Velocidad (metros por turno)'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.enterText(
         find.widgetWithText(TextFormField, 'Velocidad (metros por turno)'),
         '12',

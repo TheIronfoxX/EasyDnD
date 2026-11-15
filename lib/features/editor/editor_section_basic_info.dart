@@ -16,18 +16,25 @@
 
 import 'package:flutter/material.dart';
 
+import '../../core/theme/design_tokens.dart';
+import '../../core/ui/character_avatar.dart';
 import '../../domain/models/character.dart';
 import 'editor_fields.dart';
 
-class EditorSectionBasicInfo extends StatelessWidget {
+class EditorSectionBasicInfo extends StatefulWidget {
   const EditorSectionBasicInfo({super.key, required this.draft});
 
   /// El borrador compartido del editor: se muta en el lugar.
   final CharacterModel draft;
 
   @override
+  State<EditorSectionBasicInfo> createState() => _EditorSectionBasicInfoState();
+}
+
+class _EditorSectionBasicInfoState extends State<EditorSectionBasicInfo> {
+  @override
   Widget build(BuildContext context) {
-    final basic = draft.basicInfo;
+    final basic = widget.draft.basicInfo;
 
     return EditorSectionScaffold(
       title: 'Datos básicos',
@@ -35,6 +42,40 @@ class EditorSectionBasicInfo extends StatelessWidget {
           'la velocidad, el estado de combate actual se recorta para '
           'quedar coherente (nunca al revés).',
       children: [
+        Center(
+          child: Stack(
+            alignment: Alignment.bottomRight,
+            children: [
+              CharacterAvatar(
+                avatarPath: widget.draft.avatarPath,
+                name: basic.name,
+                size: 84,
+                onTap: () => AvatarPickerHelper.showAvatarOptions(
+                  context,
+                  currentPath: widget.draft.avatarPath,
+                  onSelected: (newPath) {
+                    setState(() => widget.draft.avatarPath = newPath);
+                  },
+                ),
+              ),
+              IgnorePointer(
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.camera_alt_rounded,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
         EditorTextField(
           label: 'Nombre',
           initialValue: basic.name,
@@ -74,7 +115,7 @@ class EditorSectionBasicInfo extends StatelessWidget {
           label: 'Velocidad (metros por turno)',
           value: basic.speed,
           onChanged: (value) {
-            if (value != null) draft.setSpeed(value);
+            if (value != null) widget.draft.setSpeed(value);
           },
         ),
         EditorIntField(

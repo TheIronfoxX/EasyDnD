@@ -93,7 +93,7 @@ extension CharacterStoreInventory on CharacterStore {
   // -------------------------------------------------------------------
 
   /// Foto de perfil (header del HUD).
-  void setAvatarPath(String path) {
+  void setAvatarPath(String? path) {
     final character = activeCharacter;
     if (character == null) return;
     character.avatarPath = path;
@@ -102,7 +102,7 @@ extension CharacterStoreInventory on CharacterStore {
 
   /// Foto de la pestaña Lore. Deliberadamente independiente de la de
   /// perfil: cambiar una no congela la otra.
-  void setLoreAvatarPath(String path) {
+  void setLoreAvatarPath(String? path) {
     final character = activeCharacter;
     if (character == null) return;
     character.loreAvatarPath = path;

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#0A0E17</color>
+    <color name="ic_launcher_background">#131009</color>
     <!-- Fondo del arranque: el mismo de la app en modo oscuro, así no hay
          flash blanco antes del primer frame de Flutter. -->
-    <color name="launch_background">#0A0E17</color>
+    <color name="launch_background">#131009</color>
 </resources>

@@ -73,11 +73,14 @@ void main() {
       expect(find.text('Atletismo'), findsOneWidget);
       expect(find.text('+5'), findsOneWidget);
       expect(find.text('Sigilo'), findsOneWidget);
-      // +3 también es el modificador de Fuerza en Atributos: acotamos al
-      // ListTile de Sigilo para no confundir ambas apariciones.
+      // +3 también es el modificador de Fuerza en Atributos: acotamos a la
+      // fila de Sigilo para no confundir ambas apariciones.
       expect(
         find.descendant(
-          of: find.widgetWithText(ListTile, 'Sigilo'),
+          of: find.ancestor(
+            of: find.text('Sigilo'),
+            matching: find.byType(Row),
+          ),
           matching: find.text('+3'),
         ),
         findsOneWidget,

@@ -97,7 +97,7 @@ se regeneran con `flutter_launcher_icons`:
 dart run flutter_launcher_icons
 ```
 
-El splash de Android usa el color de fondo de la app (`#0A0E17`) para evitar
+El splash de Android usa el color de fondo de la app (`#131009`) para evitar
 el flash blanco antes del primer frame.
 
 ## Fichas de ejemplo
