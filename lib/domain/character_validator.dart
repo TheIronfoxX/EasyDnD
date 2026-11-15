@@ -99,7 +99,9 @@ class CharacterValidator {
         'El JSON no es un objeto de ficha (¿llegó un array o un número suelto?).',
       );
     }
-    return validateMap(decoded.cast<String, dynamic>());
+    // Pasada tolerante: corrige torpezas típicas de la IA (números entre
+    // comillas, null por []...) antes de validar.
+    return validateMap(normalizeCharacterJson(decoded.cast<String, dynamic>()));
   }
 
   /// Valida un mapa ya decodificado. Expuesto aparte para tests y para
