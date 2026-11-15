@@ -408,3 +408,158 @@ class EditorEmptyHint extends StatelessWidget {
     );
   }
 }
+
+/// Campo numérico con botones − / +: el valor también se puede teclear
+/// (misma tolerancia que [EditorIntField]). Los botones llevan las keys
+/// `<id>-dec` / `<id>-inc` para los tests.
+///
+/// Con [allowEmpty] el valor puede ser null (campo vacío); el primer "+"
+/// parte de [nullStart].
+class EditorStepperField extends StatefulWidget {
+  const EditorStepperField({
+    super.key,
+    required this.id,
+    required this.label,
+    required this.value,
+    required this.onChanged,
+    this.min = 0,
+    this.max,
+    this.allowEmpty = false,
+    this.allowNegative = false,
+    this.nullStart = 0,
+  });
+
+  final String id;
+  final String label;
+  final int? value;
+  final ValueChanged<int?> onChanged;
+  final int min;
+  final int? max;
+  final bool allowEmpty;
+  final bool allowNegative;
+  final int nullStart;
+
+  @override
+  State<EditorStepperField> createState() => _EditorStepperFieldState();
+}
+
+class _EditorStepperFieldState extends State<EditorStepperField> {
+  late final TextEditingController _controller =
+      TextEditingController(text: widget.value?.toString() ?? '');
+
+  @override
+  void didUpdateWidget(EditorStepperField old) {
+    super.didUpdateWidget(old);
+    // Solo se pisa el texto si el valor cambió desde afuera (por ej. el
+    // tope arrastró los usos): mientras se teclea, el borrador conserva
+    // el último valor válido y no se toca lo escrito.
+    if (widget.value != old.value &&
+        widget.value != int.tryParse(_controller.text)) {
+      _controller.text = widget.value?.toString() ?? '';
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _step(int delta) {
+    final base = widget.value ?? widget.nullStart;
+    var next = base + delta;
+    final lowest = widget.allowNegative ? (widget.min) : widget.min;
+    if (next < lowest) next = lowest;
+    final highest = widget.max;
+    if (highest != null && next > highest) next = highest;
+    _controller.text = '$next';
+    widget.onChanged(next);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final value = widget.value;
+    return Row(
+      children: [
+        IconButton(
+          key: Key('${widget.id}-dec'),
+          tooltip: 'Restar',
+          visualDensity: VisualDensity.compact,
+          icon: const Icon(Icons.remove_circle_outline_rounded),
+          onPressed: value != null && value <= widget.min
+              ? null
+              : () => _step(-1),
+        ),
+        Expanded(
+          child: EditorIntField(
+            label: widget.label,
+            value: widget.value,
+            controller: _controller,
+            allowEmpty: widget.allowEmpty,
+            allowNegative: widget.allowNegative,
+            onChanged: widget.onChanged,
+          ),
+        ),
+        IconButton(
+          key: Key('${widget.id}-inc'),
+          tooltip: 'Sumar',
+          visualDensity: VisualDensity.compact,
+          icon: const Icon(Icons.add_circle_outline_rounded),
+          onPressed: widget.max != null && value != null && value >= widget.max!
+              ? null
+              : () => _step(1),
+        ),
+      ],
+    );
+  }
+}
+
+/// Encabezado de bloque dentro de una pestaña del taller.
+class EditorBlockTitle extends StatelessWidget {
+  const EditorBlockTitle(this.text, {super.key, this.trailing});
+
+  final String text;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.md, bottom: AppSpacing.xs),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              text.toUpperCase(),
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.primary,
+                letterSpacing: 1,
+              ),
+            ),
+          ),
+          if (trailing != null) trailing!,
+        ],
+      ),
+    );
+  }
+}
+
+/// Ficha de solo lectura (Iniciativa, Percepción pasiva...).
+class EditorReadout extends StatelessWidget {
+  const EditorReadout({super.key, required this.id, required this.label, required this.value});
+
+  final String id;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      children: [
+        Text(value, key: Key('readout-$id'), style: theme.textTheme.headlineSmall),
+        Text(label, style: theme.textTheme.labelSmall),
+      ],
+    );
+  }
+}

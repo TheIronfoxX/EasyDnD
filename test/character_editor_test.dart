@@ -35,6 +35,11 @@ void main() {
     CharacterStore store, {
     CharacterModel? edit,
   }) {
+    // Pantalla alta: las pestañas son ListView perezosos y así casi todo
+    // queda construido sin tener que scrollear en cada test.
+    tester.view.physicalSize = const Size(800, 4200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     return tester.pumpWidget(
       ChangeNotifierProvider<CharacterStore>.value(
         value: store,
@@ -81,16 +86,36 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  /// Toca un tile del shell del editor. Las últimas secciones quedan
-  /// debajo del pliegue: el ListView es lazy y hay que scrollearlo.
-  Future<void> openSection(WidgetTester tester, String title) async {
-    await tester.scrollUntilVisible(
-      find.text(title),
-      200,
-      scrollable: find.byType(Scrollable).first,
-    );
+  /// Cambia de pestaña del taller.
+  Future<void> goTab(WidgetTester tester, String name) async {
+    await tester.tap(find.widgetWithText(Tab, name));
     await tester.pumpAndSettle();
-    await tester.tap(find.text(title));
+  }
+
+  /// Campo de un diálogo abierto (los diálogos no ocultan la pestaña de
+  /// abajo, así que buscar solo por label daría coincidencias dobles).
+  Finder dialogField(String label) => find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.widgetWithText(TextFormField, label),
+      );
+
+  /// Campo de texto dentro de un widget con key (ej. 'summary-a1').
+  Finder fieldIn(String key) => find.descendant(
+        of: find.byKey(Key(key)),
+        matching: find.byType(TextFormField),
+      );
+
+  Future<void> tapKey(WidgetTester tester, String key) async {
+    final finder = find.byKey(Key(key));
+    await tester.ensureVisible(finder);
+    await tester.pumpAndSettle();
+    await tester.tap(finder);
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> openEditor(WidgetTester tester, CharacterStore store) async {
+    await pumpHome(tester, store, edit: store.activeCharacter);
+    await tester.tap(find.text('editar-ficha'));
     await tester.pumpAndSettle();
   }
 
@@ -152,6 +177,21 @@ void main() {
     });
   });
 
+
+  group('estructura del taller', () {
+    testWidgets('4 pestañas y el menú de secciones ya no existe', (tester) async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await openEditor(tester, store);
+
+      for (final name in ['Núcleo', 'Arsenal', 'Grimorio', 'Mochila']) {
+        expect(find.widgetWithText(Tab, name), findsOneWidget);
+      }
+      expect(find.text('Datos básicos'), findsNothing);
+      expect(find.text('Objetos y monedas'), findsNothing);
+    });
+  });
+
   group('alta manual', () {
     testWidgets('ficha en blanco → llenar nombre → crear entra al roster',
         (tester) async {
@@ -160,28 +200,15 @@ void main() {
 
       await tester.tap(find.text('crear-ficha'));
       await tester.pumpAndSettle();
-
       expect(find.text('Nueva ficha'), findsOneWidget);
 
-      // Los campos viven en la página de la sección, no en el shell.
-      await tester.tap(find.text('Datos básicos'));
-      await tester.pumpAndSettle();
-
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Nombre'),
-        'Rook',
-      );
+      await tester.enterText(find.widgetWithText(TextFormField, 'Nombre'), 'Rook');
       await tester.pump();
-
-      // El "Crear ficha" es del shell: volver de la sección primero.
-      await tester.pageBack();
-      await tester.pumpAndSettle();
       await tester.tap(find.text('Crear ficha'));
       await tester.pumpAndSettle();
 
       // La ficha recién creada avisa que no trae habilidades: no
-      // bloquea, pero se confirma explícitamente (mismo criterio que
-      // el wizard de importación).
+      // bloquea, pero se confirma explícitamente.
       expect(find.text('Hay 1 avisos'), findsOneWidget);
       await tester.tap(find.text('Guardar igual'));
       await tester.pumpAndSettle();
@@ -198,24 +225,13 @@ void main() {
 
       await tester.tap(find.text('crear-ficha'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Datos básicos'));
-      await tester.pumpAndSettle();
-
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Nombre'),
-        '',
-      );
+      await tester.enterText(find.widgetWithText(TextFormField, 'Nombre'), '');
       await tester.pump();
-
-      await tester.pageBack();
-      await tester.pumpAndSettle();
       await tester.tap(find.text('Crear ficha'));
       await tester.pumpAndSettle();
 
-      // El diálogo lista el error bloqueante y no sale del editor.
       expect(find.text('La ficha no se puede guardar'), findsOneWidget);
-      expect(find.textContaining('El personaje no tiene nombre'),
-          findsOneWidget);
+      expect(find.textContaining('El personaje no tiene nombre'), findsOneWidget);
       expect(find.byType(CharacterEditorScreen), findsOneWidget);
       expect(store.roster, isEmpty);
     });
@@ -225,48 +241,23 @@ void main() {
     testWidgets('guardar reemplaza sin duplicar y conserva id y PG actuales',
         (tester) async {
       final store = await boot();
-      final ficha = buildCharacter(id: 'char_rook', name: 'Rook');
-      store.addCharacter(ficha);
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
       final idOriginal = store.activeCharacter!.id;
-
-      // Combate en curso: media vida, para verificar que la edición no
-      // la toca.
       store.activeCharacter!.basicInfo.currentHp = 10;
 
-      await pumpHome(tester, store, edit: store.activeCharacter);
-      await tester.tap(find.text('editar-ficha'));
-      await tester.pumpAndSettle();
-
+      await openEditor(tester, store);
       expect(find.text('Editar a Rook'), findsOneWidget);
 
-      await tester.tap(find.text('Datos básicos'));
-      await tester.pumpAndSettle();
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Clase'),
-        'Clérigo 4',
-      );
+      await tester.enterText(find.widgetWithText(TextFormField, 'Clase'), 'Clérigo 4');
       await tester.pump();
-      // El avatar (8b) empuja este campo debajo del pliegue: el
-      // ListView de la sección es lazy, hay que scrollearlo.
-      await tester.scrollUntilVisible(
-        find.widgetWithText(TextFormField, 'Velocidad (pies por turno)'),
-        200,
-        scrollable: find.byType(Scrollable).first,
-      );
       await tester.enterText(
         find.widgetWithText(TextFormField, 'Velocidad (pies por turno)'),
         '40',
       );
       await tester.pump();
 
-      await tester.pageBack();
-      await tester.pumpAndSettle();
       await tester.tap(find.text('Guardar cambios'));
       await tester.pumpAndSettle();
-
-      // La ficha fixture tiene ranuras sin spell_save_dc: el aviso
-      // persistente vuelve a mostrarse en cada guardado (informativo,
-      // no bloquea).
       expect(find.text('Hay 1 avisos'), findsOneWidget);
       await tester.tap(find.text('Guardar igual'));
       await tester.pumpAndSettle();
@@ -277,7 +268,6 @@ void main() {
       expect(guardada.id, idOriginal);
       expect(guardada.basicInfo.characterClass, 'Clérigo 4');
       expect(guardada.basicInfo.speed, 40);
-      // El estado de combate sobrevive a la edición.
       expect(guardada.basicInfo.currentHp, 10);
     });
 
@@ -285,20 +275,14 @@ void main() {
         (tester) async {
       final store = await boot();
       store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
-
-      await pumpHome(tester, store, edit: store.activeCharacter);
-      await tester.tap(find.text('editar-ficha'));
-      await tester.pumpAndSettle();
+      await openEditor(tester, store);
 
       // Sin cambios: el atrás sale directo, sin diálogo.
       await tester.pageBack();
       await tester.pumpAndSettle();
       expect(find.byType(CharacterEditorScreen), findsNothing);
 
-      // Con cambios: aparece el diálogo y Descartar pierde los edits.
       await tester.tap(find.text('editar-ficha'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Datos básicos'));
       await tester.pumpAndSettle();
       await tester.enterText(
         find.widgetWithText(TextFormField, 'Nombre'),
@@ -306,10 +290,6 @@ void main() {
       );
       await tester.pump();
 
-      // Volver de la sección (sin confirmar: las secciones no preguntan)
-      // y recién ahí salir del editor.
-      await tester.pageBack();
-      await tester.pumpAndSettle();
       await tester.pageBack();
       await tester.pumpAndSettle();
       expect(find.text('¿Descartar los cambios?'), findsOneWidget);
@@ -319,98 +299,127 @@ void main() {
       expect(find.byType(CharacterEditorScreen), findsNothing);
       expect(store.activeCharacter!.basicInfo.name, 'Rook');
     });
+
+    testWidgets('cambiar de pestaña conserva lo tipeado', (tester) async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await openEditor(tester, store);
+
+      await tester.enterText(find.widgetWithText(TextFormField, 'Raza'), 'Mediano');
+      await tester.pump();
+      await goTab(tester, 'Mochila');
+      await goTab(tester, 'Núcleo');
+
+      expect(find.text('Mediano'), findsOneWidget);
+    });
   });
 
-  group('secciones 4b — atributos, competencias, ranuras', () {
-    testWidgets('atributos: "usar estándar" recalcula el modificador',
+  group('pestaña Núcleo', () {
+    testWidgets('steppers de vitales, alineamiento e indicadores en vivo',
         (tester) async {
       final store = await boot();
       store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
-      await pumpHome(tester, store, edit: store.activeCharacter);
-      await tester.tap(find.text('editar-ficha'));
-      await tester.pumpAndSettle();
+      final original = store.activeCharacter!.basicInfo;
+      final hp0 = original.hpMax, ac0 = original.ac, speed0 = original.speed;
+      await openEditor(tester, store);
 
-      // El tile del shell resume los seis valores.
-      expect(
-        find.text('STR 16 · DEX 12 · CON 14 · INT 10 · WIS 10 · CHA 10'),
-        findsOneWidget,
-      );
-
-      await tester.tap(find.text('Atributos'));
-      await tester.pumpAndSettle();
-
-      await tester.enterText(find.byKey(const ValueKey('value-str')), '18');
+      await tapKey(tester, 'hp-inc');
+      await tapKey(tester, 'ac-inc');
+      await tapKey(tester, 'ac-inc');
+      await tapKey(tester, 'speed-dec');
+      await tapKey(tester, 'dc-inc'); // CD vacía: parte de 10
+      await tester.enterText(find.widgetWithText(TextFormField, 'Alineamiento'), 'Legal bueno');
       await tester.pump();
 
+      // Iniciativa = mod. de Destreza; percepción pasiva sin competencia
+      // = 10 + mod. de Sabiduría.
+      expect(tester.widget<Text>(find.byKey(const Key('readout-initiative'))).data, '+1');
+      expect(tester.widget<Text>(find.byKey(const Key('readout-passive-perception'))).data, '10');
+
+      // Con una competencia "Percepción +7" el indicador la usa.
+      await tester.tap(find.text('Competencias'));
+      await tester.pumpAndSettle();
+      await tapKey(tester, 'add-skill');
+      await tester.enterText(dialogField('Nombre'), 'Percepción');
+      await tester.tap(find.byType(DropdownButtonFormField<String>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Sabiduría').last);
+      await tester.pumpAndSettle();
+      await tester.enterText(dialogField('Modificador'), '7');
+      await tester.pump();
+      await tester.tap(find.text('Guardar'));
+      await tester.pumpAndSettle();
+      expect(tester.widget<Text>(find.byKey(const Key('readout-passive-perception'))).data, '17');
+
+      // Con la CD cargada la ficha ya no tiene avisos: guarda directo.
+      await tester.tap(find.text('Guardar cambios'));
+      await tester.pumpAndSettle();
+      expect(find.text('Hay 1 avisos'), findsNothing);
+
+      final b = store.activeCharacter!.basicInfo;
+      expect(b.hpMax, hp0 + 1);
+      expect(b.ac, ac0 + 2);
+      expect(b.speed, speed0 - 1);
+      expect(b.spellSaveDc, 11);
+      expect(b.alignment, 'Legal bueno');
+      expect(store.activeCharacter!.skills.single.name, 'Percepción');
+    });
+
+    testWidgets('atributos: stepper, "usar estándar" y nota de salvación',
+        (tester) async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await openEditor(tester, store);
+
+      await tester.enterText(find.byKey(const ValueKey('value-str')), '17');
+      await tester.pump();
+      await tapKey(tester, 'value-str-inc'); // 18
       // El mod sigue en +3: el botón ofrece el +4 estándar del 18.
       await tester.tap(find.byKey(const ValueKey('standard-str')));
       await tester.pump();
 
-      // La sobreescritura también se ve en el campo, no solo en el
-      // borrador (los mods van con controllers a propósito).
-      final modField = tester.widget<TextFormField>(
-        find.byKey(const ValueKey('mod-str')),
-      );
+      final modField = tester.widget<TextFormField>(find.byKey(const ValueKey('mod-str')));
       expect(modField.controller?.text, '4');
+      expect(tester.widget<Text>(find.byKey(const Key('mod-live-str'))).data, '+4');
 
-      await tester.pageBack();
-      await tester.pumpAndSettle();
+      await tester.enterText(fieldIn('note-str'), 'Salvación +6 (competente)');
+      await tester.pump();
+
       await tester.tap(find.text('Guardar cambios'));
       await tester.pumpAndSettle();
-      expect(find.text('Hay 1 avisos'), findsOneWidget);
       await tester.tap(find.text('Guardar igual'));
       await tester.pumpAndSettle();
 
       final stats = store.activeCharacter!.stats;
       expect(stats.str.value, 18);
       expect(stats.str.mod, 4);
+      expect(stats.str.description, 'Salvación +6 (competente)');
     });
 
-    testWidgets('competencias: alta con diálogo y persistencia',
-        (tester) async {
+    testWidgets('competencias: alta con diálogo y persistencia', (tester) async {
       final store = await boot();
       store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
-      await pumpHome(tester, store, edit: store.activeCharacter);
-      await tester.tap(find.text('editar-ficha'));
-      await tester.pumpAndSettle();
+      await openEditor(tester, store);
 
       expect(find.text('sin competencias'), findsOneWidget);
-
       await tester.tap(find.text('Competencias'));
       await tester.pumpAndSettle();
+      expect(find.text('Todavía no hay competencias en la ficha.'), findsOneWidget);
 
-      expect(find.text('Todavía no hay competencias en la ficha.'),
-          findsOneWidget);
-
-      await tester.tap(find.byType(FloatingActionButton));
-      await tester.pumpAndSettle();
-
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Nombre'),
-        'Arcanos',
-      );
+      await tapKey(tester, 'add-skill');
+      await tester.enterText(dialogField('Nombre'), 'Arcanos');
       await tester.pump();
-
-      // Dropdown del atributo relacionado (se tipea el campo, no el
-      // hint: el hint es decorativo y no recibe eventos).
       await tester.tap(find.byType(DropdownButtonFormField<String>));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Sabiduría').last);
       await tester.pumpAndSettle();
-
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Modificador'),
-        '7',
-      );
+      await tester.enterText(dialogField('Modificador'), '7');
       await tester.pump();
       await tester.tap(find.text('Guardar'));
       await tester.pumpAndSettle();
 
       expect(find.text('Arcanos'), findsOneWidget);
       expect(find.text('Sabiduría · +7'), findsOneWidget);
-
-      await tester.pageBack();
-      await tester.pumpAndSettle();
       expect(find.text('1 competencia'), findsOneWidget);
 
       await tester.tap(find.text('Guardar cambios'));
@@ -430,212 +439,118 @@ void main() {
         (tester) async {
       final store = await boot();
       store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
-      await pumpHome(tester, store, edit: store.activeCharacter);
-      await tester.tap(find.text('editar-ficha'));
-      await tester.pumpAndSettle();
+      await openEditor(tester, store);
       await tester.tap(find.text('Competencias'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byType(FloatingActionButton));
-      await tester.pumpAndSettle();
+      await tapKey(tester, 'add-skill');
       await tester.tap(find.text('Guardar'));
       await tester.pump();
 
       expect(find.text('Poné un nombre.'), findsOneWidget);
-      // El diálogo sigue abierto y la lista sigue vacía.
       expect(find.text('Nueva competencia'), findsOneWidget);
 
       await tester.tap(find.text('Cancelar'));
       await tester.pumpAndSettle();
       expect(store.activeCharacter!.skills, isEmpty);
     });
+  });
 
-    testWidgets(
-        'ranuras: agregar un nivel nuevo, borrar otro y persistir '
-        'ordenado', (tester) async {
+  group('pestaña Arsenal', () {
+    testWidgets('reclasificación en 1 toque conserva la identidad (id)',
+        (tester) async {
       final store = await boot();
-      store.addCharacter(
-        buildCharacter(id: 'char_rook', name: 'Rook', slotCurrent: 2),
-      );
-      await pumpHome(tester, store, edit: store.activeCharacter);
-      await tester.tap(find.text('editar-ficha'));
-      await tester.pumpAndSettle();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await openEditor(tester, store);
+      await goTab(tester, 'Arsenal');
 
-      expect(find.text('4 de nivel 1'), findsOneWidget);
+      expect(find.text('Acción · 1'), findsOneWidget);
+      expect(find.text('Reacción · 0'), findsOneWidget);
 
-      await tester.tap(find.text('Ranuras de conjuro'));
-      await tester.pumpAndSettle();
-      expect(find.text('2 de 4 disponibles'), findsOneWidget);
+      await tapKey(tester, 'cat-a1-reaction');
+      expect(find.text('Acción · 0'), findsOneWidget);
+      expect(find.text('Reacción · 1'), findsOneWidget);
 
-      // El alta arranca en el primer nivel libre (la ficha tiene el 1).
-      await tester.tap(find.byType(FloatingActionButton));
-      await tester.pumpAndSettle();
-      expect(find.text('Nivel 2'), findsWidgets);
+      // Y a pasiva: el rol táctico queda definido (exclusión mutua).
+      await tapKey(tester, 'cat-a1-passive');
 
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Ranuras totales'),
-        '2',
-      );
-      await tester.pump();
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Disponibles ahora'),
-        '2',
-      );
-      await tester.pump();
-      await tester.tap(find.text('Guardar'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Nivel 1'), findsOneWidget);
-      expect(find.text('Nivel 2'), findsOneWidget);
-      expect(find.text('2 de 2 disponibles'), findsOneWidget);
-
-      // Borrado directo del nivel 1 (el borrador cubre el arrepentimiento).
-      await tester.tap(find.byIcon(Icons.delete_outline_rounded).first);
-      await tester.pumpAndSettle();
-      expect(find.text('Nivel 1'), findsNothing);
-
-      await tester.pageBack();
-      await tester.pumpAndSettle();
       await tester.tap(find.text('Guardar cambios'));
       await tester.pumpAndSettle();
       expect(find.text('Hay 1 avisos'), findsOneWidget);
       await tester.tap(find.text('Guardar igual'));
       await tester.pumpAndSettle();
 
-      final slots = store.activeCharacter!.spellSlots.slots;
-      expect(slots, hasLength(1));
-      expect(slots.single.level, 2);
-      expect(slots.single.max, 2);
-      expect(slots.single.current, 2);
+      final abilities = store.activeCharacter!.abilitiesByAction;
+      expect(abilities.action, isEmpty);
+      expect(abilities.passive, hasLength(1));
+      expect(abilities.passive.single.id, 'a1');
+      expect(abilities.passive.single.name, 'Golpe Devastador');
+      expect(abilities.passive.single.tacticalRole, 'Utilidad');
     });
 
-    testWidgets('ranuras: disponibles no puede superar las totales',
-        (tester) async {
+    testWidgets('el filtro por categoría oculta las demás', (tester) async {
       final store = await boot();
       store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
-      await pumpHome(tester, store, edit: store.activeCharacter);
-      await tester.tap(find.text('editar-ficha'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Ranuras de conjuro'));
-      await tester.pumpAndSettle();
+      await openEditor(tester, store);
+      await goTab(tester, 'Arsenal');
 
-      await tester.tap(find.byType(FloatingActionButton));
-      await tester.pumpAndSettle();
-
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Disponibles ahora'),
-        '5',
-      );
-      await tester.pump();
-      await tester.tap(find.text('Guardar'));
-      await tester.pump();
-
-      expect(find.text('No puede superar las totales (1).'), findsOneWidget);
-      expect(find.text('Nuevo nivel de ranura'), findsOneWidget);
-
-      await tester.tap(find.text('Cancelar'));
-      await tester.pumpAndSettle();
-      expect(store.activeCharacter!.spellSlots.slots, hasLength(1));
-    });
-
-    testWidgets('ranuras: con los 9 niveles el alta avisa en vez de romper',
-        (tester) async {
-      final store = await boot();
-      final ficha = buildCharacter(id: 'char_rook', name: 'Rook');
-      ficha.spellSlots.slots
-        ..clear()
-        ..addAll([
-          for (var level = 1; level <= 9; level++)
-            SpellSlot(level: level, max: 2, current: 2),
-        ]);
-      store.addCharacter(ficha);
-
-      await pumpHome(tester, store, edit: store.activeCharacter);
-      await tester.tap(find.text('editar-ficha'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Ranuras de conjuro'));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byType(FloatingActionButton));
-      await tester.pumpAndSettle();
-
-      expect(find.text('La ficha ya tiene ranuras de los 9 niveles.'),
-          findsOneWidget);
-      // Sin diálogo abierto: no hay niveles para elegir.
-      expect(find.text('Nuevo nivel de ranura'), findsNothing);
-    });
-  });
-
-  group('secciones 4c — habilidades', () {
-    testWidgets('alta completa desde el FAB y persistencia',
-        (tester) async {
-      final store = await boot();
-      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
-      await pumpHome(tester, store, edit: store.activeCharacter);
-      await tester.tap(find.text('editar-ficha'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('1 acción'), findsOneWidget);
-
-      await tester.tap(find.text('Habilidades'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('ACCIÓN · 1'), findsOneWidget);
+      await tapKey(tester, 'filter-reaction');
+      expect(find.text('Golpe Devastador'), findsNothing);
+      await tapKey(tester, 'filter-all');
       expect(find.text('Golpe Devastador'), findsOneWidget);
+    });
 
-      await tester.tap(find.byType(FloatingActionButton));
-      await tester.pumpAndSettle();
+    testWidgets('resumen táctico editable en línea', (tester) async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await openEditor(tester, store);
+      await goTab(tester, 'Arsenal');
 
-      expect(find.text('Nueva habilidad'), findsOneWidget);
-      expect(find.text('Habilidad sin nombre'), findsOneWidget);
-
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Nombre'),
-        'Bola de Fuego',
-      );
+      await tester.enterText(fieldIn('summary-a1'), 'Gasta la acción, +2d6 al impactar');
       await tester.pump();
 
-      // Tipo de tirada: salvación.
+      await tester.tap(find.text('Guardar cambios'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Guardar igual'));
+      await tester.pumpAndSettle();
+
+      expect(
+        store.activeCharacter!.abilitiesByAction.action.single.tacticalSummary,
+        'Gasta la acción, +2d6 al impactar',
+      );
+    });
+
+    testWidgets('alta de habilidad completa y persistencia', (tester) async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await openEditor(tester, store);
+      await goTab(tester, 'Arsenal');
+
+      await tapKey(tester, 'add-trait');
+      expect(find.text('Nueva habilidad'), findsOneWidget);
+      await tester.enterText(find.widgetWithText(TextFormField, 'Nombre'), 'Bola de Fuego');
+      await tester.pump();
       await tester.tap(find.byKey(const ValueKey('ability-attack-type')));
       await tester.pumpAndSettle();
-      await tester
-          .tap(find.text('Salvación — el objetivo tira contra tu CD'));
+      await tester.tap(find.text('Salvación — el objetivo tira contra tu CD'));
       await tester.pumpAndSettle();
-
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Dados de daño'),
-        '8d6',
-      );
+      await tester.enterText(find.widgetWithText(TextFormField, 'Dados de daño'), '8d6');
       await tester.pump();
-
-      // El switch de cargas vive abajo de la página: el ListView es
-      // lazy, hay que scrollear hasta él. Ojo: cada TextField tiene su
-      // propio Scrollable interno — el primero del árbol es el ListView.
       await tester.scrollUntilVisible(
         find.text('Usos limitados por descanso'),
         200,
         scrollable: find.byType(Scrollable).first,
       );
       await tester.pumpAndSettle();
-
       await tester.tap(find.text('Usos limitados por descanso'));
       await tester.pump();
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Tope de usos'),
-        '3',
-      );
+      await tester.enterText(find.widgetWithText(TextFormField, 'Tope de usos'), '3');
       await tester.pump();
-
       await tester.pageBack();
       await tester.pumpAndSettle();
 
-      expect(find.text('ACCIÓN · 2'), findsOneWidget);
+      expect(find.text('Acción · 2'), findsOneWidget);
       expect(find.text('Bola de Fuego'), findsOneWidget);
-      expect(find.text('Salvación · 8d6 · 3/3 usos'), findsOneWidget);
-
-      await tester.pageBack();
-      await tester.pumpAndSettle();
-      expect(find.text('2 acciones'), findsOneWidget);
 
       await tester.tap(find.text('Guardar cambios'));
       await tester.pumpAndSettle();
@@ -652,74 +567,20 @@ void main() {
       expect(bola.magicCharges.current, 3);
     });
 
-    testWidgets('mover de categoría conserva la identidad (id)',
-        (tester) async {
-      final store = await boot();
-      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
-      await pumpHome(tester, store, edit: store.activeCharacter);
-      await tester.tap(find.text('editar-ficha'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Habilidades'));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Golpe Devastador'));
-      await tester.pumpAndSettle();
-      expect(find.text('Editar habilidad'), findsOneWidget);
-
-      await tester.tap(find.byKey(const ValueKey('ability-category')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Reacción'));
-      await tester.pumpAndSettle();
-
-      await tester.pageBack();
-      await tester.pumpAndSettle();
-
-      expect(find.text('ACCIÓN · 1'), findsNothing);
-      expect(find.text('REACCIÓN · 1'), findsOneWidget);
-
-      await tester.pageBack();
-      await tester.pumpAndSettle();
-      expect(find.text('1 reacción'), findsOneWidget);
-
-      await tester.tap(find.text('Guardar cambios'));
-      await tester.pumpAndSettle();
-      expect(find.text('Hay 1 avisos'), findsOneWidget);
-      await tester.tap(find.text('Guardar igual'));
-      await tester.pumpAndSettle();
-
-      final abilities = store.activeCharacter!.abilitiesByAction;
-      expect(abilities.action, isEmpty);
-      expect(abilities.reaction, hasLength(1));
-      // La identidad no cambia al mover: el HUD cuelga las cargas
-      // de este id.
-      expect(abilities.reaction.single.id, 'a1');
-      expect(abilities.reaction.single.name, 'Golpe Devastador');
-    });
-
     testWidgets('borrar la única habilidad avisa al guardar (2 avisos)',
         (tester) async {
       final store = await boot();
       store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
-      await pumpHome(tester, store, edit: store.activeCharacter);
-      await tester.tap(find.text('editar-ficha'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Habilidades'));
-      await tester.pumpAndSettle();
+      await openEditor(tester, store);
+      await goTab(tester, 'Arsenal');
 
-      await tester.tap(find.byIcon(Icons.delete_outline_rounded));
+      await tester.tap(find.byTooltip('Borrar habilidad'));
       await tester.pumpAndSettle();
-
       expect(find.text('Golpe Devastador'), findsNothing);
-      expect(find.text('La ficha no trae habilidades todavía.'),
-          findsOneWidget);
-
-      await tester.pageBack();
-      await tester.pumpAndSettle();
-      expect(find.text('sin habilidades'), findsOneWidget);
+      expect(find.text('No hay rasgos todavía.'), findsOneWidget);
 
       await tester.tap(find.text('Guardar cambios'));
       await tester.pumpAndSettle();
-      // El aviso de "no trae habilidades" se SUMA al de ranuras sin CD.
       expect(find.text('Hay 2 avisos'), findsOneWidget);
       await tester.tap(find.text('Guardar igual'));
       await tester.pumpAndSettle();
@@ -727,147 +588,33 @@ void main() {
       expect(store.activeCharacter!.abilitiesByAction.all, isEmpty);
     });
 
-    testWidgets('notación de dados inválida avisada en vivo',
-        (tester) async {
+    testWidgets('notación de dados inválida avisada en vivo', (tester) async {
       final store = await boot();
       store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
-      await pumpHome(tester, store, edit: store.activeCharacter);
-      await tester.tap(find.text('editar-ficha'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Habilidades'));
-      await tester.pumpAndSettle();
+      await openEditor(tester, store);
+      await goTab(tester, 'Arsenal');
 
       await tester.tap(find.text('Golpe Devastador'));
       await tester.pumpAndSettle();
-
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Dados de daño'),
-        'banana',
-      );
+      await tester.enterText(find.widgetWithText(TextFormField, 'Dados de daño'), 'banana');
       await tester.pump();
 
-      expect(find.textContaining('Notación de dado inválida'),
-          findsOneWidget);
-    });
-  });
-  group('secciones 4d — recursos, armas, objetos, lore y compañeros', () {
-    testWidgets('recursos: coherencia del tope y alta desde el FAB', (
-      tester,
-    ) async {
-      final store = await boot();
-      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
-      await pumpHome(tester, store, edit: store.activeCharacter);
-      await tester.tap(find.text('editar-ficha'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Furia 2/3'), findsOneWidget);
-
-      await openSection(tester, 'Recursos');
-      expect(find.text('2 de 3 usos'), findsOneWidget);
-
-      // El recurso está gastado (2 de 3): subir el tope no regala usos.
-      await tester.tap(find.text('Furia'));
-      await tester.pumpAndSettle();
-      expect(find.text('Editar recurso'), findsOneWidget);
-
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Tope de usos'),
-        '5',
-      );
-      await tester.pump();
-      expect(
-        tester
-            .widget<TextFormField>(
-              find.widgetWithText(TextFormField, 'Usos restantes'),
-            )
-            .controller
-            ?.text,
-        '2',
-      );
-
-      // Bajar el tope por debajo de los usos restantes los recorta.
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Tope de usos'),
-        '1',
-      );
-      await tester.pump();
-      expect(
-        tester
-            .widget<TextFormField>(
-              find.widgetWithText(TextFormField, 'Usos restantes'),
-            )
-            .controller
-            ?.text,
-        '1',
-      );
-
-      await tester.tap(find.text('Guardar'));
-      await tester.pumpAndSettle();
-      expect(find.text('1 de 1 usos'), findsOneWidget);
-
-      // Alta nueva: recién creado arranca lleno (1/1) y el tope lo
-      // acompaña.
-      await tester.tap(find.byType(FloatingActionButton));
-      await tester.pumpAndSettle();
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Nombre'),
-        'Ki',
-      );
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Tope de usos'),
-        '4',
-      );
-      await tester.pump();
-      await tester.tap(find.text('Guardar'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Ki'), findsOneWidget);
-
-      await tester.pageBack();
-      await tester.pumpAndSettle();
-      expect(find.text('Furia 1/1 · Ki 4/4'), findsOneWidget);
-
-      await saveWithWarning(tester);
-
-      final resources = store.activeCharacter!.resources;
-      expect(resources, hasLength(2));
-      expect(resources[0].name, 'Furia');
-      expect(resources[0].current, 1);
-      expect(resources[0].max, 1);
-      expect(resources[1].name, 'Ki');
-      expect(resources[1].current, 4);
-      expect(resources[1].max, 4);
+      expect(find.textContaining('Notación de dado inválida'), findsOneWidget);
     });
 
-    testWidgets('armas: editar bono, daño condicional inline y arma única', (
-      tester,
-    ) async {
+    testWidgets('armas: editar bono, daño condicional y arma única', (tester) async {
       final store = await boot();
       store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
-      await pumpHome(tester, store, edit: store.activeCharacter);
-      await tester.tap(find.text('editar-ficha'));
-      await tester.pumpAndSettle();
+      await openEditor(tester, store);
+      await goTab(tester, 'Arsenal');
 
-      expect(find.text('1 arma'), findsOneWidget);
-
-      await openSection(tester, 'Armas');
-      expect(
-        find.text('Ataque +5 · 1d8+3 cortante · 3/3 cargas'),
-        findsOneWidget,
-      );
-
+      expect(find.text('Ataque +5 · 1d8+3 cortante'), findsOneWidget);
       await tester.tap(find.text('Espada Larga'));
       await tester.pumpAndSettle();
       expect(find.text('Editar arma'), findsOneWidget);
 
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Bono de ataque'),
-        '7',
-      );
+      await tester.enterText(find.widgetWithText(TextFormField, 'Bono de ataque'), '7');
       await tester.pump();
-
-      // El daño condicional vive abajo: se agrega inline y se completa
-      // en la misma tarjeta (no hay diálogo anidado).
       await tester.scrollUntilVisible(
         find.text('Agregar daño condicional'),
         200,
@@ -876,23 +623,13 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Agregar daño condicional'));
       await tester.pumpAndSettle();
-
       await tester.enterText(
         find.widgetWithText(TextFormField, 'Disparador'),
         'Si el objetivo está quemado',
       );
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Dados'),
-        '1d6',
-      );
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Tipo'),
-        'fuego',
-      );
+      await tester.enterText(find.widgetWithText(TextFormField, 'Dados'), '1d6');
+      await tester.enterText(find.widgetWithText(TextFormField, 'Tipo'), 'fuego');
       await tester.pump();
-
-      // Volver arriba: marcar única fuerza la cantidad a 1 y oculta el
-      // campo.
       await tester.scrollUntilVisible(
         find.text('Arma única'),
         -200,
@@ -906,60 +643,53 @@ void main() {
 
       await tester.pageBack();
       await tester.pumpAndSettle();
-      expect(
-        find.text('Ataque +7 · 1d8+3 cortante · 3/3 cargas'),
-        findsOneWidget,
-      );
+      expect(find.text('Ataque +7 · 1d8+3 cortante'), findsOneWidget);
+      // El daño condicional ya aparece inline en la tarjeta.
+      expect(find.text('Si el objetivo está quemado'), findsOneWidget);
 
-      await tester.pageBack();
-      await tester.pumpAndSettle();
       await saveWithWarning(tester);
-
       final weapon = store.activeCharacter!.inventory.weapons.single;
       expect(weapon.attackBonus, 7);
       expect(weapon.conditionalDamage, hasLength(1));
-      expect(
-        weapon.conditionalDamage.single.trigger,
-        'Si el objetivo está quemado',
-      );
+      expect(weapon.conditionalDamage.single.trigger, 'Si el objetivo está quemado');
       expect(weapon.conditionalDamage.single.dice, '1d6');
       expect(weapon.conditionalDamage.single.type, 'fuego');
       expect(weapon.isUnique, isTrue);
       expect(weapon.quantity, 1);
     });
 
-    testWidgets('armas: alta desde el FAB con cantidad y cargas', (
-      tester,
-    ) async {
+    testWidgets('daño condicional y resumen táctico en línea en la tarjeta',
+        (tester) async {
       final store = await boot();
       store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
-      await pumpHome(tester, store, edit: store.activeCharacter);
-      await tester.tap(find.text('editar-ficha'));
-      await tester.pumpAndSettle();
-      await openSection(tester, 'Armas');
+      await openEditor(tester, store);
+      await goTab(tester, 'Arsenal');
 
-      await tester.tap(find.byType(FloatingActionButton));
+      await tester.tap(find.text('Daño condicional'));
       await tester.pumpAndSettle();
-      expect(find.text('Nueva arma'), findsOneWidget);
-
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Nombre'),
-        'Hacha de Guerra',
-      );
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Dados de daño base'),
-        '1d12',
-      );
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Tipo de daño base'),
-        'cortante',
-      );
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Cantidad'),
-        '2',
-      );
+      await tester.enterText(find.widgetWithText(TextFormField, 'Condición'), 'Contra no muertos');
+      await tester.enterText(find.widgetWithText(TextFormField, 'Dados'), '2d8');
+      await tester.enterText(find.widgetWithText(TextFormField, 'Tipo'), 'radiante');
       await tester.pump();
 
+      await saveWithWarning(tester);
+      final c = store.activeCharacter!.inventory.weapons.single.conditionalDamage.single;
+      expect((c.trigger, c.dice, c.type), ('Contra no muertos', '2d8', 'radiante'));
+    });
+
+    testWidgets('armas: alta casera con cantidad y cargas', (tester) async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await openEditor(tester, store);
+      await goTab(tester, 'Arsenal');
+
+      await tapKey(tester, 'add-homebrew-weapon');
+      expect(find.text('Nueva arma'), findsOneWidget);
+      await tester.enterText(find.widgetWithText(TextFormField, 'Nombre'), 'Hacha de Guerra');
+      await tester.enterText(find.widgetWithText(TextFormField, 'Dados de daño base'), '1d12');
+      await tester.enterText(find.widgetWithText(TextFormField, 'Tipo de daño base'), 'cortante');
+      await tester.enterText(find.widgetWithText(TextFormField, 'Cantidad'), '2');
+      await tester.pump();
       await tester.scrollUntilVisible(
         find.text('Usos limitados por descanso'),
         200,
@@ -968,20 +698,13 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Usos limitados por descanso'));
       await tester.pump();
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Tope de usos'),
-        '2',
-      );
+      await tester.enterText(find.widgetWithText(TextFormField, 'Tope de usos'), '2');
       await tester.pump();
-
       await tester.pageBack();
       await tester.pumpAndSettle();
       expect(find.text('Hacha de Guerra'), findsOneWidget);
 
-      await tester.pageBack();
-      await tester.pumpAndSettle();
       await saveWithWarning(tester);
-
       final weapons = store.activeCharacter!.inventory.weapons;
       expect(weapons, hasLength(2));
       final hacha = weapons.firstWhere((w) => w.name == 'Hacha de Guerra');
@@ -992,92 +715,274 @@ void main() {
       expect(hacha.magicCharges.hasCharges, isTrue);
       expect(hacha.magicCharges.max, 2);
       expect(hacha.magicCharges.current, 2);
-      // El id nuevo no se recalcula del nombre.
       expect(hacha.id, startsWith('weapon_'));
     });
 
-    testWidgets('objetos y monedas: editar la bolsa y agregar un objeto', (
-      tester,
-    ) async {
+    testWidgets('+ Arma SRD calcula bonos con los atributos del borrador',
+        (tester) async {
       final store = await boot();
       store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
-      await pumpHome(tester, store, edit: store.activeCharacter);
-      await tester.tap(find.text('editar-ficha'));
+      await openEditor(tester, store);
+      await goTab(tester, 'Arsenal');
+
+      await tapKey(tester, 'add-srd-weapon');
+      await tester.tap(find.byKey(const Key('srd-weapon-estoque')));
       await tester.pumpAndSettle();
+      expect(find.text('Estoque'), findsOneWidget);
 
-      // El tile vive debajo del pliegue: scrollear antes de leerlo.
-      await tester.scrollUntilVisible(
-        find.text('Objetos y monedas'),
-        200,
-        scrollable: find.byType(Scrollable).first,
-      );
-      expect(find.text('1 objeto · 10 po · 5 pp · 2 pc'), findsOneWidget);
+      await saveWithWarning(tester);
+      final weapons = store.activeCharacter!.inventory.weapons;
+      expect(weapons, hasLength(2));
+      final estoque = weapons.firstWhere((w) => w.name == 'Estoque');
+      // Sutil: usa FUE +3 (mayor que DES +1) y no pierde el dado.
+      expect(estoque.damage.baseDice, '1d8+3');
+      expect(estoque.damage.baseType, 'perforante');
+      expect(estoque.properties, contains('Sutil'));
+      expect(estoque.id, startsWith('weapon_'));
+    });
 
-      await tester.tap(find.text('Objetos y monedas'));
+    testWidgets('borrar un arma y descartar el editor no toca la ficha',
+        (tester) async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await openEditor(tester, store);
+      await goTab(tester, 'Arsenal');
+
+      await tester.tap(find.byTooltip('Borrar arma'));
       await tester.pumpAndSettle();
+      expect(find.text('La ficha no trae armas todavía.'), findsOneWidget);
 
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.text('¿Descartar los cambios?'), findsOneWidget);
+      await tester.tap(find.text('Descartar'));
+      await tester.pumpAndSettle();
+      expect(find.byType(CharacterEditorScreen), findsNothing);
+      expect(store.activeCharacter!.inventory.weapons, hasLength(1));
+      expect(store.activeCharacter!.inventory.weapons.single.name, 'Espada Larga');
+    });
+  });
+
+  group('pestaña Grimorio', () {
+    testWidgets('ranuras: stepper alta, baja y respeta current <= max',
+        (tester) async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook', slotCurrent: 2));
+      await openEditor(tester, store);
+      await goTab(tester, 'Grimorio');
+
+      expect(find.text('2 de 4 disponibles'), findsOneWidget);
+      // Gastada (2/4): subir el tope no regala ranuras.
+      await tapKey(tester, 'slot-1-inc');
+      expect(find.text('2 de 5 disponibles'), findsOneWidget);
+      // Bajar por debajo de lo disponible las recorta.
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'Oro (po)'),
-        '99',
+        find.descendant(
+          of: find.byKey(const Key('list-grimorio')),
+          matching: find.widgetWithText(TextFormField, 'Nivel 1'),
+        ),
+        '1',
       );
       await tester.pump();
-      expect(find.text('Equivalente total: 99.52 po'), findsOneWidget);
+      expect(find.text('1 de 1 disponibles'), findsOneWidget);
 
-      await tester.tap(find.byType(FloatingActionButton));
+      // Nivel nuevo: arranca lleno.
+      await tapKey(tester, 'slot-2-inc');
+      await tapKey(tester, 'slot-2-inc');
+      expect(find.text('2 de 2 disponibles'), findsOneWidget);
+      // Llevar el nivel 1 a 0 lo quita de la ficha.
+      await tapKey(tester, 'slot-1-dec');
+
+      await tester.tap(find.text('Guardar cambios'));
       await tester.pumpAndSettle();
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Nombre'),
-        'Poción de curación',
-      );
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Descripción (opcional)'),
-        'Cura 2d4+2',
-      );
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Cantidad'),
-        '3',
-      );
+      await tester.tap(find.text('Guardar igual'));
+      await tester.pumpAndSettle();
+
+      final slots = store.activeCharacter!.spellSlots.slots;
+      expect(slots, hasLength(1));
+      expect((slots.single.level, slots.single.max, slots.single.current), (2, 2, 2));
+    });
+
+    testWidgets('la cuadrícula ofrece los 9 niveles', (tester) async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await openEditor(tester, store);
+      await goTab(tester, 'Grimorio');
+
+      for (var level = 1; level <= 9; level++) {
+        expect(find.byKey(Key('slot-$level-inc')), findsOneWidget, reason: 'nivel $level');
+      }
+    });
+
+    testWidgets('+ Conjuro casero: alta con nivel, dados y resumen',
+        (tester) async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await openEditor(tester, store);
+      await goTab(tester, 'Grimorio');
+
+      expect(find.text('La ficha no trae conjuros todavía.'), findsOneWidget);
+      await tapKey(tester, 'add-homebrew-spell');
+      expect(find.text('Nuevo conjuro casero'), findsOneWidget);
+
+      // Sin nombre no pasa.
+      await tester.tap(find.text('Guardar'));
+      await tester.pump();
+      expect(find.text('Poné un nombre.'), findsOneWidget);
+
+      await tester.enterText(find.byKey(const Key('homebrew-spell-name')), 'Rayo de la Tormenta');
+      await tester.tap(find.byKey(const Key('homebrew-level-inc')));
+      await tester.pump();
+      await tester.enterText(dialogField('Dados de daño'), '3d8');
+      await tester.enterText(dialogField('Resumen táctico'), 'Cadena de 3 objetivos');
       await tester.pump();
       await tester.tap(find.text('Guardar'));
       await tester.pumpAndSettle();
 
+      expect(find.text('Rayo de la Tormenta'), findsOneWidget);
+      // Una vez en la tarjeta del conjuro y otra en la etiqueta de la cuadrícula.
+      expect(find.text('Nivel 2'), findsNWidgets(2));
+
+      await tester.tap(find.text('Guardar cambios'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Guardar igual'));
+      await tester.pumpAndSettle();
+
+      final spell = store.activeCharacter!.abilitiesByAction.all
+          .firstWhere((a) => a.name == 'Rayo de la Tormenta');
+      expect(spell.type, 'spell');
+      expect(spell.isSpell, isTrue);
+      expect(spell.baseLevel, 2);
+      expect(spell.damageDice, '3d8');
+      expect(spell.tacticalSummary, 'Cadena de 3 objetivos');
+      expect(spell.id, startsWith('spell_'));
+    });
+
+    testWidgets('+ Conjuro SRD agrega el conjuro del catálogo y se edita en línea',
+        (tester) async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await openEditor(tester, store);
+      await goTab(tester, 'Grimorio');
+
+      await tapKey(tester, 'add-srd-spell');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Proyectil mágico').first);
+      await tester.pumpAndSettle();
+      expect(find.text('Proyectil mágico'), findsOneWidget);
+
+      final spell = store.activeCharacter!.abilitiesByAction.all.where((a) => a.isSpell);
+      expect(spell, isEmpty, reason: 'todavía es solo el borrador');
+
+      await saveWithWarning(tester);
+      final saved = store.activeCharacter!.abilitiesByAction.all.where((a) => a.isSpell);
+      expect(saved.single.name, 'Proyectil mágico');
+    });
+
+    testWidgets('recursos: steppers, recarga y alta', (tester) async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await openEditor(tester, store);
+      await goTab(tester, 'Grimorio');
+
+      // Furia 2/3 (gastado): subir el tope no regala usos.
+      await tapKey(tester, 'res-0-max-inc');
+      expect(
+        tester
+            .widget<TextFormField>(find.descendant(
+              of: find.byKey(const Key('list-grimorio')),
+              matching: find.widgetWithText(TextFormField, 'Usos restantes'),
+            ))
+            .controller
+            ?.text,
+        '2',
+      );
+      // Bajar el tope por debajo de los usos restantes los recorta.
+      await tapKey(tester, 'res-0-max-dec');
+      await tapKey(tester, 'res-0-max-dec');
+      await tapKey(tester, 'res-0-max-dec');
+
+      await tester.tap(find.byKey(const Key('res-0-recovery')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Descanso corto').last);
+      await tester.pumpAndSettle();
+
+      await tapKey(tester, 'add-resource');
+      await tester.enterText(fieldIn('res-1-name'), 'Ki');
+      await tester.pump();
+      for (var i = 0; i < 3; i++) {
+        await tapKey(tester, 'res-1-max-inc');
+      }
+
+      await saveWithWarning(tester);
+      final resources = store.activeCharacter!.resources;
+      expect(resources, hasLength(2));
+      expect((resources[0].name, resources[0].current, resources[0].max), ('Furia', 1, 1));
+      expect(resources[0].recovery, 'short_rest');
+      expect((resources[1].name, resources[1].current, resources[1].max), ('Ki', 4, 4));
+      expect(resources[1].recovery, 'manual');
+    });
+  });
+
+  group('pestaña Mochila', () {
+    testWidgets('monedero con steppers y objetos', (tester) async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await openEditor(tester, store);
+      await goTab(tester, 'Mochila');
+
+      await tester.enterText(find.widgetWithText(TextFormField, 'Oro (po)'), '99');
+      await tester.pump();
+      expect(find.text('Equivalente total: 99.52 po'), findsOneWidget);
+      await tapKey(tester, 'coin-pp-inc'); // 1 de platino = 10 po
+      await tapKey(tester, 'coin-pe-inc'); // 1 de electro = 0.5 po
+      expect(find.text('Equivalente total: 110.02 po'), findsOneWidget);
+
+      await tapKey(tester, 'add-item');
+      await tester.enterText(dialogField('Nombre'), 'Poción de curación');
+      await tester.enterText(dialogField('Descripción (opcional)'), 'Cura 2d4+2');
+      await tester.enterText(dialogField('Cantidad'), '3');
+      await tester.pump();
+      await tester.tap(find.text('Guardar'));
+      await tester.pumpAndSettle();
       expect(find.text('Poción de curación'), findsOneWidget);
       expect(find.text('Cura 2d4+2 · ×3'), findsOneWidget);
 
-      await tester.pageBack();
-      await tester.pumpAndSettle();
-      expect(find.text('2 objetos · 99 po · 5 pp · 2 pc'), findsOneWidget);
-
       await saveWithWarning(tester);
-
       final ficha = store.activeCharacter!;
       expect(ficha.purse.gold, 99);
+      expect(ficha.purse.platinum, 1);
+      expect(ficha.purse.electrum, 1);
       expect(ficha.inventory.mundaneItems, hasLength(2));
-      final pocion = ficha.inventory.mundaneItems.firstWhere(
-        (item) => item.name == 'Poción de curación',
-      );
-      expect(pocion.description, 'Cura 2d4+2');
-      expect(pocion.quantity, 3);
+      final pocion = ficha.inventory.mundaneItems.firstWhere((i) => i.name == 'Poción de curación');
+      expect((pocion.description, pocion.quantity), ('Cura 2d4+2', 3));
     });
 
-    testWidgets('lore: editar un campo actualiza el resumen y persiste', (
-      tester,
-    ) async {
+    testWidgets('+ Armadura / Escudo SRD agrega el objeto con su CA', (tester) async {
       final store = await boot();
       store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
-      await pumpHome(tester, store, edit: store.activeCharacter);
-      await tester.tap(find.text('editar-ficha'));
+      await openEditor(tester, store);
+      await goTab(tester, 'Mochila');
+
+      await tapKey(tester, 'add-srd-armor');
+      await tester.tap(find.byKey(const Key('srd-armor-escudo')));
       await tester.pumpAndSettle();
+      expect(find.text('CA +2 · escudo · ×1'), findsOneWidget);
 
-      // La fixture ya trae el trasfondo: 1 de 5. El tile vive debajo
-      // del pliegue.
-      await tester.scrollUntilVisible(
-        find.text('Historia y personalidad'),
-        200,
-        scrollable: find.byType(Scrollable).first,
+      await saveWithWarning(tester);
+      expect(
+        store.activeCharacter!.inventory.mundaneItems.map((i) => i.name),
+        containsAll(['Cuerda', 'Escudo']),
       );
-      expect(find.text('1 de 5 campos'), findsOneWidget);
+    });
 
+    testWidgets('historia: el desplegable edita un campo y persiste', (tester) async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await openEditor(tester, store);
+      await goTab(tester, 'Mochila');
+
+      expect(find.text('1 de 5 campos'), findsOneWidget);
       await tester.tap(find.text('Historia y personalidad'));
       await tester.pumpAndSettle();
       await tester.enterText(
@@ -1085,96 +990,72 @@ void main() {
         'Se distrae con cualquier cosa brillante.',
       );
       await tester.pump();
-
-      await tester.pageBack();
-      await tester.pumpAndSettle();
       expect(find.text('2 de 5 campos'), findsOneWidget);
 
       await saveWithWarning(tester);
-
       final lore = store.activeCharacter!.loreInfo;
       expect(lore.backstory, 'Historia');
       expect(lore.flaws, 'Se distrae con cualquier cosa brillante.');
     });
 
-    testWidgets('compañeros: PG coherentes al cambiar el tope y CA', (
-      tester,
-    ) async {
+    testWidgets('compañeros: PG coherentes al cambiar el tope y CA',
+        (tester) async {
       final store = await boot();
       store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
-      await pumpHome(tester, store, edit: store.activeCharacter);
-      await tester.tap(find.text('editar-ficha'));
-      await tester.pumpAndSettle();
+      await openEditor(tester, store);
+      await goTab(tester, 'Mochila');
 
-      // El tile vive debajo del pliegue: scrollear antes de leerlo.
-      await tester.scrollUntilVisible(
-        find.text('Compañeros'),
-        200,
-        scrollable: find.byType(Scrollable).first,
-      );
-      expect(find.text('1 compañero'), findsOneWidget);
-
-      await tester.tap(find.text('Compañeros'));
-      await tester.pumpAndSettle();
       expect(find.text('bestia · 5/10 PG · CA 12'), findsOneWidget);
-
       await tester.tap(find.text('Lobo'));
       await tester.pumpAndSettle();
       expect(find.text('Editar compañero'), findsOneWidget);
 
-      // Estaba herido (5/10): bajar el tope recorta los PG actuales...
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'PG máximos'),
-        '3',
-      );
+      TextFormField field(String label) => tester.widget<TextFormField>(dialogField(label));
+      await tester.enterText(dialogField('PG máximos'), '3');
       await tester.pump();
-      expect(
-        tester
-            .widget<TextFormField>(
-              find.widgetWithText(TextFormField, 'PG actuales'),
-            )
-            .controller
-            ?.text,
-        '3',
-      );
-
-      // ...y volver a subirlo, con la barra llena, la arrastra.
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'PG máximos'),
-        '20',
-      );
+      expect(field('PG actuales').controller?.text, '3');
+      await tester.enterText(dialogField('PG máximos'), '20');
       await tester.pump();
-      expect(
-        tester
-            .widget<TextFormField>(
-              find.widgetWithText(TextFormField, 'PG actuales'),
-            )
-            .controller
-            ?.text,
-        '20',
-      );
-
-      await tester.enterText(find.widgetWithText(TextFormField, 'CA'), '13');
+      expect(field('PG actuales').controller?.text, '20');
+      await tester.enterText(dialogField('CA'), '13');
       await tester.pump();
       await tester.tap(find.text('Guardar'));
       await tester.pumpAndSettle();
-
       expect(find.text('bestia · 20/20 PG · CA 13'), findsOneWidget);
 
-      await tester.pageBack();
-      await tester.pumpAndSettle();
       await saveWithWarning(tester);
-
       final companion = store.activeCharacter!.companions.single;
-      expect(companion.name, 'Lobo');
-      expect(companion.currentHp, 20);
-      expect(companion.maxHp, 20);
-      expect(companion.ac, 13);
+      expect((companion.name, companion.currentHp, companion.maxHp, companion.ac),
+          ('Lobo', 20, 20, 13));
       expect(companion.hasHp, isTrue);
+    });
+
+    testWidgets('compañero sin PG: apoyo invulnerable que persiste',
+        (tester) async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await openEditor(tester, store);
+      await goTab(tester, 'Mochila');
+
+      await tapKey(tester, 'add-companion');
+      await tester.enterText(dialogField('Nombre'), 'Cuervo');
+      await tester.enterText(dialogField('Tipo (opcional)'), 'familiar');
+      await tester.tap(find.text('Tiene PG'));
+      await tester.pumpAndSettle();
+      expect(dialogField('PG máximos'), findsNothing);
+      expect(dialogField('CA'), findsOneWidget);
+      await tester.tap(find.text('Guardar'));
+      await tester.pumpAndSettle();
+      expect(find.text('familiar · invulnerable · CA 10'), findsOneWidget);
+
+      await saveWithWarning(tester);
+      final cuervo = store.activeCharacter!.companions.firstWhere((c) => c.name == 'Cuervo');
+      expect(cuervo.type, 'familiar');
+      expect(cuervo.hasHp, isFalse);
     });
   });
 
-  group('cierre del editor — estado de combate y descarte', () {
+  group('cierre del editor — estado de combate', () {
     testWidgets('una edición cosmética conserva TODO el estado de combate',
         (tester) async {
       final store = await boot();
@@ -1185,29 +1066,15 @@ void main() {
         weaponChargesCurrent: 1,
         abilityChargesCurrent: 1,
       );
-      // Combate en curso: recurso gastado, compañero herido, movimiento
-      // consumido y una condición activa.
       ficha.resources.single.current = 2;
       ficha.companions.single.currentHp = 5;
       ficha.turnStatus.movementRemaining = 4;
       ficha.activeConditions.add('Envenenado');
       store.addCharacter(ficha);
+      await openEditor(tester, store);
 
-      await pumpHome(tester, store, edit: store.activeCharacter);
-      await tester.tap(find.text('editar-ficha'));
-      await tester.pumpAndSettle();
-
-      // El único cambio es el nombre: nada de combate debería moverse.
-      await tester.tap(find.text('Datos básicos'));
-      await tester.pumpAndSettle();
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Nombre'),
-        'Rook el Intacto',
-      );
+      await tester.enterText(find.widgetWithText(TextFormField, 'Nombre'), 'Rook el Intacto');
       await tester.pump();
-      await tester.pageBack();
-      await tester.pumpAndSettle();
-
       await saveWithWarning(tester);
 
       final guardada = store.activeCharacter!;
@@ -1215,112 +1082,13 @@ void main() {
       expect(guardada.basicInfo.name, 'Rook el Intacto');
       expect(guardada.basicInfo.currentHp, 7);
       expect(guardada.inventory.weapons.single.magicCharges.current, 1);
-      expect(
-        guardada.abilitiesByAction.action.single.magicCharges.current,
-        1,
-      );
+      expect(guardada.abilitiesByAction.action.single.magicCharges.current, 1);
       expect(guardada.resources.single.current, 2);
       expect(guardada.resources.single.max, 3);
       expect(guardada.companions.single.currentHp, 5);
       expect(guardada.companions.single.maxHp, 10);
       expect(guardada.turnStatus.movementRemaining, 4);
       expect(guardada.activeConditions, ['Envenenado']);
-    });
-
-    testWidgets('compañero sin PG: apoyo invulnerable que persiste',
-        (tester) async {
-      final store = await boot();
-      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
-      await pumpHome(tester, store, edit: store.activeCharacter);
-      await tester.tap(find.text('editar-ficha'));
-      await tester.pumpAndSettle();
-
-      await tester.scrollUntilVisible(
-        find.text('Compañeros'),
-        200,
-        scrollable: find.byType(Scrollable).first,
-      );
-      await tester.tap(find.text('Compañeros'));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byType(FloatingActionButton));
-      await tester.pumpAndSettle();
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Nombre'),
-        'Cuervo',
-      );
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Tipo (opcional)'),
-        'familiar',
-      );
-      await tester.tap(find.text('Tiene PG'));
-      await tester.pumpAndSettle();
-
-      // Sin PG los campos de vida desaparecen, pero la CA sigue.
-      expect(find.widgetWithText(TextFormField, 'PG máximos'), findsNothing);
-      expect(find.widgetWithText(TextFormField, 'CA'), findsOneWidget);
-
-      await tester.tap(find.text('Guardar'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('familiar · invulnerable · CA 10'), findsOneWidget);
-
-      await tester.pageBack();
-      await tester.pumpAndSettle();
-      await saveWithWarning(tester);
-
-      final cuervo = store.activeCharacter!.companions
-          .firstWhere((companion) => companion.name == 'Cuervo');
-      expect(cuervo.type, 'familiar');
-      expect(cuervo.hasHp, isFalse);
-    });
-
-    testWidgets('borrar un arma y descartar el editor no toca la ficha',
-        (tester) async {
-      final store = await boot();
-      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
-      await pumpHome(tester, store, edit: store.activeCharacter);
-      await tester.tap(find.text('editar-ficha'));
-      await tester.pumpAndSettle();
-
-      await tester.scrollUntilVisible(
-        find.text('Armas'),
-        200,
-        scrollable: find.byType(Scrollable).first,
-      );
-      // El tile queda justo sobre el borde del bottom bar (Guardar):
-      // scrollear un poco más para que el tap no lo agarre el botón.
-      await tester.drag(
-        find.byType(Scrollable).first,
-        const Offset(0, -80),
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Armas'));
-      await tester.pumpAndSettle();
-
-      // Borrado directo en el borrador: la lista queda vacía...
-      await tester.tap(find.byIcon(Icons.delete_outline_rounded));
-      await tester.pumpAndSettle();
-      expect(find.text('La ficha no trae armas todavía.'), findsOneWidget);
-
-      await tester.pageBack();
-      await tester.pumpAndSettle();
-      expect(find.text('sin armas'), findsOneWidget);
-
-      // ...pero salir del editor sin guardar descarta el borrador: el
-      // roster sigue con el arma original.
-      await tester.pageBack();
-      await tester.pumpAndSettle();
-      expect(find.text('¿Descartar los cambios?'), findsOneWidget);
-      await tester.tap(find.text('Descartar'));
-      await tester.pumpAndSettle();
-
-      expect(find.byType(CharacterEditorScreen), findsNothing);
-      expect(store.activeCharacter!.inventory.weapons, hasLength(1));
-      expect(
-        store.activeCharacter!.inventory.weapons.single.name,
-        'Espada Larga',
-      );
     });
   });
 }

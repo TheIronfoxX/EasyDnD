@@ -1,4 +1,5 @@
-// El editor manual de fichas por secciones (Etapa 4).
+// Taller de calibración de fichas: el editor manual en 4 pestañas
+// (Núcleo, Arsenal, Grimorio y Mochila).
 //
 // Flujo: se edita sobre una COPIA de la ficha (o una ficha en blanco
 // para el alta manual) y el roster no se toca hasta "Guardar". Ahí se
@@ -6,9 +7,8 @@
 // recién entonces se commitea — por índice si la ficha ya existía
 // (replaceCharacter, sin duplicar) o como alta si no.
 //
-// Las secciones (datos, atributos, habilidades, inventario...) son
-// páginas que el shell apila y que mutan el borrador EN EL LUGAR: no
-// hay "guardar" por sección, hay UN commit al final. Salir con
+// Las pestañas mutan el borrador EN EL LUGAR: no hay "guardar" por
+// pestaña, hay UN commit al final. Salir con
 // cambios sin guardar pide confirmación comparando el JSON del
 // borrador contra el original — barato y sin flag "dirty" que
 // mantener a mano.
@@ -27,16 +27,10 @@ import '../../domain/character_validator.dart';
 import '../../domain/models/character.dart';
 import '../../state/character_store.dart';
 import '../../core/theme/app_fonts.dart';
-import 'editor_section_abilities.dart';
-import 'editor_section_basic_info.dart';
-import 'editor_section_companions.dart';
-import 'editor_section_items.dart';
-import 'editor_section_lore.dart';
-import 'editor_section_resources.dart';
-import 'editor_section_skills.dart';
-import 'editor_section_slots.dart';
-import 'editor_section_stats.dart';
-import 'editor_section_weapons.dart';
+import 'editor_tab_arsenal.dart';
+import 'editor_tab_core.dart';
+import 'editor_tab_grimorio.dart';
+import 'editor_tab_mochila.dart';
 import '../../core/theme/design_tokens.dart';
 
 class CharacterEditorScreen extends StatefulWidget {
@@ -49,23 +43,6 @@ class CharacterEditorScreen extends StatefulWidget {
   State<CharacterEditorScreen> createState() => _CharacterEditorScreenState();
 }
 
-/// Una sección del editor: tile del menú + página que recibe el
-/// borrador. Las secciones de las etapas 4b-4d se agregan a
-/// [_sections] sin tocar nada más del shell.
-class _SectionSpec {
-  const _SectionSpec({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.page,
-  });
-
-  final IconData icon;
-  final String title;
-  final String Function(CharacterModel draft) subtitle;
-  final Widget Function(CharacterModel draft) page;
-}
-
 class _CharacterEditorScreenState extends State<CharacterEditorScreen> {
   late final CharacterModel _draft;
   late final String _originalJson;
@@ -73,172 +50,6 @@ class _CharacterEditorScreenState extends State<CharacterEditorScreen> {
   /// True después de un guardado exitoso: el PopScope deja pasar el
   /// pop sin pedir confirmación de descarte.
   bool _saved = false;
-
-  static final List<_SectionSpec> _sections = [
-    _SectionSpec(
-      icon: Icons.badge_outlined,
-      title: 'Datos básicos',
-      subtitle: _basicInfoSubtitle,
-      page: (draft) => EditorSectionBasicInfo(draft: draft),
-    ),
-    _SectionSpec(
-      icon: Icons.fitness_center_rounded,
-      title: 'Atributos',
-      subtitle: _statsSubtitle,
-      page: (draft) => EditorSectionStats(draft: draft),
-    ),
-    _SectionSpec(
-      icon: Icons.workspace_premium_rounded,
-      title: 'Competencias',
-      subtitle: _skillsSubtitle,
-      page: (draft) => EditorSectionSkills(draft: draft),
-    ),
-    _SectionSpec(
-      icon: Icons.layers_rounded,
-      title: 'Ranuras de conjuro',
-      subtitle: _slotsSubtitle,
-      page: (draft) => EditorSectionSlots(draft: draft),
-    ),
-    _SectionSpec(
-      icon: Icons.bolt_rounded,
-      title: 'Habilidades',
-      subtitle: _abilitiesSubtitle,
-      page: (draft) => EditorSectionAbilities(draft: draft),
-    ),
-    _SectionSpec(
-      icon: Icons.toll_rounded,
-      title: 'Recursos',
-      subtitle: _resourcesSubtitle,
-      page: (draft) => EditorSectionResources(draft: draft),
-    ),
-    _SectionSpec(
-      icon: Icons.gavel_rounded,
-      title: 'Armas',
-      subtitle: _weaponsSubtitle,
-      page: (draft) => EditorSectionWeapons(draft: draft),
-    ),
-    _SectionSpec(
-      icon: Icons.backpack_rounded,
-      title: 'Objetos y monedas',
-      subtitle: _itemsSubtitle,
-      page: (draft) => EditorSectionItems(draft: draft),
-    ),
-    _SectionSpec(
-      icon: Icons.auto_stories_rounded,
-      title: 'Historia y personalidad',
-      subtitle: _loreSubtitle,
-      page: (draft) => EditorSectionLore(draft: draft),
-    ),
-    _SectionSpec(
-      icon: Icons.pets_rounded,
-      title: 'Compañeros',
-      subtitle: _companionsSubtitle,
-      page: (draft) => EditorSectionCompanions(draft: draft),
-    ),
-  ];
-
-  static String _basicInfoSubtitle(CharacterModel draft) {
-    final basic = draft.basicInfo;
-    final clase = basic.characterClass.isEmpty
-        ? 'sin clase'
-        : basic.characterClass;
-    return 'Nivel ${basic.level} · ${basic.hpMax} PG · CA ${basic.ac} · $clase';
-  }
-
-  /// "STR 16 · DEX 12 · ..." — las siglas del shape tal cual las lee
-  /// la gente de D&D; los valores sin mods para que quepa en un tile.
-  static String _statsSubtitle(CharacterModel draft) {
-    const keys = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'];
-    final scores = draft.stats.asList;
-    return [
-      for (var i = 0; i < keys.length; i++) '${keys[i]} ${scores[i].value}',
-    ].join(' · ');
-  }
-
-  static String _skillsSubtitle(CharacterModel draft) {
-    final count = draft.skills.length;
-    if (count == 0) return 'sin competencias';
-    return count == 1 ? '1 competencia' : '$count competencias';
-  }
-
-  static String _slotsSubtitle(CharacterModel draft) {
-    final slots = draft.spellSlots.slots;
-    if (slots.isEmpty) return 'no lanza conjuros';
-    return [
-      for (final slot in slots) '${slot.max} de nivel ${slot.level}',
-    ].join(' · ');
-  }
-
-  static String _abilitiesSubtitle(CharacterModel draft) {
-    final abilities = draft.abilitiesByAction;
-    final parts = <String>[
-      if (abilities.action.isNotEmpty)
-        _count(abilities.action.length, 'acción', 'acciones'),
-      if (abilities.bonusAction.isNotEmpty)
-        _count(abilities.bonusAction.length, 'adicional', 'adicionales'),
-      if (abilities.reaction.isNotEmpty)
-        _count(abilities.reaction.length, 'reacción', 'reacciones'),
-      if (abilities.passive.isNotEmpty)
-        _count(abilities.passive.length, 'pasiva', 'pasivas'),
-    ];
-    if (parts.isEmpty) return 'sin habilidades';
-    return parts.join(' · ');
-  }
-
-  static String _resourcesSubtitle(CharacterModel draft) {
-    final resources = draft.resources;
-    if (resources.isEmpty) return 'sin recursos';
-    return [
-      for (final resource in resources)
-        '${resource.name} ${resource.current}/${resource.max}',
-    ].join(' · ');
-  }
-
-  static String _weaponsSubtitle(CharacterModel draft) {
-    final weapons = draft.inventory.weapons;
-    if (weapons.isEmpty) return 'sin armas';
-    return _count(weapons.length, 'arma', 'armas');
-  }
-
-  static String _itemsSubtitle(CharacterModel draft) {
-    final items = draft.inventory.mundaneItems;
-    final purse = draft.purse;
-    final coins = [
-      if (purse.gold != 0) '${purse.gold} po',
-      if (purse.silver != 0) '${purse.silver} pp',
-      if (purse.copper != 0) '${purse.copper} pc',
-    ];
-    final parts = <String>[
-      if (items.isEmpty)
-        'sin objetos'
-      else
-        _count(items.length, 'objeto', 'objetos'),
-      ...coins,
-    ];
-    return parts.join(' · ');
-  }
-
-  static String _loreSubtitle(CharacterModel draft) {
-    final lore = draft.loreInfo;
-    final filled = [
-      lore.backstory,
-      lore.personalityTraits,
-      lore.ideals,
-      lore.bonds,
-      lore.flaws,
-    ].where((text) => text.trim().isNotEmpty).length;
-    if (filled == 0) return 'sin completar';
-    return '$filled de 5 campos';
-  }
-
-  static String _companionsSubtitle(CharacterModel draft) {
-    final companions = draft.companions;
-    if (companions.isEmpty) return 'sin compañeros';
-    return _count(companions.length, 'compañero', 'compañeros');
-  }
-
-  static String _count(int n, String one, String many) =>
-      n == 1 ? '$n $one' : '$n $many';
 
   @override
   void initState() {
@@ -253,11 +64,8 @@ class _CharacterEditorScreenState extends State<CharacterEditorScreen> {
   // ACCIONES
   // -------------------------------------------------------------------
 
-  Future<void> _openSection(_SectionSpec section) async {
-    await Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(builder: (_) => section.page(_draft)));
-    // Al volver: los contadores de los tiles pueden haber cambiado.
+  /// Las pestañas avisan cuando algo cambió para refrescar el shell.
+  void _onDraftChanged() {
     if (mounted) setState(() {});
   }
 
@@ -401,56 +209,102 @@ class _CharacterEditorScreenState extends State<CharacterEditorScreen> {
         if (didPop) return; // ya salió: save o sin cambios.
         _confirmDiscardAndPop();
       },
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            isNew
-                ? 'Nueva ficha'
-                : 'Editar a ${widget.character!.basicInfo.name}',
+      child: DefaultTabController(
+        length: 4,
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text(
+              isNew
+                  ? 'Nueva ficha'
+                  : 'Editar a ${widget.character!.basicInfo.name}',
+            ),
+            bottom: const TabBar(
+              tabs: [
+                Tab(text: 'Núcleo'),
+                Tab(text: 'Arsenal'),
+                Tab(text: 'Grimorio'),
+                Tab(text: 'Mochila'),
+              ],
+            ),
           ),
-        ),
-        body: ListView(
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-          children: [
-            for (final section in _sections)
-              ListTile(
-                leading: Icon(section.icon),
-                title: Text(section.title),
-                subtitle: Text(section.subtitle(_draft)),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => _openSection(section),
-              ),
-          ],
-        ),
-        bottomNavigationBar: SafeArea(
-          top: false,
-          minimum: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.md,
-            AppSpacing.lg,
-            AppSpacing.md,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+          body: TabBarView(
             children: [
-              FilledButton.icon(
-                onPressed: _save,
-                icon: const Icon(Icons.save_rounded),
-                label: Text(isNew ? 'Crear ficha' : 'Guardar cambios'),
+              _KeepAlive(
+                child: EditorTabCore(draft: _draft, onChanged: _onDraftChanged),
               ),
-              const SizedBox(height: 6),
-              Text(
-                'Los cambios viven en el borrador hasta que guardes.',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.outline,
+              _KeepAlive(
+                child: EditorTabArsenal(
+                  draft: _draft,
+                  onChanged: _onDraftChanged,
+                ),
+              ),
+              _KeepAlive(
+                child: EditorTabGrimorio(
+                  draft: _draft,
+                  onChanged: _onDraftChanged,
+                ),
+              ),
+              _KeepAlive(
+                child: EditorTabMochila(
+                  draft: _draft,
+                  onChanged: _onDraftChanged,
                 ),
               ),
             ],
           ),
+          bottomNavigationBar: SafeArea(
+            top: false,
+            minimum: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.lg,
+              AppSpacing.md,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                FilledButton.icon(
+                  onPressed: _save,
+                  icon: const Icon(Icons.save_rounded),
+                  label: Text(isNew ? 'Crear ficha' : 'Guardar cambios'),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Los cambios viven en el borrador hasta que guardes.',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.outline,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
+  }
+}
+
+/// Mantiene vivo el estado de una pestaña al cambiar de una a otra: así
+/// no se pierde el scroll ni lo tipeado en campos con estado propio.
+class _KeepAlive extends StatefulWidget {
+  const _KeepAlive({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_KeepAlive> createState() => _KeepAliveState();
+}
+
+class _KeepAliveState extends State<_KeepAlive>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 }

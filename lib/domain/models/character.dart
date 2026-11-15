@@ -65,6 +65,9 @@ class BasicInfo {
   /// (hasta la mitad de hitDiceMax) con un descanso largo.
   int hitDiceCurrent;
 
+  /// Alineamiento en texto libre ("Legal bueno"). Vacío si no se cargó.
+  String alignment;
+
   BasicInfo({
     required this.name,
     required this.race,
@@ -79,6 +82,7 @@ class BasicInfo {
     int? hitDieSides,
     int? hitDiceMax,
     int? hitDiceCurrent,
+    this.alignment = '',
   })  : hitDieSides = hitDieSides ?? DndRules.hitDieSidesFromClass(characterClass),
         hitDiceMax = hitDiceMax ?? level,
         hitDiceCurrent = hitDiceCurrent ?? (hitDiceMax ?? level);
@@ -124,6 +128,7 @@ class BasicInfo {
       hitDieSides: (json['hit_die_sides'] as num?)?.toInt(),
       hitDiceMax: (json['hit_dice_max'] as num?)?.toInt(),
       hitDiceCurrent: (json['hit_dice_current'] as num?)?.toInt(),
+      alignment: json['alignment'] as String? ?? '',
     );
   }
 
@@ -142,6 +147,7 @@ class BasicInfo {
       'hit_die_sides': hitDieSides,
       'hit_dice_max': hitDiceMax,
       'hit_dice_current': hitDiceCurrent,
+      'alignment': alignment,
     };
   }
 }
@@ -360,7 +366,18 @@ class Purse {
   int silver;
   int copper;
 
-  Purse({this.gold = 0, this.silver = 0, this.copper = 0});
+  /// Platino y electro: solo los edita el taller de fichas; el HUD de
+  /// combate sigue mostrando oro, plata y cobre.
+  int platinum;
+  int electrum;
+
+  Purse({
+    this.gold = 0,
+    this.silver = 0,
+    this.copper = 0,
+    this.platinum = 0,
+    this.electrum = 0,
+  });
 
   factory Purse.fromJson(Map<String, dynamic>? json) {
     if (json == null) return Purse();
@@ -368,6 +385,8 @@ class Purse {
       gold: (json['gold'] as num?)?.toInt() ?? 0,
       silver: (json['silver'] as num?)?.toInt() ?? 0,
       copper: (json['copper'] as num?)?.toInt() ?? 0,
+      platinum: (json['platinum'] as num?)?.toInt() ?? 0,
+      electrum: (json['electrum'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -376,12 +395,15 @@ class Purse {
       'gold': gold,
       'silver': silver,
       'copper': copper,
+      'platinum': platinum,
+      'electrum': electrum,
     };
   }
 
   /// Valor equivalente total en piezas de oro (1 po = 10 pp = 100 pc),
   /// solo como referencia visual — no colapsa los stacks reales.
-  double get totalInGold => gold + (silver / 10) + (copper / 100);
+  double get totalInGold =>
+      platinum * 10 + gold + (electrum / 2) + (silver / 10) + (copper / 100);
 }
 
 /// Cualquier "pool" de puntos que un personaje gasta y recupera fuera
@@ -395,10 +417,15 @@ class ResourcePoint {
   int current;
   int max;
 
+  /// Cuándo se recupera: 'short_rest' | 'long_rest' | 'manual'. Los
+  /// descansos del HUD todavía no lo consumen; es dato de la ficha.
+  String recovery;
+
   ResourcePoint({
     required this.name,
     required this.current,
     required this.max,
+    this.recovery = 'manual',
   });
 
   factory ResourcePoint.fromJson(Map<String, dynamic> json) {
@@ -407,6 +434,7 @@ class ResourcePoint {
       name: json['name'] ?? 'Recurso sin nombre',
       current: (json['current'] as num?)?.toInt() ?? max,
       max: max,
+      recovery: json['recovery'] as String? ?? 'manual',
     );
   }
 
@@ -415,6 +443,7 @@ class ResourcePoint {
       'name': name,
       'current': current,
       'max': max,
+      'recovery': recovery,
     };
   }
 }

@@ -384,20 +384,34 @@ abstract final class CharacterBuilderEngine {
   }
 
   /// Convierte un arma SRD en [Weapon] con bono de ataque y daño resueltos.
-  static Weapon buildWeapon(SrdWeapon w, SrdClass cls, ComputedStats stats) {
-    final String abilityKey;
+  static Weapon buildWeapon(SrdWeapon w, SrdClass cls, ComputedStats stats) =>
+      buildWeaponFromMods(
+        w,
+        strMod: stats.mods['str']!,
+        dexMod: stats.mods['dex']!,
+        proficiencyBonus: stats.proficiencyBonus,
+        proficient: isWeaponProficient(cls, w),
+      );
+
+  /// Núcleo de [buildWeapon] sin depender de una clase SRD: lo usa el
+  /// editor de fichas, donde solo se conocen modificadores y nivel.
+  static Weapon buildWeaponFromMods(
+    SrdWeapon w, {
+    required int strMod,
+    required int dexMod,
+    required int proficiencyBonus,
+    required bool proficient,
+  }) {
+    final int mod;
     if (w.hasProperty('Sutil')) {
-      abilityKey = stats.mods['dex']! > stats.mods['str']! ? 'dex' : 'str';
+      mod = max(strMod, dexMod);
     } else if (w.rangeType == 'ranged') {
-      abilityKey = 'dex';
+      mod = dexMod;
     } else {
-      abilityKey = 'str';
+      mod = strMod;
     }
-    final mod = stats.mods[abilityKey]!;
-    final proficient = isWeaponProficient(cls, w);
     final dice = w.damageDice;
-    final type = w.damageType;
-    final dmgType = type ?? 'sin daño';
+    final dmgType = w.damageType ?? 'sin daño';
 
     final conditional = <ConditionalDamage>[];
     if (w.versatileDice != null && dice != null) {
@@ -411,7 +425,7 @@ abstract final class CharacterBuilderEngine {
     return Weapon(
       id: 'weapon_${w.id}',
       name: w.name,
-      attackBonus: mod + (proficient ? stats.proficiencyBonus : 0),
+      attackBonus: mod + (proficient ? proficiencyBonus : 0),
       // Sin dado (Red) no se le suma el modificador.
       damage: WeaponDamage(
         baseDice: dice == null ? '0d0' : '$dice${_signed(mod)}',
@@ -491,7 +505,12 @@ abstract final class CharacterBuilderEngine {
       final r = f.resource;
       if (r != null) {
         final uses = resolveFormula(r.maxFormula, level: level, mods: stats.mods);
-        resources.add(ResourcePoint(name: r.name, current: uses, max: uses));
+        resources.add(ResourcePoint(
+          name: r.name,
+          current: uses,
+          max: uses,
+          recovery: r.recovery,
+        ));
       }
     }
     for (final s in input.spells) {

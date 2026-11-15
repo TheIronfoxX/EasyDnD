@@ -13,86 +13,15 @@
 
 import 'package:flutter/material.dart';
 
-import '../../domain/models/character.dart';
 import '../../domain/models/stats.dart';
 import 'editor_fields.dart';
 import '../../core/theme/design_tokens.dart';
 
-class EditorSectionSkills extends StatefulWidget {
-  const EditorSectionSkills({super.key, required this.draft});
-
-  final CharacterModel draft;
-
-  @override
-  State<EditorSectionSkills> createState() => _EditorSectionSkillsState();
-}
-
-class _EditorSectionSkillsState extends State<EditorSectionSkills> {
-  /// Abre el diálogo de alta/edición. Cancelar no toca el borrador:
-  /// el diálogo arma una Skill nueva y recién al confirmar la página
-  /// la inserta o reemplaza.
-  Future<void> _edit({int? index}) async {
-    final skills = widget.draft.skills;
-    final result = await showDialog<Skill>(
-      context: context,
-      builder: (_) =>
-          _SkillDialog(initial: index == null ? null : skills[index]),
-    );
-    if (result == null) return;
-    setState(() {
-      if (index == null) {
-        skills.add(result);
-      } else {
-        skills[index] = result;
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final skills = widget.draft.skills;
-
-    return EditorSectionScaffold(
-      title: 'Competencias',
-      help:
-          'El modificador final de cada competencia, tal como lo usa '
-          'el HUD. No se recalcula solo: si cambia un atributo o el '
-          'bono de competencia, actualizalo a mano.',
-      onAdd: () => _edit(),
-      addLabel: 'Agregar competencia',
-      children: [
-        if (skills.isEmpty)
-          const EditorEmptyHint('Todavía no hay competencias en la ficha.'),
-        for (var i = 0; i < skills.length; i++)
-          ListTile(
-            leading: _StatBadge(skill: skills[i]),
-            title: Text(skills[i].name),
-            subtitle: Text(_subtitleFor(skills[i])),
-            trailing: IconButton(
-              tooltip: 'Borrar competencia',
-              icon: const Icon(Icons.delete_outline_rounded),
-              onPressed: () => setState(() => widget.draft.skills.removeAt(i)),
-            ),
-            onTap: () => _edit(index: i),
-          ),
-      ],
-    );
-  }
-
-  /// "Sabiduría · +7" cuando el stat es conocido (el shape permite
-  /// relatedStat raro en fichas viejas: mejor mostrarlo crudo).
-  static String _subtitleFor(Skill skill) {
-    final label = kStatLabels[skill.relatedStat];
-    if (label == null) return skill.modifierFormatted;
-    return '$label · ${skill.modifierFormatted}';
-  }
-}
-
 /// Chip con la sigla del atributo relacionado (STR, DEX...). Es la
 /// clave del shape en mayúsculas, así que una ficha vieja con un stat
 /// raro muestra lo que trajo sin romperse.
-class _StatBadge extends StatelessWidget {
-  const _StatBadge({required this.skill});
+class StatBadge extends StatelessWidget {
+  const StatBadge({super.key, required this.skill});
 
   final Skill skill;
 
@@ -116,17 +45,17 @@ class _StatBadge extends StatelessWidget {
 /// Diálogo de alta/edición de una competencia. Retorna la Skill lista
 /// para insertar, o null si se canceló — nunca muta el borrador, así
 /// cancelar no deja items fantasma a mitad de carga.
-class _SkillDialog extends StatefulWidget {
-  const _SkillDialog({this.initial});
+class SkillDialog extends StatefulWidget {
+  const SkillDialog({super.key, this.initial});
 
   /// Null = alta nueva.
   final Skill? initial;
 
   @override
-  State<_SkillDialog> createState() => _SkillDialogState();
+  State<SkillDialog> createState() => _SkillDialogState();
 }
 
-class _SkillDialogState extends State<_SkillDialog> {
+class _SkillDialogState extends State<SkillDialog> {
   final _formKey = GlobalKey<FormState>();
   late String _name = widget.initial?.name ?? '';
   late String _relatedStat = widget.initial?.relatedStat ?? '';

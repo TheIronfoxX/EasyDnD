@@ -17,98 +17,19 @@ import '../../domain/models/character.dart';
 import 'editor_fields.dart';
 import '../../core/theme/design_tokens.dart';
 
-class EditorSectionCompanions extends StatefulWidget {
-  const EditorSectionCompanions({super.key, required this.draft});
-
-  final CharacterModel draft;
-
-  @override
-  State<EditorSectionCompanions> createState() =>
-      _EditorSectionCompanionsState();
-}
-
-class _EditorSectionCompanionsState extends State<EditorSectionCompanions> {
-  Future<void> _edit({int? index}) async {
-    final companions = widget.draft.companions;
-    final result = await showDialog<Companion>(
-      context: context,
-      builder: (_) =>
-          _CompanionDialog(initial: index == null ? null : companions[index]),
-    );
-    if (result == null) return;
-    setState(() {
-      if (index == null) {
-        companions.add(result);
-      } else {
-        companions[index] = result;
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final companions = widget.draft.companions;
-
-    return EditorSectionScaffold(
-      title: 'Compañeros',
-      help:
-          'Mascotas, invocaciones y aliados. Si destildás "tiene PG", el '
-          'HUD lo trata como apoyo narrativo invulnerable (los PG quedan '
-          'guardados por si volvés a activarlo).',
-      onAdd: () => _edit(),
-      addLabel: 'Agregar compañero',
-      children: [
-        if (companions.isEmpty)
-          const EditorEmptyHint('La ficha no trae compañeros todavía.'),
-        for (var i = 0; i < companions.length; i++)
-          ListTile(
-            leading: CircleAvatar(
-              maxRadius: 16,
-              child: Text(
-                companions[i].hasHp ? '${companions[i].currentHp}' : '—',
-              ),
-            ),
-            title: Text(companions[i].name),
-            subtitle: Text(_subtitleFor(companions[i])),
-            trailing: IconButton(
-              tooltip: 'Borrar compañero',
-              icon: const Icon(Icons.delete_outline_rounded),
-              onPressed: () =>
-                  setState(() => widget.draft.companions.removeAt(i)),
-            ),
-            onTap: () => _edit(index: i),
-          ),
-      ],
-    );
-  }
-
-  /// "bestia · 5/10 PG · CA 12" o, sin PG, "familiar · invulnerable ·
-  /// CA 10".
-  static String _subtitleFor(Companion companion) {
-    final parts = <String>[
-      if (companion.type.isNotEmpty) companion.type,
-      companion.hasHp
-          ? '${companion.currentHp}/${companion.maxHp} PG'
-          : 'invulnerable',
-      'CA ${companion.ac}',
-    ];
-    return parts.join(' · ');
-  }
-}
-
 /// Diálogo de alta/edición de un compañero. Retorna el Companion listo
 /// para insertar o null al cancelar.
-class _CompanionDialog extends StatefulWidget {
-  const _CompanionDialog({this.initial});
+class CompanionDialog extends StatefulWidget {
+  const CompanionDialog({super.key, this.initial});
 
   /// Null = alta nueva.
   final Companion? initial;
 
   @override
-  State<_CompanionDialog> createState() => _CompanionDialogState();
+  State<CompanionDialog> createState() => _CompanionDialogState();
 }
 
-class _CompanionDialogState extends State<_CompanionDialog> {
+class _CompanionDialogState extends State<CompanionDialog> {
   final _formKey = GlobalKey<FormState>();
   late String _name = widget.initial?.name ?? '';
   late String _type = widget.initial?.type ?? '';
