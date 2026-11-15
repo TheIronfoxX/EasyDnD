@@ -382,6 +382,20 @@ class Nivel20Mapper {
       if (req != null && req > level) return;
       final desc = _str(f['description']);
       final summary = _str(f['summary']);
+      // Economía activa EXPLÍCITA (casting_time_unit / action_type): el
+      // rasgo es un poder táctico y va a su categoría, no a pasivas.
+      // Sin ese dato se sigue asumiendo pasivo (no se adivina por texto).
+      final active = _activeCategory(f);
+      if (active != null) {
+        buckets[active]!.add(_activeFeat(
+          id: uniqueId('feat-${_slug(fname)}'),
+          name: fname,
+          type: type,
+          description: desc.isNotEmpty ? desc : summary,
+          summary: summary,
+        ));
+        return;
+      }
       buckets['passive']!.add(_passive(
         id: uniqueId('feat-${_slug(fname)}'),
         name: fname,
@@ -398,6 +412,12 @@ class Nivel20Mapper {
     }
     for (final f in _list(root['race_feats']).map(_map)) {
       addFeat(f, 'trait');
+    }
+    // Dotes: mismo tratamiento que los rasgos de raza.
+    for (final key in const ['other_feats', 'custom_feats']) {
+      for (final f in _list(root[key]).map(_map)) {
+        addFeat(f, 'trait');
+      }
     }
 
     // ---- Carpetas personalizadas de actions[] (homebrew del jugador).
@@ -424,6 +444,34 @@ class Nivel20Mapper {
 
     return buckets;
   }
+
+  static const _activeCategories = {'action', 'bonus_action', 'reaction'};
+
+  /// 'action' | 'bonus_action' | 'reaction' si el rasgo declara su
+  /// economía activa explícitamente; null si no (queda pasivo).
+  static String? _activeCategory(Map<String, dynamic> feat) {
+    for (final key in const ['casting_time_unit', 'action_type']) {
+      final v = _str(feat[key]);
+      if (_activeCategories.contains(v)) return v;
+    }
+    return null;
+  }
+
+  static Map<String, dynamic> _activeFeat({
+    required String id,
+    required String name,
+    required String type,
+    required String description,
+    required String summary,
+  }) =>
+      {
+        'id': id,
+        'name': name,
+        'type': type,
+        'attack_type': 'none',
+        'lore_description': description,
+        'tactical_summary': summary.isNotEmpty ? summary : _firstSentence(description),
+      };
 
   static Map<String, dynamic> _passive({
     required String id,

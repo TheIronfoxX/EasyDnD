@@ -249,6 +249,46 @@ void main() {
       expect(names, isNot(contains('Bastón')));
     });
 
+    test('rasgos con economía activa explícita se promueven a su categoría', () {
+      final inner = jsonDecode(jsonEncode(raw)) as Map<String, dynamic>;
+      final hash = (inner['printable_hash'] as Map).cast<String, dynamic>();
+      (hash['race_feats'] as List).add({
+        'id': 900,
+        'name': 'Aliento de dragón',
+        'description': 'Exhalas fuego.',
+        'casting_time_unit': 'action',
+      });
+      (hash['other_feats'] as List).add({
+        'id': 901,
+        'name': 'Centinela',
+        'description': 'Reaccionas al ataque.',
+        'action_type': 'reaction',
+      });
+      ((hash['professions'] as List).first['feats'] as List).add({
+        'id': 902,
+        'name': 'Paso brumoso',
+        'description': 'Te teletransportas.',
+        'casting_time_unit': 'bonus_action',
+        'visible': true,
+        'required_level': 1,
+      });
+
+      final out = Nivel20Mapper.toJson(inner)['abilities_by_action'] as Map;
+      List names(String k) => (out[k] as List).map((a) => a['name']).toList();
+
+      expect(names('action'), contains('Aliento de dragón'));
+      expect(names('reaction'), contains('Centinela'));
+      expect(names('bonus_action'), contains('Paso brumoso'));
+      expect(names('passive'), isNot(contains('Aliento de dragón')));
+      // Las activas llevan attack_type y nunca tactical_role.
+      final aliento = (out['action'] as List)
+          .firstWhere((a) => a['name'] == 'Aliento de dragón') as Map;
+      expect(aliento['attack_type'], 'none');
+      expect(aliento.containsKey('tactical_role'), isFalse);
+      // Los que no declaran economía siguen siendo pasivos.
+      expect(names('passive'), contains('Forma cambiante'));
+    });
+
     test('ids únicos', () {
       final ids = (json['abilities_by_action'] as Map)
           .values

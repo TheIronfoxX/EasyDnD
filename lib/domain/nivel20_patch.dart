@@ -12,6 +12,7 @@
 //   "classified_features": [
 //     { "name", "category": "action|bonus_action|reaction|passive",
 //       "tactical_role" (solo passive), "attack_type" (solo activas),
+//       "resource_name", "resource_cost", "heal_dice" (solo activas),
 //       "tactical_summary", "lore_description" }
 //   ],
 //   "resources": [ { "name", "current", "max" } ],
@@ -25,6 +26,7 @@
 
 import 'dart:convert';
 
+import '../core/dice.dart';
 import '../core/json_sanitizer.dart';
 import 'models/ability.dart';
 import 'models/character.dart';
@@ -76,8 +78,11 @@ class Nivel20Patch {
         patch,
       ),
     );
-    _features(c, patch['classified_features']);
+    // Recursos antes que rasgos: las activas se vinculan por nombre a
+    // los recursos de la ficha o del parche.
     _resources(c, patch['resources']);
+    _features(c, patch['classified_features']);
+    _linkResources(c);
     _inventory(c, patch['inventory']);
     _lore(c, patch['lore_info']);
     return c;
@@ -199,11 +204,50 @@ class Nivel20Patch {
         ability.attackType = attack ?? (existing == null ? 'none' : ability.attackType);
         ability.tacticalRole = null;
       }
+      if (category != 'passive') {
+        final resource = _resourceNamed(c, _s(f['resource_name']));
+        if (resource != null) {
+          ability.resourceName = resource.name;
+          ability.resourceCost = (_i(f['resource_cost']) ?? 1).clamp(1, 10);
+        }
+        final heal = _s(f['heal_dice']);
+        if (heal.isNotEmpty && DiceExpression.tryParse(heal) != null) {
+          ability.healDice = heal;
+        }
+      }
       if (summary.isNotEmpty) ability.tacticalSummary = summary;
       if (lore.isNotEmpty) ability.loreDescription = lore;
 
       if (from != null && from != category) lists[from]!.remove(ability);
       if (from != category) lists[category]!.add(ability);
+    }
+  }
+
+  static ResourcePoint? _resourceNamed(CharacterModel c, String name) {
+    if (name.isEmpty) return null;
+    final key = _key(name);
+    for (final r in c.resources) {
+      if (_key(r.name) == key) return r;
+    }
+    return null;
+  }
+
+  /// Vincula las habilidades activas no-conjuro sin recurso a un
+  /// ResourcePoint de igual nombre normalizado (ej. el rasgo "Forma
+  /// cambiante" y el recurso "Forma cambiante"). Nunca pisa un vínculo
+  /// ya existente.
+  static void _linkResources(CharacterModel c) {
+    final abilities = c.abilitiesByAction;
+    for (final list in [
+      abilities.action,
+      abilities.bonusAction,
+      abilities.reaction,
+    ]) {
+      for (final a in list) {
+        if (a.isSpell || a.resourceName != null) continue;
+        final resource = _resourceNamed(c, a.name);
+        if (resource != null) a.resourceName = resource.name;
+      }
     }
   }
 

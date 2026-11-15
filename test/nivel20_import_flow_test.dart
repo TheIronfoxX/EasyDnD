@@ -89,6 +89,13 @@ void main() {
       expect(prompt, isNot(contains('REGLAS OBLIGATORIAS')));
     });
 
+    test('pide clasificar poderes activos y vincular recursos', () {
+      expect(prompt, contains('NO son pasivos'));
+      expect(prompt, contains('"resource_name"'));
+      expect(prompt, contains('"resource_cost"'));
+      expect(prompt, contains('"heal_dice"'));
+    });
+
     test('secciones vacías se marcan "(sin datos)"', () {
       expect(AiPrompt.forNivel20Enrichment(), contains('(sin datos)'));
     });
@@ -97,6 +104,74 @@ void main() {
       expect(prompt, contains('"purse"'));
       expect(prompt, contains('"companions"'));
       expect(prompt, contains('"name", "type", "has_hp", "current_hp", "max_hp", "ac"'));
+    });
+  });
+
+  group('Nivel20Patch.apply — recursos vinculados', () {
+    test('vincula por resource_name explícito y por nombre normalizado', () {
+      final base = Nivel20Mapper.map(raw);
+      final merged = Nivel20Patch.apply(base, {
+        'resources': [
+          {'name': 'Forma cambiante', 'current': 2, 'max': 2},
+          {'name': 'Ki', 'current': 5, 'max': 5},
+        ],
+        'classified_features': [
+          // Vínculo explícito (la IA dice qué recurso gasta y cuánto).
+          {
+            'name': 'Ráfaga de golpes',
+            'category': 'bonus_action',
+            'attack_type': 'none',
+            'resource_name': 'ki',
+            'resource_cost': 2,
+            'heal_dice': '1d4',
+          },
+          // Sin resource_name: coincide por nombre con el recurso.
+          {'name': 'Forma cambiante', 'category': 'action', 'attack_type': 'none'},
+          // Recurso inexistente: no se vincula.
+          {
+            'name': 'Golpe fantasma',
+            'category': 'action',
+            'attack_type': 'none',
+            'resource_name': 'Nada',
+          },
+        ],
+      });
+
+      final all = merged.abilitiesByAction.all;
+      final rafaga = all.firstWhere((a) => a.name == 'Ráfaga de golpes');
+      expect(rafaga.resourceName, 'Ki');
+      expect(rafaga.resourceCost, 2);
+      expect(rafaga.healDice, '1d4');
+
+      final forma = all.firstWhere((a) => a.name == 'Forma cambiante');
+      expect(merged.abilitiesByAction.action, contains(forma));
+      expect(forma.resourceName, 'Forma cambiante');
+      expect(forma.resourceCost, 1);
+
+      expect(all.firstWhere((a) => a.name == 'Golpe fantasma').resourceName, isNull);
+    });
+
+    test('las pasivas y los conjuros no se vinculan', () {
+      final base = Nivel20Mapper.map(raw);
+      final merged = Nivel20Patch.apply(base, {
+        'resources': [
+          {'name': 'Esculpir conjuros', 'current': 1, 'max': 1},
+        ],
+        'classified_features': [
+          {
+            'name': 'Esculpir conjuros',
+            'category': 'passive',
+            'tactical_role': 'Ofensivo',
+            'resource_name': 'Esculpir conjuros',
+          },
+        ],
+      });
+      final feat = merged.abilitiesByAction.passive
+          .firstWhere((a) => a.name == 'Esculpir conjuros');
+      expect(feat.resourceName, isNull);
+      for (final spell in merged.abilitiesByAction.all.where((a) => a.isSpell)) {
+        expect(spell.resourceName, isNull);
+      }
     });
   });
 
