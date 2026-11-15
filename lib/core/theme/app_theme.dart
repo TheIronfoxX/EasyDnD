@@ -17,10 +17,10 @@
 
 import 'package:flutter/material.dart';
 
-import 'app_palette.dart';
 import 'app_theme_colors.dart';
 import 'design_tokens.dart';
 import 'font_presets.dart';
+import 'theme_presets.dart';
 
 class AppTheme {
   AppTheme._(); // clase estática: no se instancia.
@@ -29,8 +29,9 @@ class AppTheme {
   /// del skin hasta que el jugador elija otro.
   static const Color defaultAccent = Color(0xFFC9A227);
 
+  /// Modo claro: siempre el tema Pergamino.
   static ThemeData light({
-    Color accent = defaultAccent,
+    Color? accent,
     FontPreset fontPreset = FontPresets.defaultPreset,
   }) => build(
     brightness: Brightness.light,
@@ -38,27 +39,33 @@ class AppTheme {
     fontPreset: fontPreset,
   );
 
+  /// Modo oscuro: Grimorio salvo que se pida otro tema oscuro.
   static ThemeData dark({
-    Color accent = defaultAccent,
+    Color? accent,
     FontPreset fontPreset = FontPresets.defaultPreset,
-  }) => build(
-    brightness: Brightness.dark,
-    accent: accent,
-    fontPreset: fontPreset,
-  );
+    AppThemePreset preset = AppThemePreset.defaultDark,
+  }) => build(preset: preset, accent: accent, fontPreset: fontPreset);
 
-  /// Tema completo para una luminosidad, un acento y una tipografía.
+  /// Tema completo para un preset del catálogo, un acento y una
+  /// tipografía. Sin [preset] se usa el de fábrica de [brightness]
+  /// (Grimorio u Pergamino); sin [accent], el acento de firma del tema.
   static ThemeData build({
-    required Brightness brightness,
-    Color accent = defaultAccent,
+    Brightness? brightness,
+    AppThemePreset? preset,
+    Color? accent,
     FontPreset fontPreset = FontPresets.defaultPreset,
   }) {
-    final palette = AppPalette.of(brightness);
+    final resolved =
+        preset ?? AppThemePreset.forBrightness(brightness ?? Brightness.dark);
+    final themeBrightness = resolved.brightness;
+    final palette = resolved.palette;
+    final tactical = resolved.tactical;
+    final accentColor = accent ?? resolved.accent;
 
-    // El acento lo elige el jugador: no podemos confiar en el onPrimary
-    // que inventa el seed. Lo resolvemos por contraste real.
+    // El acento lo puede elegir el jugador: no podemos confiar en el
+    // onPrimary que inventa el seed. Lo resolvemos por contraste real.
     final onAccent =
-        ThemeData.estimateBrightnessForColor(accent) == Brightness.dark
+        ThemeData.estimateBrightnessForColor(accentColor) == Brightness.dark
         ? Colors.white
         : Colors.black;
 
@@ -66,15 +73,19 @@ class AppTheme {
     // salen de la paleta semántica, no del algoritmo de M3.
     final scheme =
         ColorScheme.fromSeed(
-          seedColor: accent,
-          brightness: brightness,
+          seedColor: accentColor,
+          brightness: themeBrightness,
         ).copyWith(
-          primary: accent,
+          primary: accentColor,
           onPrimary: onAccent,
-          secondary: accent,
+          secondary: accentColor,
           onSecondary: onAccent,
           surface: palette.surface,
           onSurface: palette.textPrimary,
+          surfaceContainerLowest: palette.background,
+          surfaceContainerLow: palette.surface,
+          surfaceContainer: palette.surface,
+          surfaceContainerHigh: palette.surfaceElevated,
           surfaceContainerHighest: palette.surfaceElevated,
           onSurfaceVariant: palette.textSecondary,
           outline: palette.border,
@@ -84,11 +95,18 @@ class AppTheme {
 
     final base = ThemeData(
       useMaterial3: true,
-      brightness: brightness,
+      brightness: themeBrightness,
       colorScheme: scheme,
     );
 
     final hairline = BorderSide(color: palette.border);
+    final buttonShape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(AppRadii.md),
+    );
+    const buttonText = TextStyle(
+      fontWeight: FontWeight.w700,
+      letterSpacing: 0.2,
+    );
     final cardShape = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(AppRadii.lg),
       side: hairline,
@@ -143,7 +161,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadii.md),
-          borderSide: BorderSide(color: accent, width: 1.5),
+          borderSide: BorderSide(color: accentColor, width: 1.5),
         ),
       ),
       dividerTheme: DividerThemeData(color: palette.border),
@@ -159,24 +177,108 @@ class AppTheme {
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: palette.surface,
         surfaceTintColor: Colors.transparent,
-        indicatorColor: accent.withValues(alpha: 0.18),
+        indicatorColor: accentColor.withValues(alpha: 0.18),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return IconThemeData(
-            color: selected ? accent : palette.textSecondary,
+            color: selected ? accentColor : palette.textSecondary,
           );
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return TextStyle(
-            color: selected ? accent : palette.textSecondary,
+            color: selected ? accentColor : palette.textSecondary,
             fontSize: 12,
             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
           );
         }),
       ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          shape: buttonShape,
+          textStyle: buttonText,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.md,
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          shape: buttonShape,
+          textStyle: buttonText,
+          side: BorderSide(color: tactical.metalBorder),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.md,
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(shape: buttonShape, textStyle: buttonText),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: palette.surfaceElevated.withValues(alpha: 0.55),
+        selectedColor: accentColor.withValues(alpha: 0.22),
+        checkmarkColor: accentColor,
+        side: BorderSide(color: palette.border),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.sm),
+        ),
+        labelStyle: TextStyle(
+          color: palette.textPrimary,
+          fontWeight: FontWeight.w600,
+          fontSize: 13,
+        ),
+        secondaryLabelStyle: TextStyle(
+          color: palette.textPrimary,
+          fontWeight: FontWeight.w600,
+          fontSize: 13,
+        ),
+      ),
+      tabBarTheme: TabBarThemeData(
+        labelColor: accentColor,
+        unselectedLabelColor: palette.textSecondary,
+        indicatorColor: accentColor,
+        indicatorSize: TabBarIndicatorSize.label,
+        dividerColor: palette.border,
+        labelStyle: const TextStyle(
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.3,
+        ),
+        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
+      ),
+      listTileTheme: ListTileThemeData(
+        iconColor: palette.textSecondary,
+        subtitleTextStyle: TextStyle(
+          color: palette.textSecondary,
+          fontSize: 12.5,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.md),
+        ),
+      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: accentColor,
+        linearTrackColor: palette.surfaceElevated,
+      ),
+      tooltipTheme: TooltipThemeData(
+        decoration: BoxDecoration(
+          color: tactical.surfaceRaised,
+          borderRadius: BorderRadius.circular(AppRadii.sm),
+          border: Border.all(color: tactical.metalBorder),
+        ),
+        textStyle: TextStyle(color: palette.textPrimary, fontSize: 12),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: accentColor,
+        foregroundColor: onAccent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+        ),
+      ),
       dividerColor: palette.border,
-      extensions: [AppThemeColors.fromPalette(palette)],
+      extensions: [AppThemeColors.fromPalette(palette), tactical],
       textTheme: _typography(base.textTheme, fontPreset).apply(
         bodyColor: palette.textPrimary,
         displayColor: palette.textPrimary,
@@ -194,11 +296,8 @@ class AppTheme {
   static TextTheme _typography(TextTheme base, FontPreset preset) {
     final withBody = base.apply(fontFamily: preset.bodyFamily);
 
-    TextStyle? display(TextStyle? style, {double tracking = 0.4}) =>
-        style?.copyWith(
-          fontFamily: preset.displayFamily,
-          letterSpacing: tracking,
-        );
+    TextStyle? display(TextStyle? style, {double tracking = 0.4}) => style
+        ?.copyWith(fontFamily: preset.displayFamily, letterSpacing: tracking);
 
     return withBody.copyWith(
       displayLarge: display(withBody.displayLarge),

@@ -15,7 +15,12 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/design_tokens.dart';
+import '../../core/ui/stat_dial.dart';
+import '../../core/ui/tactical_card.dart';
+
 export '../../core/ui/character_avatar.dart';
+export '../../core/ui/stat_dial.dart';
+export '../../core/ui/tactical_card.dart';
 
 /// Tarjeta de sección con encabezado icono + título + acción opcional.
 /// Es la unidad visual del tablero: una tarjeta por tema (vida, turno,
@@ -27,11 +32,15 @@ class HudSectionCard extends StatelessWidget {
     required this.title,
     required this.child,
     this.trailing,
+    this.tone,
   });
 
   final IconData icon;
   final String title;
   final Widget child;
+
+  /// Color de rol de la sección (armas, conjuros...). `null` = acento.
+  final Color? tone;
 
   /// Acción del encabezado (recargar, agregar...). A la derecha del
   /// título, alineada con el texto.
@@ -39,26 +48,9 @@ class HudSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-
-    return Container(
+    return TacticalCard(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppRadii.lg),
-        border: Border.all(color: scheme.outline),
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            scheme.surface,
-            Color.alphaBlend(
-              scheme.surfaceContainerHighest.withValues(alpha: 0.5),
-              scheme.surface,
-            ),
-          ],
-        ),
-      ),
+      tone: tone,
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.lg,
         AppSpacing.md,
@@ -68,30 +60,11 @@ class HudSectionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: scheme.primary.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(AppRadii.sm),
-                  border: Border.all(
-                    color: scheme.primary.withValues(alpha: 0.30),
-                  ),
-                ),
-                child: Icon(icon, size: 16, color: scheme.primary),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  title,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              if (trailing != null) trailing!,
-            ],
+          SectionHeader(
+            icon: icon,
+            title: title,
+            trailing: trailing,
+            tone: tone,
           ),
           const SizedBox(height: AppSpacing.md),
           child,
@@ -111,60 +84,26 @@ class HudStatTile extends StatelessWidget {
     required this.label,
     required this.value,
     this.onTap,
+    this.tone,
+    this.emphasized = false,
   });
 
   final IconData icon;
   final String label;
   final String value;
   final VoidCallback? onTap;
+  final Color? tone;
+  final bool emphasized;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withValues(alpha: 0.35),
-        borderRadius: BorderRadius.circular(AppRadii.md),
-        border: Border.all(color: scheme.outline),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.sm,
-              vertical: AppSpacing.sm,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, size: 20, color: scheme.onSurfaceVariant),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: scheme.outline,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+    return StatDial(
+      icon: icon,
+      label: label,
+      value: value,
+      tone: tone,
+      onTap: onTap,
+      emphasized: emphasized,
     );
   }
 }

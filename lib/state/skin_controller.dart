@@ -15,6 +15,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/theme/app_theme.dart';
 import '../core/theme/font_presets.dart';
+import '../core/theme/theme_presets.dart';
 
 class SkinController extends ChangeNotifier {
   SkinController(this._prefs);
@@ -24,18 +25,37 @@ class SkinController extends ChangeNotifier {
   static const String darkModeKey = 'easydnd.skin.dark.v1';
   static const String fontKey = 'easydnd.skin.font.v1';
 
+  /// Último tema OSCURO elegido (id de [AppThemePreset]). El modo claro
+  /// no se guarda acá: es [darkModeKey] en false, y siempre es Pergamino.
+  static const String themeKey = 'easydnd.skin.theme.v1';
+
   /// Claves de la app vieja, solo para migrar una vez.
   static const String legacyAccentKey = 'accent_color_argb';
   static const String legacyDarkModeKey = 'is_dark_mode';
 
   final SharedPreferences _prefs;
 
-  Color _accentColor = AppTheme.defaultAccent;
+  /// Acento elegido a mano por el jugador. `null` = usar el acento de
+  /// firma del tema activo.
+  Color? _customAccent;
+  AppThemePreset _darkPreset = AppThemePreset.defaultDark;
   bool _isDarkMode = true; // la app siempre arrancó en oscuro
   FontPreset _fontPreset = FontPresets.defaultPreset;
   bool _isReady = false;
 
-  Color get accentColor => _accentColor;
+  /// Acento efectivo: el propio del jugador o, si no eligió ninguno, el
+  /// de firma del tema activo.
+  Color get accentColor => _customAccent ?? themePreset.accent;
+
+  /// true si el jugador pisó el acento de firma con un color propio.
+  bool get hasCustomAccent => _customAccent != null;
+
+  /// Tema activo: Pergamino en modo claro, el oscuro elegido si no.
+  AppThemePreset get themePreset =>
+      _isDarkMode ? _darkPreset : AppThemePreset.defaultLight;
+
+  /// Tema oscuro al que vuelve el toggle claro/oscuro.
+  AppThemePreset get darkPreset => _darkPreset;
   bool get isDarkMode => _isDarkMode;
   FontPreset get fontPreset => _fontPreset;
   bool get isReady => _isReady;
@@ -43,9 +63,18 @@ class SkinController extends ChangeNotifier {
 
   /// Tema resuelto para el modo actual. Lo usan tests y pantallas que
   /// necesiten un ThemeData sin pasar por MaterialApp.
-  ThemeData get themeData => AppTheme.build(
-    brightness: _isDarkMode ? Brightness.dark : Brightness.light,
-    accent: _accentColor,
+  ThemeData get themeData => _isDarkMode ? darkTheme : lightTheme;
+
+  /// Tema del modo claro (Pergamino) con el acento y la tipografía
+  /// actuales. Es el `theme` del MaterialApp.
+  ThemeData get lightTheme =>
+      AppTheme.light(accent: _customAccent, fontPreset: _fontPreset);
+
+  /// Tema del modo oscuro (el preset oscuro elegido). Es el `darkTheme`
+  /// del MaterialApp.
+  ThemeData get darkTheme => AppTheme.dark(
+    preset: _darkPreset,
+    accent: _customAccent,
     fontPreset: _fontPreset,
   );
 
@@ -57,9 +86,9 @@ class SkinController extends ChangeNotifier {
     final storedAccent = _prefs.getInt(accentKey);
     final legacyAccent = _prefs.getInt(legacyAccentKey);
     if (storedAccent != null) {
-      _accentColor = Color(storedAccent);
+      _customAccent = Color(storedAccent);
     } else if (legacyAccent != null) {
-      _accentColor = Color(legacyAccent);
+      _customAccent = Color(legacyAccent);
       await _prefs.setInt(accentKey, legacyAccent);
     }
 
@@ -72,6 +101,11 @@ class SkinController extends ChangeNotifier {
       await _prefs.setBool(darkModeKey, legacyMode);
     }
 
+    // Un id de tema desconocido (build futuro) o uno claro guardado por
+    // error cae al oscuro de fábrica: el toggle siempre tiene a dónde ir.
+    final storedTheme = AppThemePreset.byId(_prefs.getString(themeKey));
+    if (storedTheme != null && storedTheme.isDark) _darkPreset = storedTheme;
+
     // byId cae al preset por defecto si no hay nada guardado o si el id
     // es de una versión futura que este build no conoce.
     _fontPreset = FontPresets.byId(_prefs.getString(fontKey));
@@ -82,10 +116,34 @@ class SkinController extends ChangeNotifier {
 
   /// Cambia el acento y lo persiste. Mismo color = no-op (ni notifica).
   Future<void> setAccentColor(Color color) async {
-    if (_accentColor == color) return;
-    _accentColor = color;
+    if (accentColor == color) return;
+    _customAccent = color;
     notifyListeners();
     await _prefs.setInt(accentKey, color.toARGB32());
+  }
+
+  /// Vuelve al acento de firma del tema activo.
+  Future<void> clearCustomAccent() async {
+    if (_customAccent == null) return;
+    _customAccent = null;
+    notifyListeners();
+    await _prefs.remove(accentKey);
+  }
+
+  /// Elige un tema del catálogo y lo persiste. Un tema oscuro pasa a ser
+  /// el destino del toggle; Pergamino es simplemente "modo claro". Elegir
+  /// un tema restaura su acento de firma: quien quiera otro color lo
+  /// vuelve a elegir en Apariencia.
+  Future<void> setThemePreset(AppThemePreset preset) async {
+    if (themePreset == preset && _customAccent == null) return;
+    final hadAccent = _customAccent != null;
+    _customAccent = null;
+    _isDarkMode = preset.isDark;
+    if (preset.isDark) _darkPreset = preset;
+    notifyListeners();
+    await _prefs.setBool(darkModeKey, _isDarkMode);
+    if (preset.isDark) await _prefs.setString(themeKey, preset.id);
+    if (hadAccent) await _prefs.remove(accentKey);
   }
 
   /// Fija el modo claro/oscuro y lo persiste. Mismo valor = no-op.

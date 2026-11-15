@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../core/theme/app_theme.dart';
+import '../core/theme/design_tokens.dart';
 import '../features/hud/startup_gate.dart';
 import '../state/character_store.dart';
 import '../state/skin_controller.dart';
@@ -34,14 +34,11 @@ class EasyDnDApp extends StatelessWidget {
           return MaterialApp(
             title: 'EasyDnD',
             debugShowCheckedModeBanner: false,
-            theme: AppTheme.light(
-              accent: skin.accentColor,
-              fontPreset: skin.fontPreset,
-            ),
-            darkTheme: AppTheme.dark(
-              accent: skin.accentColor,
-              fontPreset: skin.fontPreset,
-            ),
+            // Pergamino es el modo claro; el oscuro es el tema del
+            // catálogo que eligió el jugador. El toggle alterna entre ambos.
+            theme: skin.lightTheme,
+            darkTheme: skin.darkTheme,
+            themeAnimationDuration: AppDurations.normal,
             themeMode: skin.themeMode,
             home: const StartupGate(),
           );

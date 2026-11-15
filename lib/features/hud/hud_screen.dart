@@ -19,6 +19,7 @@ import '../../state/character_store.dart';
 import '../editor/character_editor_screen.dart';
 import '../import/import_wizard_screen.dart';
 import '../skin/skin_screen.dart';
+import '../skin/theme_picker.dart';
 import 'hud_combat_tab.dart';
 import 'hud_dialogs.dart';
 import 'hud_inventory_tab.dart';
@@ -26,6 +27,8 @@ import 'hud_sheet_tab.dart';
 import 'hud_widgets.dart';
 import 'welcome_screen.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/theme/tactical_palette.dart';
+import '../../core/theme/telemetry.dart';
 
 /// Acciones del menú de mantenimiento de la AppBar.
 enum _HudMenuAction {
@@ -33,6 +36,7 @@ enum _HudMenuAction {
   correctWithAi,
   importNew,
   createNew,
+  themes,
   appearance,
   delete,
 }
@@ -82,6 +86,8 @@ class _HudScreenState extends State<HudScreen> {
             builder: (_) => const CharacterEditorScreen(),
           ),
         );
+      case _HudMenuAction.themes:
+        await showThemePickerSheet(context);
       case _HudMenuAction.appearance:
         await Navigator.of(
           context,
@@ -135,19 +141,11 @@ class _HudScreenState extends State<HudScreen> {
     return Scaffold(
       appBar: AppBar(
         leadingWidth: 60,
-        // El degradé sale del acento del skin, no de un color fijo: así
-        // el header acompaña cualquier preset sin tocar nada acá.
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                scheme.primary.withValues(alpha: 0.16),
-                scheme.surface,
-              ],
-            ),
-          ),
+        // El degradé sale del tema activo (TacticalPalette), no de un
+        // color fijo: cada tema del catálogo trae su propia cabecera.
+        flexibleSpace: AnimatedContainer(
+          duration: AppDurations.normal,
+          decoration: BoxDecoration(gradient: context.tactical.headerGradient),
         ),
         leading: Padding(
           padding: const EdgeInsets.only(left: AppSpacing.md),
@@ -171,7 +169,7 @@ class _HudScreenState extends State<HudScreen> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
               ),
             ),
             if (identity.isNotEmpty)
@@ -223,6 +221,13 @@ class _HudScreenState extends State<HudScreen> {
               ),
               PopupMenuDivider(),
               PopupMenuItem(
+                value: _HudMenuAction.themes,
+                child: _MenuRow(
+                  icon: Icons.auto_awesome_mosaic_rounded,
+                  label: 'Temas',
+                ),
+              ),
+              PopupMenuItem(
                 value: _HudMenuAction.appearance,
                 child: _MenuRow(
                   icon: Icons.palette_outlined,
@@ -245,9 +250,19 @@ class _HudScreenState extends State<HudScreen> {
       body: IndexedStack(
         index: _tabIndex,
         children: [
-          HudCombatTab(character: character),
-          HudSheetTab(character: character),
-          HudInventoryTab(character: character),
+          // Cada tab entra con un fundido corto al seleccionarse; los tres
+          // siguen montados (IndexedStack) para conservar el scroll.
+          for (final (index, tab) in [
+            HudCombatTab(character: character),
+            HudSheetTab(character: character),
+            HudInventoryTab(character: character),
+          ].indexed)
+            AnimatedOpacity(
+              duration: AppDurations.normal,
+              curve: Curves.easeOut,
+              opacity: index == _tabIndex ? 1 : 0,
+              child: tab,
+            ),
         ],
       ),
       bottomNavigationBar: NavigationBar(
@@ -273,8 +288,6 @@ class _HudScreenState extends State<HudScreen> {
       ),
     );
   }
-
-
 }
 
 /// Selector de personaje activo. Lista el roster completo con una tilde
@@ -296,25 +309,89 @@ class _RosterSelector extends StatelessWidget {
         for (var i = 0; i < store.roster.length; i++)
           PopupMenuItem<int>(
             value: i,
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    store.roster[i].basicInfo.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                if (i == store.activeIndex)
-                  Icon(
-                    Icons.check_rounded,
-                    size: 18,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-              ],
+            child: _RosterRow(
+              character: store.roster[i],
+              active: i == store.activeIndex,
             ),
           ),
       ],
+    );
+  }
+}
+
+/// Fila del roster: nombre, clase/nivel y PG con una barra fina, para
+/// elegir personaje sabiendo en qué estado quedó cada uno.
+class _RosterRow extends StatelessWidget {
+  const _RosterRow({required this.character, required this.active});
+
+  final CharacterModel character;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final tactical = context.tactical;
+    final info = character.basicInfo;
+    final ratio = info.hpMax <= 0
+        ? 0.0
+        : (info.currentHp / info.hpMax).clamp(0.0, 1.0);
+    final hpColor = ratio <= 0.25 ? tactical.damage : tactical.heal;
+    final characterClass = info.characterClass.trim();
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 200),
+      child: Row(
+        children: [
+          Container(
+            width: 3,
+            height: 34,
+            decoration: BoxDecoration(
+              color: active ? scheme.primary : tactical.metalBorder,
+              borderRadius: BorderRadius.circular(AppRadii.pill),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  info.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                  ),
+                ),
+                Text(
+                  [
+                    if (characterClass.isNotEmpty) characterClass,
+                    'Nv. ${info.level}',
+                    'PG ${info.currentHp}/${info.hpMax}',
+                  ].join(' · '),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelSmall
+                      ?.copyWith(color: scheme.onSurfaceVariant)
+                      .tabular,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                LinearProgressIndicator(
+                  value: ratio,
+                  minHeight: 3,
+                  color: hpColor,
+                  borderRadius: BorderRadius.circular(AppRadii.pill),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          if (active)
+            Icon(Icons.check_rounded, size: 18, color: scheme.primary),
+        ],
+      ),
     );
   }
 }
