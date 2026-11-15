@@ -366,6 +366,41 @@ void main() {
   });
 
   group('recursos y compañeros', () {
+    test('spendResource descuenta el coste con tope en 0', () async {
+      final store = await boot();
+      store.addCharacter(buildCharacter()); // Furia 2/3
+      store.spendResource('Furia', 2);
+      expect(store.activeCharacter!.resources.single.current, 0);
+      store.spendResource('Furia', 5);
+      expect(store.activeCharacter!.resources.single.current, 0);
+      store.spendResource('Nada', 1); // no-op
+    });
+
+    test('los descansos respetan ResourcePoint.recovery', () async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(hitDiceMax: 5, hitDiceCurrent: 5));
+      final resources = store.activeCharacter!.resources
+        ..clear()
+        ..addAll([
+          ResourcePoint(name: 'Corto', current: 0, max: 2, recovery: 'short_rest'),
+          ResourcePoint(name: 'Largo', current: 0, max: 2, recovery: 'long_rest'),
+          ResourcePoint(name: 'Manual', current: 0, max: 2),
+        ]);
+
+      store.shortRest();
+      expect(resources.map((r) => r.current).toList(), [2, 0, 0]);
+
+      resources.first.current = 0;
+      store.longRest();
+      expect(resources.map((r) => r.current).toList(), [2, 2, 0]);
+
+      resources
+        ..[0].current = 0
+        ..[1].current = 0;
+      store.customRest(restoreCharges: true);
+      expect(resources.map((r) => r.current).toList(), [2, 2, 0]);
+    });
+
     test('recursos clampean entre 0 y max', () async {
       final store = await boot();
       store.addCharacter(buildCharacter()); // Furia 2/3

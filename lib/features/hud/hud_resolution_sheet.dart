@@ -81,6 +81,17 @@ class RollAction {
   final VoidCallback? onConsumeCharge;
   final ValueChanged<int>? onConsumeSlot;
 
+  /// Recurso compartido (ResourcePoint) que la acción gasta al usarse.
+  /// Null en [resourceName] = no gasta ninguno.
+  final String? resourceName;
+  final int resourceCurrent;
+  final int resourceMax;
+  final int resourceCost;
+  final VoidCallback? onConsumeResource;
+
+  /// Dado de curación, distinto del de daño (ej. "1d10+3").
+  final String? healDice;
+
   const RollAction({
     required this.name,
     required this.kindLabel,
@@ -101,6 +112,12 @@ class RollAction {
     this.slotOptions = const [],
     this.onConsumeCharge,
     this.onConsumeSlot,
+    this.resourceName,
+    this.resourceCurrent = 0,
+    this.resourceMax = 0,
+    this.resourceCost = 1,
+    this.onConsumeResource,
+    this.healDice,
   });
 
   /// Cualquier conjuro de nivel 1+ gasta ranura; un truco (nivel 0) no.
@@ -117,6 +134,11 @@ class RollAction {
       damageDice != null && DiceExpression.tryParse(damageDice!) != null;
 
   bool get hasCharges => charges != null;
+
+  bool get usesResource => resourceName != null;
+
+  bool get hasHeal =>
+      healDice != null && DiceExpression.tryParse(healDice!) != null;
 }
 
 /// Abre la hoja. [random] es inyectable para tests determinísticos.
@@ -134,7 +156,7 @@ Future<void> showResolutionSheet(
   );
 }
 
-enum _Phase { setup, attack, damage }
+enum _Phase { setup, attack, damage, heal }
 
 enum _RollMode { digital, manual }
 
@@ -171,6 +193,13 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
 
   late int _chargesRemaining = widget.action.charges?.current ?? 0;
 
+  /// Copia local del recurso vinculado, para reflejar el gasto al instante.
+  late int _resourceRemaining = widget.action.resourceCurrent;
+  bool _resourceConsumed = false;
+
+  int? _healTotal;
+  String? _healBreakdown;
+
   List<int> _dice = const [];
   int? _damageTotal;
   String? _damageBreakdown;
@@ -206,8 +235,12 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
 
   bool get _hasChargesLeft => !_action.hasCharges || _chargesRemaining > 0;
 
+  bool get _hasResourceLeft =>
+      !_action.usesResource || _resourceRemaining >= _action.resourceCost;
+
   bool get _canRoll {
     if (!_hasChargesLeft) return false;
+    if (!_hasResourceLeft) return false;
     if (_action.usesSpellSlot) return _slotLeft > 0;
     return true;
   }
@@ -245,6 +278,17 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
     _chargeConsumed = true;
   }
 
+  /// El recurso vinculado se gasta una sola vez por hoja, igual que las
+  /// cargas: la habilidad ya se usó, acierte o no.
+  void _consumeResourceIfNeeded() {
+    if (!_action.usesResource || _resourceConsumed) return;
+    if (_resourceRemaining >= _action.resourceCost) {
+      _resourceRemaining -= _action.resourceCost;
+      _action.onConsumeResource?.call();
+    }
+    _resourceConsumed = true;
+  }
+
   // -------------------------------------------------------------------
   // Tiradas.
   // -------------------------------------------------------------------
@@ -256,6 +300,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
     final result = rollD20(mode: _advantage, random: _random);
     _consumeSlotIfNeeded();
     _consumeChargeIfNeeded();
+    _consumeResourceIfNeeded();
     setState(() {
       _dice = result.dice;
       _phase = _Phase.attack;
@@ -279,6 +324,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
 
     _consumeSlotIfNeeded();
     _consumeChargeIfNeeded();
+    _consumeResourceIfNeeded();
     setState(() {
       _manualError = null;
       _dice = [first, if (second != null) second];
@@ -302,9 +348,31 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
 
   void _onFail() => Navigator.of(context).pop();
 
+  /// Cierra la hoja, o pasa antes a la fase de curación si la acción
+  /// cura y todavía no se mostró.
+  void _finish() {
+    if (_action.hasHeal && _phase != _Phase.heal) {
+      if (_mode == _RollMode.digital) {
+        final result = resolveDamageRoll(
+          baseDice: _action.healDice,
+          isScalable: false,
+          baseLevel: 0,
+          scalingFormula: null,
+          selectedLevel: 0,
+          random: _random,
+        );
+        _healTotal = result?.total;
+        _healBreakdown = result?.breakdown;
+      }
+      setState(() => _phase = _Phase.heal);
+      return;
+    }
+    Navigator.of(context).pop();
+  }
+
   void _onImpact() {
     if (!_action.hasDamage) {
-      Navigator.of(context).pop();
+      _finish();
       return;
     }
     if (_mode == _RollMode.digital) _computeDamage();
@@ -314,8 +382,9 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
   void _onSaveFailed() {
     _consumeSlotIfNeeded();
     _consumeChargeIfNeeded();
+    _consumeResourceIfNeeded();
     if (!_action.hasDamage) {
-      Navigator.of(context).pop();
+      _finish();
       return;
     }
     if (_mode == _RollMode.digital) _computeDamage();
@@ -325,16 +394,34 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
   void _onSavePassed() {
     _consumeSlotIfNeeded();
     _consumeChargeIfNeeded();
+    _consumeResourceIfNeeded();
     Navigator.of(context).pop();
   }
 
   void _onUse() {
     _consumeSlotIfNeeded();
     _consumeChargeIfNeeded();
-    Navigator.of(context).pop();
+    _consumeResourceIfNeeded();
+    _finish();
   }
 
-  void _onOmitDamage() => Navigator.of(context).pop();
+  void _onOmitDamage() => _finish();
+
+  void _onConfirmHeal() {
+    if (_mode == _RollMode.manual && _healTotal == null) {
+      final value = int.tryParse(_manualDamage.text.trim());
+      if (value == null || value < 0) {
+        setState(() => _manualError = 'Escribí la curación total (0 o más).');
+        return;
+      }
+      setState(() {
+        _manualError = null;
+        _healTotal = value;
+      });
+      return;
+    }
+    Navigator.of(context).pop();
+  }
 
   void _onConfirmDamage() {
     if (_mode == _RollMode.manual && !_manualDamageConfirmed) {
@@ -352,7 +439,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
       });
       return;
     }
-    Navigator.of(context).pop();
+    _finish();
   }
 
   /// Fórmula de daño a nivel elegido, para el recordatorio de mesa en
@@ -389,6 +476,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
       _Phase.setup => _buildSetup(),
       _Phase.attack => _buildAttackResult(),
       _Phase.damage => _buildDamage(),
+      _Phase.heal => _buildHeal(),
     };
 
     return Padding(
@@ -430,6 +518,19 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
             'Usos: $_chargesRemaining/${action.charges!.max}',
             style: theme.textTheme.labelLarge?.copyWith(
               color: _chargesRemaining > 0
+                  ? theme.colorScheme.onSurfaceVariant
+                  : theme.colorScheme.error,
+            ),
+          ),
+        ],
+        if (_action.usesResource) ...[
+          const SizedBox(height: 10),
+          Text(
+            'Recurso: $_resourceRemaining/${action.resourceMax}'
+            '${action.resourceCost > 1 ? ' · coste ${action.resourceCost}' : ''}'
+            ' (${action.resourceName})',
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: _hasResourceLeft
                   ? theme.colorScheme.onSurfaceVariant
                   : theme.colorScheme.error,
             ),
@@ -494,7 +595,9 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
             icon: Icons.error_outline_rounded,
             text: !_hasChargesLeft
                 ? 'Sin usos disponibles: recuperalos con un descanso.'
-                : 'No te quedan ranuras de este nivel.',
+                : !_hasResourceLeft
+                    ? 'No te alcanzan los puntos de ${_action.resourceName}.'
+                    : 'No te quedan ranuras de este nivel.',
             error: true,
           ),
         ],
@@ -850,6 +953,83 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
               ),
             ),
           ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHeal() {
+    final theme = Theme.of(context);
+    final showManualInput = _mode == _RollMode.manual && _healTotal == null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _SheetHeader(action: _action),
+        const SizedBox(height: AppSpacing.lg),
+        _sectionLabel('Curación'),
+        const SizedBox(height: AppSpacing.sm),
+        if (showManualInput)
+          TextField(
+            controller: _manualDamage,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            decoration: InputDecoration(
+              labelText: 'Curación total',
+              helperText: 'En mesa: tirá ${_action.healDice}',
+              errorText: _manualError,
+              border: const OutlineInputBorder(),
+            ),
+          )
+        else
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: 14,
+            ),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.4,
+              ),
+              borderRadius: BorderRadius.circular(AppRadii.md),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'PG recuperados',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${_healTotal ?? 0}',
+                      key: const ValueKey('heal_total'),
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: theme.colorScheme.tertiary,
+                      ),
+                    ),
+                    if (_healBreakdown != null)
+                      Text(
+                        _healBreakdown!,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        const SizedBox(height: 20),
+        FilledButton(
+          onPressed: _onConfirmHeal,
+          child: Text(showManualInput ? 'Ver curación' : 'Cerrar'),
         ),
       ],
     );

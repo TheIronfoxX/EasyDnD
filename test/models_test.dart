@@ -230,4 +230,50 @@ void main() {
       expect(purse.copper, 2);
     });
   });
+
+  group('Ability — recurso vinculado y curación', () {
+    test('roundtrip conserva resource_name, resource_cost y heal_dice', () {
+      final original = Ability.fromJson({
+        'id': 'a1',
+        'name': 'Golpe de Ki',
+        'resource_name': 'Ki',
+        'resource_cost': 2,
+        'heal_dice': '1d10+3',
+      });
+      final json = original.toJson(category: 'bonus_action');
+      expect(json['resource_name'], 'Ki');
+      expect(json['resource_cost'], 2);
+      expect(json['heal_dice'], '1d10+3');
+
+      final revived = Ability.fromJson(json);
+      expect(revived.resourceName, 'Ki');
+      expect(revived.resourceCost, 2);
+      expect(revived.healDice, '1d10+3');
+    });
+
+    test('ficha vieja: sin campos nuevos, fallback seguro y JSON sin ruido', () {
+      final old = Ability.fromJson({'id': 'a1', 'name': 'Viejo'});
+      expect(old.resourceName, isNull);
+      expect(old.resourceCost, 1);
+      expect(old.healDice, isNull);
+
+      final json = old.toJson(category: 'action');
+      expect(json.containsKey('resource_name'), isFalse);
+      expect(json.containsKey('resource_cost'), isFalse);
+      expect(json.containsKey('heal_dice'), isFalse);
+    });
+
+    test('las pasivas no escriben recurso ni curación', () {
+      final a = Ability.fromJson({
+        'id': 'a1',
+        'name': 'Pasiva',
+        'resource_name': 'Ki',
+        'heal_dice': '1d4',
+      });
+      final json = a.toJson(category: 'passive');
+      expect(json.containsKey('resource_name'), isFalse);
+      expect(json.containsKey('resource_cost'), isFalse);
+      expect(json.containsKey('heal_dice'), isFalse);
+    });
+  });
 }

@@ -93,6 +93,7 @@ extension CharacterStoreCombat on CharacterStore {
     _restoreAllSpellSlotsNoNotify(character);
     _restoreAllWeaponCharges(character);
     _restoreAllAbilityCharges(character);
+    _restoreResources(character, const {'short_rest', 'long_rest'});
     _restoreHalfHitDice(character);
 
     _notifyAndPersist();
@@ -113,8 +114,19 @@ extension CharacterStoreCombat on CharacterStore {
     if (restoreCharges) {
       _restoreAllWeaponCharges(character);
       _restoreAllAbilityCharges(character);
+      _restoreResources(character, const {'short_rest', 'long_rest'});
     }
 
+    _notifyAndPersist();
+  }
+
+  /// Descanso corto: restaura los recursos con recovery 'short_rest'.
+  /// Los dados de golpe se gastan aparte (spendHitDice), porque el
+  /// jugador decide cuántos.
+  void shortRest() {
+    final character = activeCharacter;
+    if (character == null) return;
+    _restoreResources(character, const {'short_rest'});
     _notifyAndPersist();
   }
 
@@ -124,6 +136,14 @@ extension CharacterStoreCombat on CharacterStore {
   void _restoreAllSpellSlotsNoNotify(CharacterModel character) {
     for (final slot in character.spellSlots.slots) {
       slot.current = slot.max;
+    }
+  }
+
+  void _restoreResources(CharacterModel character, Set<String> recoveries) {
+    for (final resource in character.resources) {
+      if (recoveries.contains(resource.recovery)) {
+        resource.current = resource.max;
+      }
     }
   }
 
@@ -322,6 +342,15 @@ extension CharacterStoreCombat on CharacterStore {
     final resource = _findResource(name);
     if (resource == null) return;
     resource.current = (resource.current - 1).clamp(0, resource.max);
+    _notifyAndPersist();
+  }
+
+  /// Gasta [cost] puntos del recurso indicado (mínimo 0). No-op si no
+  /// existe.
+  void spendResource(String name, int cost) {
+    final resource = _findResource(name);
+    if (resource == null || cost <= 0) return;
+    resource.current = (resource.current - cost).clamp(0, resource.max);
     _notifyAndPersist();
   }
 

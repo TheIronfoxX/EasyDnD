@@ -171,12 +171,11 @@ class HudActionsSection extends StatelessWidget {
               buildTile(ability),
           ],
           if (traits.isNotEmpty) ...[
-            if (showHeaders)
-              _SubCategoryHeader(
-                icon: Icons.shield_outlined,
-                title: 'Rasgos y Habilidades',
-                count: traits.length,
-              ),
+            _SubCategoryHeader(
+              icon: Icons.flash_on_rounded,
+              title: 'Habilidades',
+              count: traits.length,
+            ),
             for (final ability in traits) buildTile(ability),
           ],
         ],
@@ -206,6 +205,17 @@ class HudActionsSection extends StatelessWidget {
     );
   }
 
+  /// Recurso de la ficha al que apunta una habilidad. Si el nombre ya
+  /// no existe (se borró el recurso) la habilidad se comporta como si no
+  /// lo gastara.
+  ResourcePoint? _findResource(String? name) {
+    if (name == null) return null;
+    for (final r in character.resources) {
+      if (r.name == name) return r;
+    }
+    return null;
+  }
+
   RollAction _abilityAction(
     Ability ability, {
     required StatsBlock stats,
@@ -215,14 +225,23 @@ class HudActionsSection extends StatelessWidget {
   }) {
     final isSpell = ability.type == 'spell';
     final usesSpellSlot = ability.baseLevel >= 1;
+    final resource = _findResource(ability.resourceName);
 
     return RollAction(
       name: ability.name,
-      kindLabel: isSpell ? 'Conjuro' : 'Rasgo',
-      icon: isSpell ? Icons.auto_awesome_rounded : Icons.shield_rounded,
+      kindLabel: isSpell ? 'Conjuro' : 'Habilidad',
+      icon: isSpell ? Icons.auto_awesome_rounded : Icons.flash_on_rounded,
       modifier: stats.modFor(ability.relatedStat) + proficiency,
       attackType: ability.attackType,
       damageDice: ability.damageDice,
+      healDice: ability.healDice,
+      resourceName: resource?.name,
+      resourceCurrent: resource?.current ?? 0,
+      resourceMax: resource?.max ?? 0,
+      resourceCost: ability.resourceCost,
+      onConsumeResource: resource == null
+          ? null
+          : () => store.spendResource(resource.name, ability.resourceCost),
       successDescription: ability.successDescription,
       failureDescription: ability.failureDescription,
       loreDescription: ability.loreDescription,
@@ -269,7 +288,8 @@ class _ActionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final subtitle = _subtitle();
-    final noCharges = action.hasCharges && action.charges!.current <= 0;
+    final noCharges = (action.hasCharges && action.charges!.current <= 0) ||
+        (action.usesResource && action.resourceCurrent < action.resourceCost);
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
@@ -306,6 +326,14 @@ class _ActionTile extends StatelessWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (action.usesResource) ...[
+            _ResourceBadge(
+              name: action.resourceName!,
+              current: action.resourceCurrent,
+              max: action.resourceMax,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+          ],
           if (action.hasCharges) ...[
             _ChargeBadge(
               current: action.charges!.current,
@@ -341,7 +369,13 @@ class _ActionTile extends StatelessWidget {
       ].join(' · ');
     }
     if (action.isPlainUse) {
-      return [action.kindLabel, 'Efecto', if (hasDice) dice].join(' · ');
+      final heal = action.healDice?.trim();
+      return [
+        action.kindLabel,
+        'Efecto',
+        if (hasDice) dice,
+        if (heal != null && heal.isNotEmpty) 'Cura $heal',
+      ].join(' · ');
     }
 
     final mod = action.modifier >= 0
@@ -469,6 +503,48 @@ class _ChargeBadge extends StatelessWidget {
           color: depleted
               ? theme.colorScheme.onErrorContainer
               : theme.colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+/// Chip con los puntos que quedan del recurso vinculado ("Ki 3/4").
+class _ResourceBadge extends StatelessWidget {
+  const _ResourceBadge({
+    required this.name,
+    required this.current,
+    required this.max,
+  });
+
+  final String name;
+  final int current;
+  final int max;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final depleted = current <= 0;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 2,
+      ),
+      decoration: BoxDecoration(
+        color: depleted
+            ? theme.colorScheme.errorContainer
+            : theme.colorScheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+      ),
+      child: Text(
+        '$name $current/$max',
+        key: const ValueKey('resource_badge'),
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: depleted
+              ? theme.colorScheme.onErrorContainer
+              : theme.colorScheme.onSecondaryContainer,
           fontWeight: FontWeight.w600,
         ),
       ),

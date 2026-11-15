@@ -98,6 +98,20 @@ class Ability {
   /// Weapon.
   MagicCharges magicCharges;
 
+  /// Nombre del [ResourcePoint] de la ficha que esta habilidad gasta al
+  /// usarse (Ki, Furia, Inspiración Bárdica...). Null = no gasta
+  /// recursos compartidos (fichas viejas). Se une por nombre, igual que
+  /// el resto de la app identifica los recursos.
+  String? resourceName;
+
+  /// Puntos que gasta de [resourceName] por uso. Solo tiene sentido si
+  /// hay resourceName.
+  int resourceCost;
+
+  /// Dado de curación (ej. "1d10+3"), separado de [damageDice] para que
+  /// la hoja de resolución muestre una tirada de curación diferenciada.
+  String? healDice;
+
   SpellScaling scaling;
 
   // Fachada de compatibilidad sobre el bundle SpellScaling: el resto
@@ -132,6 +146,9 @@ class Ability {
     this.tacticalSummary,
     this.tacticalRole,
     MagicCharges? magicCharges,
+    this.resourceName,
+    this.resourceCost = 1,
+    this.healDice,
     SpellScaling? scaling,
   })  : scaling = scaling ??
             SpellScaling(
@@ -163,7 +180,16 @@ class Ability {
       magicCharges: MagicCharges.fromJson(
         json['magic_charges'] as Map<String, dynamic>?,
       ),
+      resourceName: _nonEmpty(json['resource_name']),
+      resourceCost: ((json['resource_cost'] as num?) ?? 1).toInt().clamp(1, 99),
+      healDice: _nonEmpty(json['heal_dice']),
     );
+  }
+
+  static String? _nonEmpty(Object? raw) {
+    if (raw is! String) return null;
+    final value = raw.trim();
+    return value.isEmpty ? null : value;
   }
 
   /// LA serialización de Ability (ver comentario de archivo: es la
@@ -194,6 +220,13 @@ class Ability {
       'base_level': baseLevel,
       'scaling_formula': scalingFormula,
       'magic_charges': magicCharges.toJson(),
+      // Recursos y curación: solo en habilidades activas (o sueltas), y
+      // sin ruido si no se usan — así las fichas viejas no cambian.
+      if (!isPassive && resourceName != null) ...{
+        'resource_name': resourceName,
+        'resource_cost': resourceCost,
+      },
+      if (!isPassive && healDice != null) 'heal_dice': healDice,
     };
   }
 }

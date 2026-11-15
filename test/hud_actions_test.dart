@@ -120,7 +120,7 @@ void main() {
 
       // La fila del arma resume ataque y daño; la del rasgo, su tipo.
       expect(find.text('Arma · Ataque +5 · 1d8+3 cortante'), findsOneWidget);
-      expect(find.text('Rasgo · Ataque +6 · 2d6'), findsOneWidget);
+      expect(find.text('Habilidad · Ataque +6 · 2d6'), findsOneWidget);
     });
 
     testWidgets('las pasivas despliegan lore y resumen táctico', (
@@ -388,6 +388,66 @@ void main() {
       final ability = store.activeCharacter!.abilitiesByAction.action
           .firstWhere((a) => a.id == 'a_shield');
       expect(ability.magicCharges.current, 1);
+    });
+
+    testWidgets('habilidad ligada a un recurso: muestra, gasta y cura', (
+      tester,
+    ) async {
+      final character = buildCharacter(id: 'char_res', name: 'Rook');
+      character.resources
+        ..clear()
+        ..add(ResourcePoint(name: 'Ki', current: 3, max: 4));
+      character.abilitiesByAction.bonusAction.add(
+        Ability.fromJson({
+          'id': 'a_ki',
+          'name': 'Ráfaga Vital',
+          'attack_type': 'none',
+          'resource_name': 'Ki',
+          'resource_cost': 2,
+          'heal_dice': '1d4',
+        }),
+      );
+
+      final store = await bootWith(character);
+      await pumpActions(tester, store, random: FakeRandom([0]));
+
+      // Grupo propio con encabezado, insignia y chip de recurso.
+      expect(find.text('HABILIDADES'), findsWidgets);
+      expect(find.text('Ki 3/4'), findsOneWidget);
+      expect(find.textContaining('Habilidad · Efecto'), findsOneWidget);
+
+      await tapText(tester, 'Ráfaga Vital');
+      expect(find.text('Recurso: 3/4 · coste 2 (Ki)'), findsOneWidget);
+
+      await tapText(tester, 'Usar');
+      // Curación diferenciada del daño.
+      expect(find.text('Curación'.toUpperCase()), findsOneWidget);
+      expect(find.byKey(const ValueKey('heal_total')), findsOneWidget);
+      expect(store.activeCharacter!.resources.single.current, 1);
+    });
+
+    testWidgets('sin puntos suficientes bloquea el uso', (tester) async {
+      final character = buildCharacter(id: 'char_res2', name: 'Rook');
+      character.resources
+        ..clear()
+        ..add(ResourcePoint(name: 'Ki', current: 1, max: 4));
+      character.abilitiesByAction.action.add(
+        Ability.fromJson({
+          'id': 'a_ki',
+          'name': 'Lluvia de Golpes',
+          'attack_type': 'none',
+          'resource_name': 'Ki',
+          'resource_cost': 2,
+        }),
+      );
+
+      final store = await bootWith(character);
+      await pumpActions(tester, store);
+
+      await tapText(tester, 'Lluvia de Golpes');
+      expect(find.text('Usar'), findsNothing);
+      expect(find.text('No te alcanzan los puntos de Ki.'), findsOneWidget);
+      expect(store.activeCharacter!.resources.single.current, 1);
     });
   });
 }

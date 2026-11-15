@@ -676,6 +676,7 @@ class _RestsSection extends StatelessWidget {
     if (count == null) return;
 
     final healed = store.spendHitDice(count);
+    store.shortRest();
     messenger.showSnackBar(SnackBar(content: Text('Recuperaste $healed PG.')));
   }
 
