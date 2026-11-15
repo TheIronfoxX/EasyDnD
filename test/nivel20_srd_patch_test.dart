@@ -275,6 +275,35 @@ Aquí tienes:
       expect(ids.toSet().length, ids.length);
     });
 
+    test('type y concentration del parche llegan al modelo, solo en activas', () {
+      final patch = Nivel20Patch.tryDecode('''
+{"classified_features": [
+  {"name": "Forma cambiante", "category": "action", "type": "racial",
+   "attack_type": "none", "concentration": true},
+  {"name": "Supernova", "category": "passive", "type": "class",
+   "tactical_role": "Ofensivo", "concentration": true},
+  {"name": "Truco nuevo", "category": "reaction", "type": "inventado",
+   "attack_type": "none"}
+]}''')!;
+      final out = Nivel20Patch.apply(base, patch);
+
+      final forma = out.abilitiesByAction.action
+          .firstWhere((a) => a.name == 'Forma cambiante');
+      expect(forma.type, 'racial');
+      expect(forma.concentration, isTrue);
+
+      // Una pasiva toma el origen pero nunca concentración.
+      final nova = out.abilitiesByAction.passive
+          .firstWhere((a) => a.name == 'Supernova');
+      expect(nova.type, 'class');
+      expect(nova.concentration, isFalse);
+
+      // Un origen que no está en la lista se ignora.
+      final nuevo = out.abilitiesByAction.reaction.single;
+      expect(nuevo.type, 'trait');
+      expect(nuevo.concentration, isFalse);
+    });
+
     test('resources: añade válidos y descarta los inválidos', () {
       expect(merged.resources.map((r) => r.name), ['Forma cambiante']);
       expect(merged.resources.single.max, 2);

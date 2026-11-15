@@ -239,6 +239,19 @@ void main() {
       expect(e['is_scalable'], isFalse);
     });
 
+    test('la duración "Concentración ..." marca concentration: true', () {
+      // Conjurar elemental dura "Concentración 1 hora"; Rayo de fuego es
+      // instantáneo.
+      expect(spell('Conjurar elemental')['concentration'], isTrue);
+      expect(spell('Rayo de fuego').containsKey('concentration'), isFalse);
+
+      // Y llega al modelo.
+      final c = Nivel20Mapper.map(raw);
+      final byName = {for (final a in c.abilitiesByAction.all) a.name: a};
+      expect(byName['Conjurar elemental']!.concentration, isTrue);
+      expect(byName['Rayo de fuego']!.concentration, isFalse);
+    });
+
     test('rasgos y homebrew van a passive; carpetas de pruebas no', () {
       final names = ((json['abilities_by_action'] as Map)['passive'] as List)
           .map((a) => a['name'])

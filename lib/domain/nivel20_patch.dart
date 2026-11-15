@@ -49,6 +49,10 @@ class Nivel20Patch {
   static const _roles = ['Ofensivo', 'Defensivo', 'Utilidad'];
   static const _attackTypes = ['save', 'attack', 'none'];
 
+  /// Orígenes que la IA puede asignar a un poder (los conjuros ya llegan
+  /// como 'spell' desde el mapper y no se tocan).
+  static const _originTypes = ['class', 'racial', 'feat', 'item'];
+
   /// ¿Es [json] un parche (alguna clave de parche y NO una ficha completa)?
   static bool looksLikePatch(Map<String, dynamic> json) =>
       !json.containsKey('basic_info') && patchKeys.any(json.containsKey);
@@ -204,7 +208,12 @@ class Nivel20Patch {
         ability.attackType = attack ?? (existing == null ? 'none' : ability.attackType);
         ability.tacticalRole = null;
       }
+      final origin = _s(f['type']);
+      if (_originTypes.contains(origin) && !ability.isSpell) {
+        ability.type = origin;
+      }
       if (category != 'passive') {
+        if (f['concentration'] == true) ability.concentration = true;
         final resource = _resourceNamed(c, _s(f['resource_name']));
         if (resource != null) {
           ability.resourceName = resource.name;

@@ -112,6 +112,11 @@ class Ability {
   /// la hoja de resolución muestre una tirada de curación diferenciada.
   String? healDice;
 
+  /// true si el conjuro o poder exige mantener concentración. Solo se
+  /// escribe en el JSON de habilidades activas y solo cuando es true:
+  /// las fichas viejas no cambian.
+  bool concentration;
+
   SpellScaling scaling;
 
   // Fachada de compatibilidad sobre el bundle SpellScaling: el resto
@@ -149,6 +154,7 @@ class Ability {
     this.resourceName,
     this.resourceCost = 1,
     this.healDice,
+    this.concentration = false,
     SpellScaling? scaling,
   })  : scaling = scaling ??
             SpellScaling(
@@ -183,6 +189,7 @@ class Ability {
       resourceName: _nonEmpty(json['resource_name']),
       resourceCost: ((json['resource_cost'] as num?) ?? 1).toInt().clamp(1, 99),
       healDice: _nonEmpty(json['heal_dice']),
+      concentration: json['concentration'] == true,
     );
   }
 
@@ -227,6 +234,7 @@ class Ability {
         'resource_cost': resourceCost,
       },
       if (!isPassive && healDice != null) 'heal_dice': healDice,
+      if (!isPassive && concentration) 'concentration': true,
     };
   }
 }

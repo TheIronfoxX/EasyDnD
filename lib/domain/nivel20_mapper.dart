@@ -554,6 +554,7 @@ class Nivel20Mapper {
       'success_description': '',
       'failure_description': '',
       'is_scalable': scaling.isNotEmpty,
+      if (_concentrates(spell)) 'concentration': true,
       'base_level': spellLevel,
       'damage_dice': dice,
       'scaling_formula': scaling,
@@ -872,6 +873,13 @@ class Nivel20Mapper {
     if (v is String) return int.tryParse(v.trim());
     return null;
   }
+
+  /// Nivel20 no trae una bandera de concentración: la duración del
+  /// conjuro lo dice en texto ("Concentración 1 minuto"). Se acepta
+  /// también un `concentration: true` explícito por si algún día llega.
+  static bool _concentrates(Map<String, dynamic> spell) =>
+      spell['concentration'] == true ||
+      _str(spell['duration']).toLowerCase().contains('concentraci');
 
   static String _firstSentence(String text) {
     final t = text.trim();

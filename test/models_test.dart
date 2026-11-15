@@ -231,6 +231,50 @@ void main() {
     });
   });
 
+  group('Ability — concentración', () {
+    test('roundtrip conserva concentration en una habilidad activa', () {
+      final original = Ability.fromJson({
+        'id': 'a1',
+        'name': 'Bendición',
+        'type': 'spell',
+        'concentration': true,
+      });
+      expect(original.concentration, isTrue);
+
+      final json = original.toJson(category: 'action');
+      expect(json['concentration'], isTrue);
+
+      final revived = Ability.fromJson(json);
+      expect(revived.concentration, isTrue);
+    });
+
+    test('ficha vieja: por defecto false y el JSON no escribe nada', () {
+      final old = Ability.fromJson({'id': 'a1', 'name': 'Viejo'});
+      expect(old.concentration, isFalse);
+      expect(
+        old.toJson(category: 'action').containsKey('concentration'),
+        isFalse,
+      );
+      // Tampoco con false explícito.
+      final explicit = Ability.fromJson({'id': 'a2', 'name': 'X', 'concentration': false});
+      expect(explicit.toJson().containsKey('concentration'), isFalse);
+    });
+
+    test('las pasivas nunca escriben concentration', () {
+      final passive = Ability.fromJson({
+        'id': 'a1',
+        'name': 'Pasiva',
+        'concentration': true,
+      });
+      expect(passive.toJson(category: 'passive').containsKey('concentration'), isFalse);
+    });
+
+    test('un valor que no es booleano true se ignora', () {
+      final a = Ability.fromJson({'id': 'a1', 'name': 'X', 'concentration': 'sí'});
+      expect(a.concentration, isFalse);
+    });
+  });
+
   group('Ability — recurso vinculado y curación', () {
     test('roundtrip conserva resource_name, resource_cost y heal_dice', () {
       final original = Ability.fromJson({

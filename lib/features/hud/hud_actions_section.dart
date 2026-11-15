@@ -32,7 +32,7 @@ import '../../core/theme/design_tokens.dart';
 import '../../core/theme/tactical_theme_tokens.dart';
 import '../../core/theme/telemetry.dart';
 
-class HudActionsSection extends StatelessWidget {
+class HudActionsSection extends StatefulWidget {
   const HudActionsSection({super.key, required this.character, this.random});
 
   final CharacterModel character;
@@ -40,6 +40,19 @@ class HudActionsSection extends StatelessWidget {
   /// Inyectable para tests determinísticos. En la app queda null y la
   /// hoja usa Random().
   final Random? random;
+
+  @override
+  State<HudActionsSection> createState() => _HudActionsSectionState();
+}
+
+/// Filtro rápido de la sección: qué familias de acciones se muestran.
+enum _ActionFilter { all, weapons, abilities, spells }
+
+class _HudActionsSectionState extends State<HudActionsSection> {
+  _ActionFilter _filter = _ActionFilter.all;
+
+  CharacterModel get character => widget.character;
+  Random? get random => widget.random;
 
   void _open(BuildContext context, RollAction action) {
     showResolutionSheet(context, action, random: random);
@@ -54,9 +67,39 @@ class HudActionsSection extends StatelessWidget {
     final abilities = character.abilitiesByAction;
     final weapons = character.inventory.weapons;
 
+    final showWeapons =
+        _filter == _ActionFilter.all || _filter == _ActionFilter.weapons;
+    final showTraits =
+        _filter == _ActionFilter.all || _filter == _ActionFilter.abilities;
+    final showSpells =
+        _filter == _ActionFilter.all || _filter == _ActionFilter.spells;
+
+    // Conteos para las etiquetas del filtro: lo que cada chip muestra.
+    final spellCount = abilities.all.where((a) => a.isSpell).length;
+    final traitCount = abilities.all.where((a) => a.isTrait).length;
+    final visibleCount =
+        (showWeapons ? weapons.length : 0) +
+        (showSpells ? spellCount - _passiveSpells(abilities) : 0) +
+        (showTraits ? traitCount : 0);
+
     return Column(
       children: [
-        if (weapons.isNotEmpty)
+        _ActionFilterBar(
+          selected: _filter,
+          counts: {
+            _ActionFilter.all: weapons.length + abilities.all.length,
+            _ActionFilter.weapons: weapons.length,
+            _ActionFilter.abilities: traitCount,
+            _ActionFilter.spells: spellCount,
+          },
+          onSelected: (value) => setState(() => _filter = value),
+        ),
+        if (visibleCount == 0)
+          const Padding(
+            padding: EdgeInsets.only(bottom: AppSpacing.md),
+            child: HudEmptyHint('No hay nada que mostrar con este filtro.'),
+          ),
+        if (weapons.isNotEmpty && showWeapons)
           HudSectionCard(
             icon: Icons.gavel_rounded,
             title: 'Armas',
@@ -84,6 +127,8 @@ class HudActionsSection extends StatelessWidget {
             proficiency: proficiency,
             saveDc: saveDc,
             store: store,
+            showSpells: showSpells,
+            showTraits: showTraits,
           ),
         if (abilities.bonusAction.isNotEmpty)
           _abilityCard(
@@ -95,6 +140,8 @@ class HudActionsSection extends StatelessWidget {
             proficiency: proficiency,
             saveDc: saveDc,
             store: store,
+            showSpells: showSpells,
+            showTraits: showTraits,
           ),
         if (abilities.reaction.isNotEmpty)
           _abilityCard(
@@ -106,8 +153,10 @@ class HudActionsSection extends StatelessWidget {
             proficiency: proficiency,
             saveDc: saveDc,
             store: store,
+            showSpells: showSpells,
+            showTraits: showTraits,
           ),
-        if (abilities.passive.isNotEmpty)
+        if (abilities.passive.isNotEmpty && showTraits)
           HudSectionCard(
             icon: Icons.auto_stories_rounded,
             title: 'Pasivas',
@@ -122,6 +171,10 @@ class HudActionsSection extends StatelessWidget {
     );
   }
 
+  /// Conjuros que viven en "passive" (no se muestran como acciones).
+  int _passiveSpells(AbilitiesByAction abilities) =>
+      abilities.passive.where((a) => a.isSpell).length;
+
   Widget _abilityCard(
     BuildContext context, {
     required String title,
@@ -131,10 +184,23 @@ class HudActionsSection extends StatelessWidget {
     required int proficiency,
     required int? saveDc,
     required CharacterStore store,
+    required bool showSpells,
+    required bool showTraits,
   }) {
-    final cantrips = abilities.where((a) => a.isCantrip).toList();
-    final leveledSpells = abilities.where((a) => a.isLeveledSpell).toList();
-    final traits = abilities.where((a) => a.isTrait).toList();
+    // El filtro rápido decide qué familias entran; una tarjeta sin nada
+    // que mostrar desaparece entera.
+    final cantrips = showSpells
+        ? abilities.where((a) => a.isCantrip).toList()
+        : <Ability>[];
+    final leveledSpells = showSpells
+        ? abilities.where((a) => a.isLeveledSpell).toList()
+        : <Ability>[];
+    final traits = showTraits
+        ? abilities.where((a) => a.isTrait).toList()
+        : <Ability>[];
+    if (cantrips.isEmpty && leveledSpells.isEmpty && traits.isEmpty) {
+      return const SizedBox.shrink();
+    }
     final spellLevels = leveledSpells.map((a) => a.baseLevel).toSet().toList()
       ..sort();
 
@@ -153,6 +219,7 @@ class HudActionsSection extends StatelessWidget {
         tone: ability.isTrait
             ? context.tactical.ability
             : context.tactical.spell,
+        ability: ability,
         onTap: () => _open(context, action),
       );
     }
@@ -325,10 +392,15 @@ class _ActionTile extends StatelessWidget {
     required this.action,
     required this.onTap,
     required this.tone,
+    this.ability,
   });
 
   final RollAction action;
   final VoidCallback onTap;
+
+  /// La habilidad o conjuro de origen (null en armas): de acá salen la
+  /// insignia de origen, la de concentración y la lectura de reglas.
+  final Ability? ability;
 
   /// Color de rol: arma, conjuro o habilidad activa.
   final Color tone;
@@ -369,13 +441,19 @@ class _ActionTile extends StatelessWidget {
           fontWeight: FontWeight.w700,
         ),
       ),
-      subtitle: Text(
-        subtitle,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: theme.textTheme.bodySmall
-            ?.copyWith(color: scheme.onSurfaceVariant)
-            .tabular,
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            subtitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: scheme.onSurfaceVariant)
+                .tabular,
+          ),
+          if (ability != null) _badgeRow(context, ability!),
+        ],
       ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
@@ -588,24 +666,294 @@ class _ResourceBadge extends StatelessWidget {
         horizontal: AppSpacing.sm,
         vertical: 3,
       ),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: color.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(AppRadii.pill),
-        border: Border.all(color: color.withValues(alpha: 0.45)),
+        shape: context.tactical.buttonBorder(
+          color.withValues(alpha: 0.45),
+          width: 1,
+        ),
       ),
-      child: Row(
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.toll_rounded, size: 12, color: color),
-          const SizedBox(width: AppSpacing.xs),
-          Text(
-            '$name $current/$max',
-            key: const ValueKey('resource_badge'),
-            style: theme.textTheme.labelSmall
-                ?.copyWith(color: color, fontWeight: FontWeight.w700)
-                .tabular,
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.toll_rounded, size: 12, color: color),
+              const SizedBox(width: AppSpacing.xs),
+              Text(
+                '$name $current/$max',
+                key: const ValueKey('resource_badge'),
+                style: theme.textTheme.labelSmall
+                    ?.copyWith(color: color, fontWeight: FontWeight.w700)
+                    .tabular,
+              ),
+            ],
           ),
+          const SizedBox(height: 3),
+          // Los pips con la forma de la skin: se ve cuánto queda sin leer.
+          ResourcePips(current: current, max: max, color: tone, size: 6),
         ],
+      ),
+    );
+  }
+}
+
+/// Insignias de una habilidad o conjuro bajo su resumen: origen (Clase,
+/// Racial, Dote, Objeto), concentración y el botón de lectura de reglas.
+Widget _badgeRow(BuildContext context, Ability ability) {
+  final tactical = context.tactical;
+  final origin = abilityOriginLabel(ability);
+  final badges = <Widget>[
+    if (origin != null)
+      TonePill(
+        key: ValueKey('origin_badge_${ability.id}'),
+        label: origin.$1,
+        icon: origin.$2,
+        tone: tactical.ability,
+      ),
+    if (ability.concentration)
+      TonePill(
+        key: ValueKey('concentration_badge_${ability.id}'),
+        label: 'Concentración',
+        icon: Icons.filter_tilt_shift_rounded,
+        tone: tactical.spell,
+      ),
+  ];
+
+  return Padding(
+    padding: const EdgeInsets.only(top: AppSpacing.xs),
+    child: Row(
+      children: [
+        Expanded(
+          child: Wrap(
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
+            children: badges,
+          ),
+        ),
+        IconButton(
+          key: ValueKey('info_${ability.id}'),
+          tooltip: 'Leer reglas de ${ability.name}',
+          visualDensity: VisualDensity.compact,
+          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          padding: EdgeInsets.zero,
+          iconSize: 18,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          icon: const Icon(Icons.info_outline_rounded),
+          onPressed: () => showAbilityInfoSheet(context, ability),
+        ),
+      ],
+    ),
+  );
+}
+
+/// Etiqueta e icono de origen de una habilidad según su `type`. Los
+/// conjuros no llevan insignia de origen (ya van agrupados por nivel).
+/// `trait` (y cualquier tipo desconocido) cae a "Habilidad"; el
+/// `class_feature` de fichas hechas con el prompt anterior cuenta como
+/// Clase.
+(String, IconData)? abilityOriginLabel(Ability ability) {
+  return switch (ability.type) {
+    'spell' => null,
+    'class' || 'class_feature' => ('Clase', Icons.military_tech_rounded),
+    'racial' => ('Racial', Icons.diversity_3_rounded),
+    'feat' => ('Dote', Icons.workspace_premium_rounded),
+    'item' => ('Objeto', Icons.auto_fix_high_rounded),
+    _ => ('Habilidad', Icons.flash_on_rounded),
+  };
+}
+
+/// Hoja de lectura rápida: descripción, éxito y fallo de una habilidad o
+/// conjuro sin entrar al editor ni tirar dados.
+Future<void> showAbilityInfoSheet(BuildContext context, Ability ability) {
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    showDragHandle: true,
+    builder: (_) => _AbilityInfoSheet(ability: ability),
+  );
+}
+
+class _AbilityInfoSheet extends StatelessWidget {
+  const _AbilityInfoSheet({required this.ability});
+
+  final Ability ability;
+
+  static bool _has(String? text) => text != null && text.trim().isNotEmpty;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tactical = context.tactical;
+    final tone = ability.isSpell ? tactical.spell : tactical.ability;
+    final origin = abilityOriginLabel(ability);
+
+    Widget block(
+      String label,
+      String text,
+      Color color, {
+      bool italic = false,
+    }) {
+      return Padding(
+        padding: const EdgeInsets.only(top: AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label.toUpperCase(),
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: color,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              text,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontStyle: italic ? FontStyle.italic : null,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final hasAnything =
+        _has(ability.loreDescription) ||
+        _has(ability.successDescription) ||
+        _has(ability.failureDescription) ||
+        _has(ability.tacticalSummary);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xl,
+        0,
+        AppSpacing.xl,
+        AppSpacing.xxl,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  ability.name,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
+            children: [
+              TonePill(
+                label: ability.isCantrip
+                    ? 'Truco'
+                    : ability.isLeveledSpell
+                    ? 'Conjuro de nivel ${ability.baseLevel}'
+                    : 'Habilidad',
+                tone: tone,
+              ),
+              if (origin != null)
+                TonePill(label: origin.$1, icon: origin.$2, tone: tone),
+              if (ability.concentration)
+                TonePill(
+                  label: 'Concentración',
+                  icon: Icons.filter_tilt_shift_rounded,
+                  tone: tactical.spell,
+                ),
+            ],
+          ),
+          if (!hasAnything)
+            const Padding(
+              padding: EdgeInsets.only(top: AppSpacing.lg),
+              child: HudEmptyHint(
+                'Sin descripción todavía. Podés agregarla desde Editar ficha.',
+              ),
+            ),
+          if (_has(ability.loreDescription))
+            block('Descripción', ability.loreDescription!, tone, italic: true),
+          if (_has(ability.tacticalSummary))
+            block('En mesa', ability.tacticalSummary!, tone),
+          if (_has(ability.successDescription))
+            block('Si tiene éxito', ability.successDescription, tactical.heal),
+          if (_has(ability.failureDescription))
+            block('Si falla', ability.failureDescription, tactical.damage),
+        ],
+      ),
+    );
+  }
+}
+
+/// Barra de filtro rápido: Todo | Armas | Habilidades | Conjuros. Cada
+/// chip lleva el conteo; así "Armas · 1" no se confunde con el título de
+/// la tarjeta de armas.
+class _ActionFilterBar extends StatelessWidget {
+  const _ActionFilterBar({
+    required this.selected,
+    required this.counts,
+    required this.onSelected,
+  });
+
+  final _ActionFilter selected;
+  final Map<_ActionFilter, int> counts;
+  final ValueChanged<_ActionFilter> onSelected;
+
+  static const _labels = {
+    _ActionFilter.all: 'Todo',
+    _ActionFilter.weapons: 'Armas',
+    _ActionFilter.abilities: 'Habilidades',
+    _ActionFilter.spells: 'Conjuros',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primary = theme.colorScheme.primary;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: SizedBox(
+        width: double.infinity,
+        child: Wrap(
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.xs,
+          children: [
+            for (final entry in _labels.entries)
+              ChoiceChip(
+                key: Key('actions-filter-${entry.key.name}'),
+                label: Text('${entry.value} · ${counts[entry.key] ?? 0}'),
+                selected: selected == entry.key,
+                showCheckmark: false,
+                selectedColor: primary.withValues(alpha: 0.22),
+                side: BorderSide(
+                  color: selected == entry.key
+                      ? primary
+                      : theme.colorScheme.outline,
+                ),
+                labelStyle: theme.textTheme.labelMedium
+                    ?.copyWith(
+                      color: selected == entry.key
+                          ? primary
+                          : theme.colorScheme.onSurfaceVariant,
+                      fontWeight: selected == entry.key
+                          ? FontWeight.w800
+                          : FontWeight.w500,
+                    )
+                    .tabular,
+                onSelected: (_) => onSelected(entry.key),
+              ),
+          ],
+        ),
       ),
     );
   }
