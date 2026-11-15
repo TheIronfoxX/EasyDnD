@@ -417,8 +417,10 @@ class ResourcePoint {
   int current;
   int max;
 
-  /// Cuándo se recupera: 'short_rest' | 'long_rest' | 'manual'. Los
-  /// descansos del HUD todavía no lo consumen; es dato de la ficha.
+  /// Cuándo se recupera: 'short_rest' | 'long_rest' | 'manual'. El
+  /// descanso corto restaura solo los 'short_rest'; el largo restaura
+  /// 'short_rest' y 'long_rest'. Los 'manual' nunca se restauran solos
+  /// (solo con restoreAllResources o a mano desde el HUD).
   String recovery;
 
   ResourcePoint({

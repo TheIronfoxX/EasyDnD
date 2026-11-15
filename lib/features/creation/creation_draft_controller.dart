@@ -38,6 +38,9 @@ class CharacterPreview {
       CharacterValidationResult(character: character, issues: warnings);
 }
 
+/// LEGADO — a retirar en una limpieza posterior. Pertenece al asistente de
+/// creación multi-paso, descartado a favor del editor de 4 pestañas y la
+/// importación desde Nivel20. Ninguna pantalla lo usa; no extenderlo.
 class CreationDraftController extends ChangeNotifier {
   static const List<int> standardArray = [15, 14, 13, 12, 10, 8];
   static const int pointBuyBudget = 27;

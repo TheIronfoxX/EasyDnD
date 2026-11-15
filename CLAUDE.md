@@ -33,14 +33,16 @@ the pre-merge bar.
 Layered, inside-out, under `lib/`:
 
 ```
-core/      reglas puras y utilidades (dados, reglas D&D, resolución, tema) — no Flutter deps besides theme
-  theme/   design tokens, palette, fonts, ThemeData — the only place colors/fonts are decided
+core/      reglas puras y utilidades (dados, reglas D&D, resolución, json_sanitizer) — no Flutter deps besides theme
+  theme/   design tokens, palette, fonts, accent/font/theme presets, tactical tokens, ThemeData — the only place colors/fonts are decided
   ui/      shared presentational widgets with no business logic
-domain/    models, validator, AI import prompt — pure Dart, no Flutter
-data/      repositories, persistence (SharedPreferences), Nivel20 extraction, spell catalog
+domain/    models (incl. srd_* catalog models), validator, AI import prompt, CharacterBuilderEngine,
+           Nivel20Mapper/Nivel20Patch — pure Dart, no Flutter
+data/      repositories, persistence (SharedPreferences), Nivel20 extraction, SRD catalogs (class, equipment, spell)
 state/     CharacterStore (roster/combat/inventory) and SkinController — ChangeNotifier, exposed via Provider
 app/       widget root (MultiProvider + MaterialApp)
-features/  UI per feature: hud, editor, import, skin
+features/  UI per feature: hud, editor (4 tabs: Núcleo, Arsenal, Grimorio, Mochila), import, skin
+           creation/ is LEGACY (CreationDraftController, no UI) — to be removed, don't extend
 main.dart  bootstrap: builds and inits the store + skin controller before the first frame
 ```
 
@@ -102,6 +104,21 @@ and web's CanvasKit renderer doesn't resolve generic font family fallbacks.
 `domain/` (models, `character_validator.dart`, `ai_prompt.dart`) have no Flutter
 dependency, so game-rule logic is testable without a widget tree.
 
+### Import: deterministic base + AI patch
+
+Nivel20 import builds the base sheet with `Nivel20Mapper` (no AI); the AI only returns a
+sparse "patch" that `Nivel20Patch` merges on top. The full-sheet AI import
+(`AiPrompt.forEmptySheet`/`forEmbeddedSource`) is supported but secondary; `forCorrection`
+serves both paths. `CharacterBuilderEngine` is only the SRD rules/calculation engine behind
+the editor (the multi-step creation wizard was dropped). Details and pending work: ADR-0001
+to ADR-0003.
+
+## Domain language and decisions
+
+- `GLOSSARY.md` — canonical domain terms (Ficha, Estado de combate, Poder, Importación, Parche…). Use them.
+- `docs/adr/` — architecture decisions (import strategy, validation/versioning, combat state).
+  Read the relevant ADR before changing import, validation or store replace semantics.
+
 ## Testing conventions
 
 - `test/fakes/fake_random.dart`: deterministic `Random` substitute for dice-roll
@@ -119,3 +136,17 @@ dependency, so game-rule logic is testable without a widget tree.
 ## Token discipline
 - Read targeted line ranges instead of whole files when inspecting existing code.
 - Do not run `flutter pub get` unless `pubspec.yaml` was modified.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues (`TheIronfoxX/EasyDnD`), via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `GLOSSARY.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.

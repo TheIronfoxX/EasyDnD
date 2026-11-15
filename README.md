@@ -61,12 +61,13 @@ El código se organiza por capas, de adentro hacia afuera:
 ```
 lib/
 ├── core/        # reglas puras y utilidades (dados, reglas D&D, resolución,
-│   └── theme/   # tokens de diseño, paleta, tipografía, tema)
-├── domain/      # modelos, validador y prompt de IA
-├── data/        # repositorios, persistencia y extracción de Nivel20
+│   └── theme/   # tokens de diseño, paleta, presets, tipografía, tema)
+├── domain/      # modelos, validador, prompts de IA, motor de reglas SRD,
+│                # mapper y parche de Nivel20
+├── data/        # repositorios, persistencia, extracción de Nivel20, catálogos SRD
 ├── state/       # CharacterStore (roster/combate/inventario) y SkinController
 ├── app/         # raíz de widgets (providers + MaterialApp)
-├── features/    # UI por feature: hud, editor, import, skin
+├── features/    # UI por feature: hud, editor, import, skin (creation/ es legado)
 └── main.dart    # bootstrap: inicializa store y skin antes de pintar
 ```
 
@@ -78,6 +79,9 @@ Reglas que sostienen el diseño:
   para poder testearlas sin UI.
 - La persistencia se encapsula en repositorios; el estado expone
   `ChangeNotifier` y la UI escucha con Provider.
+
+Vocabulario del dominio en [`GLOSSARY.md`](GLOSSARY.md) y decisiones de
+arquitectura en [`docs/adr/`](docs/adr/).
 
 ## Persistencia
 
