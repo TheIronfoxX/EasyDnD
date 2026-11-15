@@ -1,0 +1,133 @@
+{
+  "_nota": "Recorte de la respuesta real de Nivel20 (ficha Kael`nar Ardinys, nivel 15). Misma estructura y claves; se conserva 1 elemento representativo por lista y se acortan descripciones largas. HTML ya limpiado como lo haría Nivel20Extractor.",
+  "printable_hash": {
+    "originals": {"static": {"armor_normal": {"total": 12}}},
+    "info": {
+      "level": 15, "level_desc": "Mago 15", "proficiency_bonus": 5, "size": "Mediano",
+      "hit_points": 125, "id": 1619384, "name": "Kael`nar Ardinys", "status": "active",
+      "race_id": 27, "race_name": "Kitsune", "subrace_id": null, "subrace_name": null,
+      "race": "Kitsune", "player": "Ironfox_XTT", "speed": 30, "campaign": "Vísperas de la Destrucción",
+      "image_url": "https://nivel20.com/images/3141259/original-x.png", "spell_caster": true
+    },
+    "proficiency": {"none": 0, "proficient": 5, "expertise": 10},
+    "armor": {"base_armor": 10, "equipment_bonus": 0, "ability_bonus": 2, "normal": 13, "flat_footed": 10, "touch": 12, "modifiers": []},
+    "initiative": {"base": 2, "base_source": "Destreza", "total": 2},
+    "speed": {"base": 30, "base_source": "Velocidad base Kitsune", "modifiers": [], "total": 30},
+    "saving_throw": {
+      "int": {"total": 10, "ability": "int", "ability_mod": 5, "proficiency": "proficient", "name": "Inteligencia", "slug": "int"},
+      "fue": {"total": -1, "ability": "fue", "ability_mod": -1, "proficiency": "none", "name": "Fuerza", "slug": "fue"}
+    },
+    "ability": {
+      "fue": {"base": 9, "total": 9, "mod": -1, "race_bonus": 0, "name": "Fuerza", "short_name": "Fue", "slug": "fue"},
+      "des": {"base": 14, "total": 15, "mod": 2, "race_bonus": 0, "name": "Destreza", "short_name": "Des", "slug": "des"},
+      "con": {"base": 16, "total": 18, "mod": 4, "race_bonus": 0, "name": "Constitución", "short_name": "Con", "slug": "con"},
+      "int": {"base": 18, "total": 21, "mod": 5, "race_bonus": 1, "name": "Inteligencia", "short_name": "Int", "slug": "int"},
+      "sab": {"base": 12, "total": 14, "mod": 2, "race_bonus": 2, "name": "Sabiduría", "short_name": "Sab", "slug": "sab"},
+      "car": {"base": 11, "total": 11, "mod": 0, "race_bonus": 0, "name": "Carisma", "short_name": "Car", "slug": "car"}
+    },
+    "skill": {
+      "arcanos": {"slug": "arcanos", "name": "Arcanos", "ability": "int", "ability_mod": 5, "total": 10, "proficiency": "proficient", "proficiency_bonus": 5, "description": "Tu prueba de Inteligencia (Arcana)..."},
+      "atletismo": {"slug": "atletismo", "name": "Atletismo", "ability": "fue", "ability_mod": -1, "total": -1, "proficiency": "none", "proficiency_bonus": 0, "description": "..."},
+      "trato_con_animales": {"slug": "trato_con_animales", "name": "Trato con Animales", "ability": "sab", "ability_mod": 2, "total": 2, "proficiency": "none", "proficiency_bonus": 0, "description": "..."}
+    },
+    "feats": [],
+    "items": {
+      "armas": [{
+        "name": "Bastón", "description": "El bastón es un arma simple...", "group": "Armas sencillas", "slot": "Una mano",
+        "equippable": true, "location": "equipped", "location_text": "Equipado", "grants_attack": true, "grants_armor": false,
+        "attack": {"range": "", "target": "", "to_hit": {"ability_id": "19", "bonus": "", "value": 4},
+                   "damage": {"value": "1d6 -1", "dice": "1d6", "ability_id": "19", "ability_factor": "1", "bonus": "", "type": "Contundente"}},
+        "armor": {"type": "armor", "value": "", "max_ability": "", "penalty": ""},
+        "tags": ["Versátil"], "proficient": true, "proficiency": "proficient",
+        "fields": {"versatil": "1d8", "municion": null, "prerrequisitos": null}
+      }],
+      "armaduras": [], "equipo_de_aventuras": [], "monturas_y_vehiculos": []
+    },
+    "protections": [],
+    "equipment": "Una aguja que nunca se dobla.",
+    "fields": {
+      "alineamiento": "Caótico bueno", "apariencia": null, "edad": null,
+      "historia": "Kael nació en un remoto bosque encantado...",
+      "idiomas": null, "notas": null, "puntos_de_experiencia": null,
+      "spell_attack": {"total": 0}, "spell_save": {"total": 0}
+    },
+    "multiclass": {"multi_caster": false, "profession_count": 1, "caster_count": 1, "pact_caster_count": 0, "caster_level": 15, "spell_slots": []},
+    "spell_books": [{
+      "profession_id": 22, "profession_name": "Mago",
+      "spells": [
+        [0, [{
+          "id": 165, "name": "Rayo de fuego", "level": 0,
+          "summary": "Realiza un ataque de conjuro a distancia...", "description": "Arrojas una mota de fuego...",
+          "components": "V, S", "short_components": "V, S", "component_material_description": "",
+          "range": "120 pies", "casting_time": "1 acción", "casting_time_unit": "action", "short_casting_time": "1 acción",
+          "area": null, "target": null, "duration": "Instantáneo", "saving_throw": null,
+          "attack": "A distancia 1d10 fuego", "tags": [{"id": 100, "name": "Daño", "description": ""}],
+          "spell_school_name": "Evocación", "ritual": false, "spell_type": "default",
+          "character_spell_id": 9156825, "included": true, "prepared": true, "profession_id": 22, "label": []
+        }]],
+        [1, [{
+          "id": 202, "name": "Manos ardientes", "level": 1,
+          "summary": "Creas una lámina de fuego en un cono de 15 pies...",
+          "description": "...**En niveles superiores.** ...el daño aumenta en 1d6 por cada nivel por encima de 1.",
+          "range": "Personal", "casting_time_unit": "action", "area": "Cono de 15 pies", "duration": "Instantáneo",
+          "saving_throw": "Destreza mitad", "attack": "Contra salvación 3d6 fuego",
+          "spell_school_name": "Evocación", "prepared": false, "included": true
+        }, {
+          "id": 214, "name": "Retirada expeditiva", "level": 1, "casting_time_unit": "bonus_action",
+          "saving_throw": null, "attack": null, "duration": "Concentración 10 minutos", "prepared": false, "included": true
+        }]],
+        [4, [{
+          "id": 435, "name": "Tormenta de hielo", "level": 4, "casting_time_unit": "action",
+          "saving_throw": "Destreza mitad", "attack": "Contra salvación 2d8+4",
+          "description": "...2d8 contundente y 4d6 de frío... aumenta 1d8 por cada nivel por encima de 4.", "prepared": false, "included": true
+        }]],
+        [5, [{
+          "id": 447, "name": "Conjurar elemental", "level": 5, "casting_time": "1 minuto", "casting_time_unit": "minute",
+          "saving_throw": null, "attack": null, "duration": "Concentración 1 hora", "prepared": false, "included": true
+        }]]
+      ],
+      "focus_spells": [],
+      "spell_ability_id": 22, "spell_ability_name": "Inteligencia", "spell_ability_short_name": "Int", "spell_ability_slug": "int", "spell_ability_mod": 5,
+      "spell_caster": "full_caster", "spell_method": "prepare_spells", "cantrips_enabled": true,
+      "min_spell_slot_level": 1, "max_spell_slot_level": 9,
+      "current_level_slots": {"cantrips": "5", "1": "4", "2": "3", "3": "3", "4": "3", "5": "2", "6": "1", "7": "1", "8": "1"},
+      "prepared_spells": 20, "prepared_cantrips": false, "known_spells": null, "cantrips": 5,
+      "spell_save_proficiency": "proficient", "spell_save_dc": 18, "spell_attack_proficiency": "proficient", "spell_attack_bonus": 10
+    }],
+    "professions": [{
+      "id": 22, "name": "Mago", "description": "Los magos son...",
+      "archetype_id": 51, "archetype_name": "Escuela de evocación", "archetype_description": "Centras tu estudio...",
+      "level": 15, "hit_points_dice": 6,
+      "feats": [
+        {"id": 378, "name": "Esculpir conjuros", "summary": null, "description": "Puedes crear «bolsas» de relativa seguridad...", "mode": "simple", "visible": true, "profession_id": 51, "group_name": "Escuela de evocación", "required_level": 2, "modifiers": [], "levels": []},
+        {"id": 373, "name": "Recuperación arcana", "summary": "Una vez por día, cuando hagas un descanso breve...", "description": "...", "mode": "simple", "visible": true, "profession_id": 22, "group_name": null, "required_level": 1, "modifiers": [], "levels": []}
+      ]
+    }],
+    "race_feats": [{"id": 107, "name": "Forma cambiante", "description": "Puedes usar tu acción para polimorfarte en un zorro... Puedes usar este rasgo dos veces..."}],
+    "other_feats": [], "custom_feats": [],
+    "background": {"name": "- Personalizado -", "description": "...", "specialty": "", "feat_name": "", "feat_description": "", "ideals": null, "bonds": null, "flaws": null, "traits": null},
+    "resources": {"spell_slots": {"1": "4", "2": "3", "3": "3", "4": "3", "5": "2", "6": "1", "7": "1", "8": "1"}},
+    "proficiencies": {
+      "skills": {"proficient": ["Arcanos", "Investigación"], "expertise": []},
+      "saving_throws": {"proficient": ["Inteligencia", "Sabiduría"], "expertise": []},
+      "items": {"proficient": ["Ballesta ligera", "Bastón", "Daga", "Dardo", "Honda"], "expertise": []}
+    },
+    "actions": [
+      {"id": "item-action-4613362", "name": "Bastón", "action_type": "folder", "source_name": "Equipo",
+       "elements": [
+         {"id": "item-4613362-attack", "name": "Ataque", "action_type": "dice_roll", "dice_roll": "1d20+4", "roll_options": {"roll_name": "Bastón", "roll_type": "attack"}},
+         {"id": null, "name": "Daño", "action_type": "dice_roll", "dice_roll": "1d6 -1", "roll_options": {"roll_name": "Bastón", "roll_type": "damage"}}
+       ]},
+      {"id": 1061829, "name": "Rayo de Fuego", "description": "Truco", "action_type": "dice_roll", "source_name": "Kael`nar Ardinys", "dice_roll": "2d10", "dice_roll_formula": "2d10", "roll_options": {"roll_name": "", "roll_type": "default"}},
+      {"id": 1061828, "name": "Mano del Mago", "description": null, "action_type": "none", "source_name": "Kael`nar Ardinys"},
+      {"id": 2385969, "name": "Estrella Carmesí", "action_type": "folder", "source_name": "Kael`nar Ardinys",
+       "elements": [
+         {"id": 2385975, "name": "Supernova", "description": "Una vez por descanso largo, al lanzar una evocación: maximiza todos los dados de daño...", "action_type": "none", "source_name": "Kael`nar Ardinys"}
+       ]},
+      {"id": "skill-checks", "name": "Pruebas de habilidad", "action_type": "folder", "order": 99,
+       "elements": [{"id": "skill-action-109", "name": "Arcanos", "action_type": "dice_roll", "dice_roll": "1d20+10", "dice_roll_formula": "1d20+{{ skills.arcanos.total }}", "roll_options": {"roll_name": "Arcanos", "roll_type": "check"}}]},
+      {"id": "saving-throws", "name": "Tiradas de Salvación", "action_type": "folder", "order": 100,
+       "elements": [{"id": "saving_throw-action-16", "name": "Inteligencia", "action_type": "dice_roll", "dice_roll": "1d20+10", "roll_options": {"roll_name": "TS Inteligencia", "roll_type": "check"}}]}
+    ]
+  }
+}
