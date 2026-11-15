@@ -142,7 +142,7 @@ void main() {
       expect(store.roster.single.basicInfo.name, 'Kael`nar Ardinys');
     });
 
-    testWidgets('"Atrás" desde la revisión directa vuelve al paso 1', (tester) async {
+    testWidgets('"Atrás" desde la revisión directa conserva el JSON pegado', (tester) async {
       tester.view.physicalSize = const Size(900, 2400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
@@ -152,12 +152,48 @@ void main() {
       await tester.ensureVisible(find.text('Importar directo (sin IA)'));
       await tester.tap(find.text('Importar directo (sin IA)'));
       await tester.pumpAndSettle();
+      expect(find.text('Importar personaje'), findsOneWidget);
+
       await tester.tap(find.text('Atrás'));
       await tester.pumpAndSettle();
 
-      // Vuelve al paso 1 (no al de pegar la respuesta).
+      // Paso 1 de vuelta, con el modo y el texto intactos.
       expect(find.text('Conseguí el prompt para tu IA'), findsOneWidget);
+      final field = tester.widget<TextField>(find.byType(TextField).first);
+      expect(field.controller!.text, fixtureText);
       expect(store.roster, isEmpty);
+
+      // Y puede elegir la otra vía sin volver a pegar nada.
+      await tester.ensureVisible(find.text('Preparar prompt de IA (enriquecido)'));
+      await tester.tap(find.text('Preparar prompt de IA (enriquecido)'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('NO MODIFIQUES', findRichText: true), findsOneWidget);
+    });
+
+    testWidgets('Atrás desde la revisión tras pegar la respuesta de la IA también conserva el Paso 1', (tester) async {
+      tester.view.physicalSize = const Size(900, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      final store = await boot();
+      await pumpWizard(tester, store);
+
+      await tester.tap(find.text('Continuar')); // paso 2
+      await tester.pumpAndSettle();
+      final ia = jsonEncode(Nivel20Mapper.toJson(raw));
+      await tester.enterText(find.byType(TextField), ia);
+      await tester.pump();
+      await tester.tap(find.text('Continuar')); // valida -> paso 3
+      await tester.pumpAndSettle();
+      expect(find.text('Importar personaje'), findsOneWidget);
+
+      await tester.tap(find.text('Atrás')); // paso 2
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Atrás')); // paso 1
+      await tester.pumpAndSettle();
+
+      final field = tester.widget<TextField>(find.byType(TextField).first);
+      expect(field.controller!.text, fixtureText);
+      expect(find.text('Importar directo (sin IA)'), findsOneWidget);
     });
 
     testWidgets('prompt enriquecido: reemplaza el prompt de la vista previa', (tester) async {

@@ -166,32 +166,48 @@ class _ImportWizardScreenState extends State<ImportWizardScreen> {
           _StepIndicator(current: _step, labels: _stepLabels),
           const Divider(height: 1),
           Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 180),
-              switchInCurve: Curves.easeOut,
-              switchOutCurve: Curves.easeIn,
-              child: switch (_step) {
-                0 => WizardStepSource(
-                  key: const ValueKey('wizard-step-source'),
-                  isReplace: isReplace,
-                  replacedName: replacedName,
-                  currentSheet: isReplace ? store.roster[replaceIndex] : null,
-                  onNivel20LinkResolved: _onNivel20LinkResolved,
-                  onDirectImport: _onDirectImport,
+            // El Paso 1 se mantiene montado (Offstage) aunque se avance:
+            // así "Atrás" devuelve al jugador su JSON o enlace tal como
+            // lo dejó, y puede elegir la otra vía sin volver a pegarlo.
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Offstage(
+                  offstage: _step != 0,
+                  child: TickerMode(
+                    enabled: _step == 0,
+                    child: WizardStepSource(
+                      key: const ValueKey('wizard-step-source'),
+                      isReplace: isReplace,
+                      replacedName: replacedName,
+                      currentSheet:
+                          isReplace ? store.roster[replaceIndex] : null,
+                      onNivel20LinkResolved: _onNivel20LinkResolved,
+                      onDirectImport: _onDirectImport,
+                    ),
+                  ),
                 ),
-                1 => WizardStepPaste(
-                  key: const ValueKey('wizard-step-paste'),
-                  controller: _responseController,
-                  errors: _responseErrors,
-                ),
-                _ => WizardStepPreview(
-                  key: const ValueKey('wizard-step-preview'),
-                  result: _result!,
-                  isReplace: isReplace,
-                  replacedName: replacedName,
-                  onConfirm: _confirmImport,
-                ),
-              },
+                if (_step != 0)
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 180),
+                    switchInCurve: Curves.easeOut,
+                    switchOutCurve: Curves.easeIn,
+                    child: switch (_step) {
+                      1 => WizardStepPaste(
+                        key: const ValueKey('wizard-step-paste'),
+                        controller: _responseController,
+                        errors: _responseErrors,
+                      ),
+                      _ => WizardStepPreview(
+                        key: const ValueKey('wizard-step-preview'),
+                        result: _result!,
+                        isReplace: isReplace,
+                        replacedName: replacedName,
+                        onConfirm: _confirmImport,
+                      ),
+                    },
+                  ),
+              ],
             ),
           ),
           const Divider(height: 1),
