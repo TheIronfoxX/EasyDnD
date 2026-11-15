@@ -33,6 +33,7 @@ import '../../core/theme/design_tokens.dart';
 import '../../core/theme/tactical_theme_tokens.dart';
 import '../../core/theme/telemetry.dart';
 import '../../core/ui/stat_dial.dart';
+import '../../core/ui/tactical_card.dart';
 
 /// Cargas/usos de un arma o habilidad, tal como las ve la hoja.
 class RollCharges {
@@ -657,29 +658,9 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
             const SizedBox(height: 20),
             _sectionLabel('Tirada'),
             const SizedBox(height: AppSpacing.sm),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                ChoiceChip(
-                  label: const Text('Normal'),
-                  selected: _advantage == AdvantageMode.normal,
-                  onSelected: (_) =>
-                      setState(() => _advantage = AdvantageMode.normal),
-                ),
-                ChoiceChip(
-                  label: const Text('Ventaja'),
-                  selected: _advantage == AdvantageMode.advantage,
-                  onSelected: (_) =>
-                      setState(() => _advantage = AdvantageMode.advantage),
-                ),
-                ChoiceChip(
-                  label: const Text('Desventaja'),
-                  selected: _advantage == AdvantageMode.disadvantage,
-                  onSelected: (_) =>
-                      setState(() => _advantage = AdvantageMode.disadvantage),
-                ),
-              ],
+            _AdvantageSelector(
+              value: _advantage,
+              onChanged: (mode) => setState(() => _advantage = mode),
             ),
           ],
           if ((!_action.isPlainUse && _action.hasDamage) ||
@@ -847,7 +828,24 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
+        if (_dice.length > 1) ...[
+          const SizedBox(height: AppSpacing.xs),
+          _DiceBreakdown(dice: _dice, kept: natural, tone: highlight),
+        ],
         const SizedBox(height: AppSpacing.md),
+        if (isCrit || isFumble) ...[
+          Center(
+            child: TonePill(
+              key: const ValueKey('natural_tag'),
+              label: isCrit ? 'Natural 20' : 'Natural 1',
+              icon: isCrit
+                  ? Icons.auto_awesome_rounded
+                  : Icons.heart_broken_rounded,
+              tone: highlight,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+        ],
         Center(
           child: _DieMedallion(
             color: highlight,
@@ -1125,6 +1123,121 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
 // ---------------------------------------------------------------------
 // Piezas privadas de la hoja.
 // ---------------------------------------------------------------------
+
+/// Selector `Ventaja | Normal | Desventaja` con la forma, el borde y los
+/// colores de la skin: el modo activo se tiñe (ventaja = curación,
+/// desventaja = daño, normal = color principal).
+class _AdvantageSelector extends StatelessWidget {
+  const _AdvantageSelector({required this.value, required this.onChanged});
+
+  final AdvantageMode value;
+  final ValueChanged<AdvantageMode> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final tactical = context.tactical;
+    final tone = switch (value) {
+      AdvantageMode.advantage => tactical.heal,
+      AdvantageMode.disadvantage => tactical.damage,
+      AdvantageMode.normal => scheme.primary,
+    };
+
+    return SegmentedButton<AdvantageMode>(
+      key: const ValueKey('advantage_selector'),
+      showSelectedIcon: false,
+      segments: const [
+        ButtonSegment(
+          value: AdvantageMode.advantage,
+          label: Text('Ventaja'),
+          icon: Icon(Icons.keyboard_double_arrow_up_rounded, size: 18),
+        ),
+        ButtonSegment(
+          value: AdvantageMode.normal,
+          label: Text('Normal'),
+          icon: Icon(Icons.drag_handle_rounded, size: 18),
+        ),
+        ButtonSegment(
+          value: AdvantageMode.disadvantage,
+          label: Text('Desventaja'),
+          icon: Icon(Icons.keyboard_double_arrow_down_rounded, size: 18),
+        ),
+      ],
+      selected: {value},
+      onSelectionChanged: (selection) => onChanged(selection.first),
+      style: ButtonStyle(
+        shape: WidgetStatePropertyAll(tactical.buttonShape),
+        side: WidgetStatePropertyAll(
+          BorderSide(color: tactical.metalBorder, width: tactical.borderWidth),
+        ),
+        backgroundColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? tone.withValues(alpha: 0.22)
+              : Colors.transparent,
+        ),
+        foregroundColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? tone
+              : scheme.onSurfaceVariant,
+        ),
+        textStyle: WidgetStatePropertyAll(
+          Theme.of(
+            context,
+          ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+        ),
+      ),
+    );
+  }
+}
+
+/// Los dos d20 de una tirada con ventaja o desventaja: `[19, 6]`. El que
+/// cuenta va resaltado y el descartado, tachado y apagado.
+class _DiceBreakdown extends StatelessWidget {
+  const _DiceBreakdown({
+    required this.dice,
+    required this.kept,
+    required this.tone,
+  });
+
+  final List<int> dice;
+  final int kept;
+  final Color tone;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final base = theme.textTheme.titleMedium
+        ?.copyWith(fontFamily: AppFonts.jetBrainsMono)
+        .tabular;
+    // Si salen dos valores iguales solo se marca el primero como el que
+    // cuenta.
+    final keptIndex = dice.indexOf(kept);
+
+    return Text.rich(
+      TextSpan(
+        style: base?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+        children: [
+          const TextSpan(text: '['),
+          for (var i = 0; i < dice.length; i++) ...[
+            TextSpan(
+              text: '${dice[i]}',
+              style: i == keptIndex
+                  ? base?.copyWith(color: tone, fontWeight: FontWeight.w900)
+                  : base?.copyWith(
+                      color: theme.colorScheme.outline,
+                      decoration: TextDecoration.lineThrough,
+                    ),
+            ),
+            if (i < dice.length - 1) const TextSpan(text: ', '),
+          ],
+          const TextSpan(text: ']'),
+        ],
+      ),
+      key: const ValueKey('dice_breakdown'),
+      textAlign: TextAlign.center,
+    );
+  }
+}
 
 class _SheetHeader extends StatelessWidget {
   const _SheetHeader({required this.action, required this.tone});

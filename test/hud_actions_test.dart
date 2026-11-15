@@ -14,6 +14,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:easydnd/core/theme/app_theme.dart';
+import 'package:easydnd/core/dice.dart';
 import 'package:easydnd/core/ui/pip_shape.dart';
 import 'package:easydnd/core/ui/tactical_card.dart';
 import 'package:easydnd/domain/models/ability.dart';
@@ -676,6 +677,153 @@ void main() {
       // La píldora aparece en la tarjeta y en la hoja.
       expect(find.text('Concentración'), findsNWidgets(2));
       expect(find.text('Conjuro de nivel 1'), findsOneWidget);
+    });
+  });
+
+  group('selector de ventaja y desventaja', () {
+    Future<CharacterStore> openSword(
+      WidgetTester tester,
+      List<int> outcomes,
+    ) async {
+      final store = await bootWith(
+        buildCharacter(id: 'char_adv', name: 'Rook'),
+      );
+      await pumpActions(tester, store, random: FakeRandom(outcomes));
+      await tapText(tester, 'Espada Larga');
+      return store;
+    }
+
+    SegmentedButton<AdvantageMode> selector(WidgetTester tester) =>
+        tester.widget(find.byKey(const ValueKey('advantage_selector')));
+
+    testWidgets('muestra Ventaja | Normal | Desventaja, con Normal por defecto', (
+      tester,
+    ) async {
+      await openSword(tester, [9]);
+
+      expect(selector(tester).selected, {AdvantageMode.normal});
+      final left = tester.getTopLeft(find.text('Ventaja')).dx;
+      final middle = tester.getTopLeft(find.text('Normal')).dx;
+      final right = tester.getTopLeft(find.text('Desventaja')).dx;
+      expect(left, lessThan(middle));
+      expect(middle, lessThan(right));
+      expect(find.text('Tirar d20'), findsOneWidget);
+
+      await tapText(tester, 'Desventaja');
+      expect(selector(tester).selected, {AdvantageMode.disadvantage});
+      expect(find.text('Tirar 2d20'), findsOneWidget);
+
+      await tapText(tester, 'Normal');
+      expect(selector(tester).selected, {AdvantageMode.normal});
+      expect(find.text('Tirar d20'), findsOneWidget);
+    });
+
+    testWidgets('ventaja: se queda con el mayor y muestra ambos dados', (
+      tester,
+    ) async {
+      // 18 % 20 + 1 = 19 y 5 % 20 + 1 = 6.
+      await openSword(tester, [18, 5]);
+
+      await tapText(tester, 'Ventaja');
+      await tapText(tester, 'Tirar 2d20');
+
+      expect(find.text('Dados: 19 y 6 → se usa 19 (ventaja)'), findsOneWidget);
+      expect(find.text('[19, 6]'), findsOneWidget);
+      // 19 + 5 de bono de la espada.
+      expect(find.text('24'), findsOneWidget);
+      // 19 no es crítico.
+      expect(find.text('¡Éxito crítico!'), findsNothing);
+      expect(find.byKey(const ValueKey('natural_tag')), findsNothing);
+    });
+
+    testWidgets('desventaja: se queda con el menor y muestra ambos dados', (
+      tester,
+    ) async {
+      await openSword(tester, [18, 5]);
+
+      await tapText(tester, 'Desventaja');
+      await tapText(tester, 'Tirar 2d20');
+
+      expect(
+        find.text('Dados: 19 y 6 → se usa 6 (desventaja)'),
+        findsOneWidget,
+      );
+      expect(find.text('[19, 6]'), findsOneWidget);
+      expect(find.text('11'), findsOneWidget); // 6 + 5
+    });
+
+    testWidgets('el crítico se evalúa sobre el dado elegido (ventaja)', (
+      tester,
+    ) async {
+      // 20 y 3: con ventaja cuenta el 20.
+      await openSword(tester, [19, 2]);
+
+      await tapText(tester, 'Ventaja');
+      await tapText(tester, 'Tirar 2d20');
+
+      expect(find.text('[20, 3]'), findsOneWidget);
+      expect(find.text('¡Éxito crítico!'), findsOneWidget);
+      expect(find.text('Natural 20'), findsOneWidget);
+      expect(find.text('¡Pifia!'), findsNothing);
+    });
+
+    testWidgets('un 20 descartado por la desventaja no es crítico', (
+      tester,
+    ) async {
+      // 20 y 3: con desventaja cuenta el 3.
+      await openSword(tester, [19, 2]);
+
+      await tapText(tester, 'Desventaja');
+      await tapText(tester, 'Tirar 2d20');
+
+      expect(find.text('[20, 3]'), findsOneWidget);
+      expect(find.text('¡Éxito crítico!'), findsNothing);
+      expect(find.byKey(const ValueKey('natural_tag')), findsNothing);
+    });
+
+    testWidgets('la pifia se evalúa sobre el dado elegido (desventaja)', (
+      tester,
+    ) async {
+      // 1 y 20: con desventaja cuenta el 1.
+      await openSword(tester, [0, 19]);
+
+      await tapText(tester, 'Desventaja');
+      await tapText(tester, 'Tirar 2d20');
+
+      expect(find.text('[1, 20]'), findsOneWidget);
+      expect(find.text('¡Pifia!'), findsOneWidget);
+      expect(find.text('Natural 1'), findsOneWidget);
+      expect(find.text('¡Éxito crítico!'), findsNothing);
+    });
+
+    testWidgets('una tirada normal no muestra desglose de dos dados', (
+      tester,
+    ) async {
+      await openSword(tester, [9]);
+
+      await tapText(tester, 'Tirar d20');
+
+      expect(find.text('Dado natural: 10'), findsOneWidget);
+      expect(find.byKey(const ValueKey('dice_breakdown')), findsNothing);
+    });
+
+    testWidgets('una acción de salvación no ofrece el selector', (
+      tester,
+    ) async {
+      final character = buildCharacter(id: 'char_save', name: 'Rook');
+      character.abilitiesByAction.action.add(
+        Ability.fromJson({
+          'id': 'a_save',
+          'name': 'Aliento Gélido',
+          'attack_type': 'save',
+          'damage_dice': '2d6',
+        }),
+      );
+      final store = await bootWith(character);
+      await pumpActions(tester, store);
+
+      await tapText(tester, 'Aliento Gélido');
+      expect(find.byKey(const ValueKey('advantage_selector')), findsNothing);
     });
   });
 }
