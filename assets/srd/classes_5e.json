@@ -39,7 +39,7 @@
         "description": "Ventaja en pruebas y salvaciones de Fuerza, bonificador al daño cuerpo a cuerpo con Fuerza y resistencia al daño contundente, cortante y perforante durante 1 minuto.",
         "resource": {
           "name": "Furias",
-          "max_formula": "2",
+          "max_formula": "rage_uses",
           "recovery": "long_rest"
         }
       },
@@ -119,7 +119,7 @@
         "description": "Concedes a una criatura un dado de inspiración que puede sumar a una prueba, ataque o salvación.",
         "resource": {
           "name": "Inspiración bárdica",
-          "max_formula": "mod. Carisma (mín. 1)",
+          "max_formula": "max(1,cha_mod)",
           "recovery": "long_rest"
         }
       },
@@ -522,7 +522,7 @@
         "description": "Conviertes puntos de hechicería en espacios de conjuro y viceversa.",
         "resource": {
           "name": "Puntos de hechicería",
-          "max_formula": "nivel de hechicero",
+          "max_formula": "level",
           "recovery": "long_rest"
         }
       },
@@ -644,7 +644,7 @@
         "description": "Gastas puntos de ki para Ráfaga de golpes, Defensa paciente o Paso del viento.",
         "resource": {
           "name": "Puntos de ki",
-          "max_formula": "nivel de monje",
+          "max_formula": "level",
           "recovery": "short_rest"
         }
       },
@@ -698,7 +698,7 @@
         "description": "Detectas celestiales, infernales y muertos vivientes cercanos.",
         "resource": {
           "name": "Sentido divino",
-          "max_formula": "1 + mod. Carisma",
+          "max_formula": "max(1,1+cha_mod)",
           "recovery": "long_rest"
         }
       },
@@ -709,7 +709,7 @@
         "description": "Curas puntos de golpe de una reserva igual a 5 × nivel de paladín.",
         "resource": {
           "name": "Imposición de manos",
-          "max_formula": "5 × nivel de paladín",
+          "max_formula": "5*level",
           "recovery": "long_rest"
         }
       },
