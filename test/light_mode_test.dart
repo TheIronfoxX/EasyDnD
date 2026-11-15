@@ -82,7 +82,7 @@ void main() {
       AppPalette.light.background,
     );
 
-    await tester.tap(find.text('Ficha en blanco (editor manual)'));
+    await tester.tap(find.text('Crear ficha a mano'));
     await tester.pumpAndSettle();
 
     context = tester.element(find.text('Nueva ficha'));
