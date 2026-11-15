@@ -87,6 +87,82 @@ class Nivel20Mapper {
     };
   }
 
+  /// ¿Parece el JSON de una ficha de Nivel20 (con o sin "printable_hash")?
+  /// Sirve para decidir si ofrecer la importación directa.
+  static bool looksLikeNivel20(Map<String, dynamic> raw) {
+    final root = _unwrap(raw);
+    return _map(root['info']).containsKey('name') &&
+        root['ability'] is Map;
+  }
+
+  /// Textos crudos que el mapeador NO puede clasificar solo (rasgos,
+  /// acciones caseras, equipo), para el prompt de enriquecimiento con IA.
+  static Nivel20Sources enrichmentSources(Map<String, dynamic> raw) {
+    final root = _unwrap(raw);
+    final info = _map(root['info']);
+    final professions = _list(root['professions']).map(_map).toList();
+    final level = _level(info, professions);
+
+    final feats = StringBuffer();
+    void addFeat(Map<String, dynamic> f, String origin) {
+      final name = _str(f['name']);
+      if (name.isEmpty || f['visible'] == false) return;
+      final req = _int(f['required_level']);
+      if (req != null && req > level) return;
+      final text = _str(f['description']).isNotEmpty
+          ? _str(f['description'])
+          : _str(f['summary']);
+      feats.writeln('- [$origin] $name: $text');
+    }
+
+    for (final p in professions) {
+      for (final f in _list(p['feats']).map(_map)) {
+        addFeat(f, _str(p['name']));
+      }
+    }
+    for (final f in _list(root['race_feats']).map(_map)) {
+      addFeat(f, 'Raza');
+    }
+    for (final f in _list(root['other_feats']).map(_map)) {
+      addFeat(f, 'Otro');
+    }
+    for (final f in _list(root['custom_feats']).map(_map)) {
+      addFeat(f, 'Personalizado');
+    }
+
+    final custom = StringBuffer();
+    for (final a in _list(root['actions']).map(_map)) {
+      final id = _str(a['id']);
+      if (id == 'skill-checks' || id == 'saving-throws') continue;
+      if (_str(a['action_type']) != 'folder') continue;
+      if (_str(a['source_name']) == 'Equipo') continue;
+      for (final e in _list(a['elements']).map(_map)) {
+        final name = _str(e['name']);
+        if (name.isEmpty) continue;
+        custom.writeln('- [${_str(a['name'])}] $name: ${_str(e['description'])}');
+      }
+    }
+
+    final equipment = StringBuffer();
+    final free = _str(root['equipment']);
+    if (free.isNotEmpty) equipment.writeln(free);
+    final items = _map(root['items']);
+    for (final key in ['armaduras', 'equipo_de_aventuras', 'monturas_y_vehiculos']) {
+      for (final i in _list(items[key]).map(_map)) {
+        final name = _str(i['name']);
+        if (name.isNotEmpty) {
+          equipment.writeln('- $name: ${_str(i['description'])}');
+        }
+      }
+    }
+
+    return Nivel20Sources(
+      feats: feats.toString().trim(),
+      customActions: custom.toString().trim(),
+      equipment: equipment.toString().trim(),
+    );
+  }
+
   // ---------------------------------------------------------------------
   // BASIC INFO
   // ---------------------------------------------------------------------
@@ -622,4 +698,22 @@ class Nivel20Mapper {
     t = t.replaceAll(RegExp(r'[^a-z0-9]+'), '-');
     return t.replaceAll(RegExp(r'^-+|-+$'), '');
   }
+}
+
+/// Textos crudos de una ficha de Nivel20 para el prompt de enriquecimiento.
+class Nivel20Sources {
+  const Nivel20Sources({
+    required this.feats,
+    required this.customActions,
+    required this.equipment,
+  });
+
+  /// Rasgos de clase, subclase, raza y personalizados (uno por línea).
+  final String feats;
+
+  /// Rasgos caseros de carpetas de acciones del jugador.
+  final String customActions;
+
+  /// Equipo libre y objetos sin clasificar.
+  final String equipment;
 }

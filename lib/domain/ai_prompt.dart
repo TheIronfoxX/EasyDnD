@@ -530,4 +530,62 @@ Devuélveme el JSON completo, sin comentarios ni texto fuera del bloque de códi
         'jugador).\n\n$_warning\n$_rules\n\n'
         '$_exampleHeader\n$_exampleJson';
   }
+
+  /// Enriquecimiento de una ficha de Nivel20 ya mapeada de forma
+  /// determinista: la IA recibe el JSON base (con atributos, PG, CA,
+  /// velocidad, ranuras y CD ya calculados por la app) más los textos
+  /// crudos que la app no sabe clasificar, y se limita a completarlos.
+  static String forNivel20Enrichment(
+    String baseJson, {
+    String feats = '',
+    String customActions = '',
+    String equipment = '',
+  }) {
+    String section(String title, String body) =>
+        '$title\n${body.trim().isEmpty ? '(sin datos)' : body.trim()}';
+
+    return 'Actúa como experto en D&D 5e. Te paso una ficha de personaje '
+        'ya convertida automáticamente al formato JSON de mi app. Los '
+        'números ya están calculados y son correctos: tu trabajo es SOLO '
+        'completar lo que la app no puede deducir.\n\n'
+        'FICHA BASE (JSON):\n\n${baseJson.trim()}\n\n'
+        '${section('RASGOS (texto original de Nivel20):', feats)}\n\n'
+        '${section('ACCIONES CASERAS DEL JUGADOR (texto original):', customActions)}\n\n'
+        '${section('EQUIPO (texto original):', equipment)}\n\n'
+        'NO MODIFIQUES, bajo ningún concepto: "basic_info" (nombre, raza, '
+        'clase, nivel, hp_max, hp_current, ac, speed, spell_save_dc, dados '
+        'de golpe), "stats", "skills", "spell_slots", "purse", ni el '
+        '"attack_bonus" y el "damage" de las armas. Tampoco cambies ni '
+        'borres ningún campo existente, ni añadas campos que no estén en '
+        'la ficha base. Si crees que algún número está mal, ignóralo y '
+        'avísame fuera del JSON.\n\n'
+        'LO ÚNICO QUE DEBES HACER:\n\n'
+        '1. Clasificar las habilidades de "abilities_by_action" según lo '
+        'que gastan: "action", "bonus_action", "reaction" o "passive" '
+        '(mueve cada una a su categoría correcta, sin duplicarlas ni '
+        'perder ninguna). Las pasivas llevan "tactical_role" con uno de '
+        'estos valores EXACTOS: "Ofensivo", "Defensivo" o "Utilidad". '
+        'Las de action, bonus_action y reaction llevan "attack_type" '
+        '("save", "attack" o "none") y NUNCA "tactical_role"; las pasivas '
+        'NUNCA llevan "attack_type".\n'
+        '2. Rellenar "resources" con los rasgos de usos limitados (Forma '
+        'cambiante, Recuperación arcana, Supernova, etc.) como '
+        '{ "name", "current", "max" }, con "current" igual a "max". Si '
+        'no hay ninguno, deja [].\n'
+        '3. Desglosar el EQUIPO en objetos individuales dentro de '
+        '"inventory.mundane_items" ({ "name", "description", "quantity" }), '
+        'reemplazando el objeto genérico "Equipo" si existe. No inventes '
+        'objetos que no aparezcan en el texto.\n'
+        '4. Redactar "tactical_summary" y "lore_description" de cada '
+        'habilidad que los tenga vacíos o pobres, en lenguaje llano y sin '
+        'jerga de D&D, como si se lo explicaras a quien nunca ha jugado: '
+        '"tactical_summary" dice qué hacer con los dados (formato "[frase '
+        'sobre la tirada] | Daño/Curación: [dado] [Tipo]", con la CD real '
+        'de la ficha) y qué gasta (acción, acción adicional, reacción, '
+        'movimiento o recursos); "lore_description" explica en un par de '
+        'frases qué hace en la ficción y cuándo conviene usarlo.\n\n'
+        'No toques "user_tactics" ni "adventure_notes". Si algo es '
+        'ambiguo, PREGÚNTAME antes de asumir. Devuélveme el JSON '
+        'completo, sin comentarios ni texto fuera del bloque de código.';
+  }
 }
