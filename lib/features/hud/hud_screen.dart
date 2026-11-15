@@ -211,14 +211,14 @@ class _HudScreenState extends State<HudScreen> {
                 value: _HudMenuAction.importNew,
                 child: _MenuRow(
                   icon: Icons.auto_awesome_rounded,
-                  label: 'Importar otra ficha',
+                  label: 'Importar desde Nivel20',
                 ),
               ),
               PopupMenuItem(
                 value: _HudMenuAction.createNew,
                 child: _MenuRow(
                   icon: Icons.person_add_rounded,
-                  label: 'Crear ficha a mano',
+                  label: 'Ficha en blanco',
                 ),
               ),
               PopupMenuDivider(),

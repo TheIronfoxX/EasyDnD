@@ -82,7 +82,7 @@ void main() {
       AppPalette.light.background,
     );
 
-    await tester.tap(find.text('Crear ficha a mano'));
+    await tester.tap(find.text('Ficha en blanco'));
     await tester.pumpAndSettle();
 
     context = tester.element(find.text('Nueva ficha'));
@@ -96,7 +96,7 @@ void main() {
     await tester.pageBack();
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Importar ficha con IA'));
+    await tester.tap(find.text('Importar desde Nivel20'));
     await tester.pumpAndSettle();
     context = tester.element(find.text('Importar ficha'));
     expect(Theme.of(context).brightness, Brightness.light);

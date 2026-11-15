@@ -107,7 +107,7 @@ class WelcomeScreen extends StatelessWidget {
                           icon: const Icon(Icons.auto_awesome_rounded),
                           label: const Padding(
                             padding: EdgeInsets.symmetric(vertical: 14),
-                            child: Text('Importar ficha con IA'),
+                            child: Text('Importar desde Nivel20'),
                           ),
                         ),
                         const SizedBox(height: AppSpacing.md),
@@ -116,7 +116,7 @@ class WelcomeScreen extends StatelessWidget {
                           icon: const Icon(Icons.person_add_rounded),
                           label: const Padding(
                             padding: EdgeInsets.symmetric(vertical: 14),
-                            child: Text('Crear ficha a mano'),
+                            child: Text('Ficha en blanco'),
                           ),
                         ),
                         const SizedBox(height: AppSpacing.xl),

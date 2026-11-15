@@ -44,20 +44,20 @@ void main() {
       expect(find.text('EasyDnD'), findsOneWidget);
       expect(find.textContaining('funciona sin conexión'), findsOneWidget);
 
-      await tester.tap(find.text('Crear ficha a mano'));
+      await tester.tap(find.text('Ficha en blanco'));
       await tester.pumpAndSettle();
       expect(find.text('Nueva ficha'), findsOneWidget);
 
       await tester.pageBack();
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Importar ficha con IA'));
+      await tester.tap(find.text('Importar desde Nivel20'));
       await tester.pumpAndSettle();
       expect(find.text('Importar ficha'), findsOneWidget);
 
       await tester.pageBack();
       await tester.pumpAndSettle();
-      expect(find.text('Crear ficha a mano'), findsOneWidget);
+      expect(find.text('Ficha en blanco'), findsOneWidget);
     });
   });
 
@@ -141,7 +141,7 @@ void main() {
 
       await tester.tap(find.byTooltip('Más opciones'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Crear ficha a mano'));
+      await tester.tap(find.text('Ficha en blanco'));
       await tester.pumpAndSettle();
       expect(find.text('Nueva ficha'), findsOneWidget);
     });
@@ -157,7 +157,7 @@ void main() {
       store.deleteCharacter(0);
       await tester.pumpAndSettle();
 
-      expect(find.text('Importar ficha con IA'), findsOneWidget);
+      expect(find.text('Importar desde Nivel20'), findsOneWidget);
       expect(find.text('Combate'), findsNothing);
     });
   });

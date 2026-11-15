@@ -31,15 +31,15 @@ void main() {
 
     await tester.pumpWidget(EasyDnDApp(store: store, skin: skin));
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    expect(find.text('Importar ficha con IA'), findsNothing);
+    expect(find.text('Importar desde Nivel20'), findsNothing);
 
     await store.init();
     await tester.pumpAndSettle();
 
     expect(find.byType(CircularProgressIndicator), findsNothing);
     expect(find.text('EasyDnD'), findsOneWidget);
-    expect(find.text('Importar ficha con IA'), findsOneWidget);
-    expect(find.text('Crear ficha a mano'), findsOneWidget);
+    expect(find.text('Importar desde Nivel20'), findsOneWidget);
+    expect(find.text('Ficha en blanco'), findsOneWidget);
   });
 
   testWidgets('el modo y el acento guardados se aplican al arrancar', (

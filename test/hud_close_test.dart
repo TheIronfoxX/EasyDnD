@@ -115,7 +115,7 @@ void main() {
 
       expect(store.roster, isEmpty);
       expect(store.activeCharacter, isNull);
-      expect(find.text('Importar ficha con IA'), findsOneWidget);
+      expect(find.text('Importar desde Nivel20'), findsOneWidget);
       expect(find.text('Combate'), findsNothing);
       // En la bienvenida el aviso de borrado sobra.
       expect(find.text('Ficha de Rook eliminada.'), findsNothing);

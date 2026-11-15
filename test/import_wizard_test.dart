@@ -14,6 +14,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:easydnd/data/roster_repository.dart';
+import 'package:easydnd/features/editor/character_editor_screen.dart';
 import 'package:easydnd/features/import/import_wizard_screen.dart';
 import 'package:easydnd/state/character_store.dart';
 
@@ -216,14 +217,84 @@ void main() {
       );
       expect(find.text('Copiar prompt de corrección'), findsOneWidget);
 
-      // Confirmar: vuelve a home y el roster quedó poblado y activo.
+      // Confirmar: el roster queda poblado y activo, y el wizard salta
+      // directo al taller de edición con la ficha recién importada.
       await tester.tap(find.text('Importar personaje'));
       await tester.pumpAndSettle();
 
       expect(find.byType(ImportWizardScreen), findsNothing);
+      expect(find.byType(CharacterEditorScreen), findsOneWidget);
+      expect(find.text('Editar a Kaelen'), findsOneWidget);
       expect(store.roster.length, 1);
       expect(store.activeCharacter?.basicInfo.name, 'Kaelen');
       expect(store.activeIndex, 0);
+    });
+
+    testWidgets(
+        'tras importar, calibrar en el taller y guardar no duplica la ficha', (
+      tester,
+    ) async {
+      final store = await boot();
+      await pumpHome(tester, store);
+      await openWizard(tester);
+
+      await pasteResponse(
+          tester, jsonEncode(buildFichaJson(id: 'char_k', name: 'Kaelen')));
+      await tester.tap(find.text('Continuar'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Importar personaje'));
+      await tester.pumpAndSettle();
+
+      // Calibración: reclasificar el rasgo importado en un toque.
+      await tester.tap(find.widgetWithText(Tab, 'Arsenal'));
+      await tester.pumpAndSettle();
+      final chip = find.byKey(const Key('cat-a1-bonusAction'));
+      await tester.scrollUntilVisible(
+        chip,
+        200,
+        scrollable: find
+            .descendant(
+              of: find.byKey(const Key('list-arsenal')),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      await tester.tap(chip);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Guardar cambios'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Guardar igual'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CharacterEditorScreen), findsNothing);
+      expect(store.roster, hasLength(1), reason: 'el editor reemplaza, no duplica');
+      expect(store.activeCharacter!.id, 'char_k');
+      final abilities = store.activeCharacter!.abilitiesByAction;
+      expect(abilities.action, isEmpty);
+      expect(abilities.bonusAction.single.id, 'a1');
+    });
+
+    testWidgets('al reemplazar con IA (corrección) NO se abre el taller', (
+      tester,
+    ) async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_k', name: 'Kaelen'));
+      await pumpHome(tester, store, replaceIndex: 0);
+      await openWizard(tester);
+
+      await tester.tap(find.text('Ficha actual'));
+      await tester.pumpAndSettle();
+      await pasteResponse(
+          tester, jsonEncode(buildFichaJson(id: 'char_k', name: 'Kaelen II')));
+      await tester.tap(find.text('Continuar'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.textContaining('Reemplazar a'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CharacterEditorScreen), findsNothing);
+      expect(store.roster, hasLength(1));
+      expect(store.activeCharacter!.basicInfo.name, 'Kaelen II');
     });
 
     testWidgets('ir atrás desde la revisión y corregir el JSON pegado', (

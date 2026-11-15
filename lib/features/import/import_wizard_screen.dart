@@ -27,6 +27,7 @@ import '../../data/spell_catalog.dart';
 import '../../domain/nivel20_patch.dart';
 import '../../domain/character_validator.dart';
 import '../../state/character_store.dart';
+import '../editor/character_editor_screen.dart';
 import 'nivel20_import.dart';
 import 'wizard_step_paste.dart';
 import 'wizard_step_preview.dart';
@@ -157,11 +158,20 @@ class _ImportWizardScreenState extends State<ImportWizardScreen> {
     final replaceIndex = widget.replaceIndex;
     if (replaceIndex != null) {
       store.replaceCharacter(replaceIndex, character);
-    } else {
-      store.addCharacter(character);
+      Navigator.of(context).pop(true);
+      return;
     }
 
-    Navigator.of(context).pop(true);
+    // Alta: la ficha entra al roster y se abre directo el taller para
+    // calibrar acciones, resúmenes tácticos o equipo ANTES de pasar al
+    // HUD. El editor trabaja sobre una copia (mismo id) y al guardar
+    // reemplaza la ficha recién añadida, sin duplicarla.
+    store.addCharacter(character);
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => CharacterEditorScreen(character: character),
+      ),
+    );
   }
 
   @override
