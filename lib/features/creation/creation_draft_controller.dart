@@ -6,6 +6,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 
+import '../../core/dice.dart';
 import '../../domain/character_builder_engine.dart';
 import '../../domain/character_validator.dart';
 import '../../domain/models/character.dart';
@@ -24,6 +25,19 @@ class CharacterCreationException implements Exception {
   String toString() => 'CharacterCreationException: ${problems.join('; ')}';
 }
 
+/// Resultado de [CreationDraftController.buildPreview]: la ficha generada
+/// más los avisos no bloqueantes del validador, para mostrarlos antes de
+/// confirmar el alta (igual que el wizard de importación).
+class CharacterPreview {
+  final CharacterModel character;
+  final List<ValidationIssue> warnings;
+  const CharacterPreview(this.character, this.warnings);
+
+  /// Forma que consume la vista previa compartida con la importación.
+  CharacterValidationResult get validationResult =>
+      CharacterValidationResult(character: character, issues: warnings);
+}
+
 class CreationDraftController extends ChangeNotifier {
   static const List<int> standardArray = [15, 14, 13, 12, 10, 8];
   static const int pointBuyBudget = 27;
@@ -34,6 +48,8 @@ class CreationDraftController extends ChangeNotifier {
   // Identidad
   String _name = '';
   String _race = '';
+  String _subclass = '';
+  String _background = '';
   int _level = 1;
   int _speed = 30;
 
@@ -68,6 +84,8 @@ class CreationDraftController extends ChangeNotifier {
 
   String get name => _name;
   String get race => _race;
+  String get subclass => _subclass;
+  String get background => _background;
   int get level => _level;
   int get speed => _speed;
   SrdClass? get srdClass => _class;
@@ -82,6 +100,22 @@ class CreationDraftController extends ChangeNotifier {
   List<SrdSpell> get spells => List.unmodifiable(_spells);
   int? get customHpMax => _customHpMax;
   int get startingGold => _startingGold;
+
+  /// Pericias disponibles: 2 si la clase tiene el rasgo "Pericia" a este
+  /// nivel (Pícaro 1, Bardo 3), 0 en otro caso.
+  int get expertiseSlots {
+    final cls = _class;
+    if (cls == null) return 0;
+    final has = cls.coreFeatures.any((f) => f.name == 'Pericia' && f.level <= _level);
+    return has ? 2 : 0;
+  }
+
+  /// Nivel máximo de ranura al nivel actual (0 = solo trucos / sin magia).
+  int get maxSpellLevel {
+    final slots = stats?.spellSlots.keys;
+    if (slots == null || slots.isEmpty) return 0;
+    return slots.reduce(max);
+  }
 
   int get skillChoicesLeft => (_class?.skillChoicesCount ?? 0) - _skills.length;
 
@@ -101,6 +135,8 @@ class CreationDraftController extends ChangeNotifier {
     return CharacterCreationInput(
       name: _name,
       race: _race,
+      subclass: _subclass,
+      background: _background,
       level: _level,
       speed: _speed,
       srdClass: cls,
@@ -145,9 +181,12 @@ class CreationDraftController extends ChangeNotifier {
 
   void setName(String v) => _set(() => _name = v);
   void setRace(String v) => _set(() => _race = v);
+  void setSubclass(String v) => _set(() => _subclass = v);
+  void setBackground(String v) => _set(() => _background = v);
   void setLevel(int v) => _set(() {
         _level = v.clamp(1, 20);
         _pruneSpellsToClass();
+        _pruneExpertise();
       });
   void setSpeed(int v) => _set(() => _speed = v.clamp(5, 120));
   void setCustomHpMax(int? v) => _set(() => _customHpMax = v);
@@ -163,7 +202,14 @@ class CreationDraftController extends ChangeNotifier {
         }
         _expertise.removeWhere((s) => !_skills.contains(s));
         _pruneSpellsToClass();
+        _pruneExpertise();
       });
+
+  void _pruneExpertise() {
+    while (_expertise.length > expertiseSlots) {
+      _expertise.remove(_expertise.last);
+    }
+  }
 
   void _pruneSpellsToClass() {
     final cls = _class;
@@ -212,9 +258,9 @@ class CreationDraftController extends ChangeNotifier {
 
   /// 4d6 descartando el menor, por atributo. Pasa a método `rolled`.
   void rollAbilityScores([Random? random]) {
-    final rng = random ?? Random();
+    final expression = DiceExpression.tryParse('4d6')!;
     int roll() {
-      final dice = List.generate(4, (_) => rng.nextInt(6) + 1)..sort();
+      final dice = [...expression.rollDetailed(random: random).groups.single.dice]..sort();
       return dice.skip(1).fold(0, (a, b) => a + b);
     }
 
@@ -251,6 +297,7 @@ class CreationDraftController extends ChangeNotifier {
   /// Pericia (solo sobre habilidades ya competentes). false si no aplica.
   bool toggleExpertise(String skill) {
     if (!_skills.contains(skill)) return false;
+    if (!_expertise.contains(skill) && _expertise.length >= expertiseSlots) return false;
     _set(() => _expertise.contains(skill) ? _expertise.remove(skill) : _expertise.add(skill));
     return true;
   }
@@ -279,22 +326,34 @@ class CreationDraftController extends ChangeNotifier {
 
   // ---------------------------- resultado ---------------------------
 
-  /// Construye la ficha final y la pasa por [CharacterValidator]. Lanza
-  /// [CharacterCreationException] si el borrador está incompleto o si la
-  /// validación da errores o avisos (una ficha creada aquí no debería
-  /// tener ninguno).
-  CharacterModel buildValidatedCharacter() {
+  /// Construye la ficha y la valida SIN exigir que esté libre de avisos:
+  /// devuelve la ficha con los avisos no bloqueantes para la revisión del
+  /// Paso 5. Lanza [CharacterCreationException] si el borrador está
+  /// incompleto o si el validador reporta errores estructurales.
+  CharacterPreview buildPreview() {
     final pending = problems;
     final i = input;
     if (pending.isNotEmpty || i == null) throw CharacterCreationException(pending);
 
     final result = CharacterValidator.validateMap(CharacterBuilderEngine.build(i).toJson());
-    if (result.issues.isNotEmpty || result.character == null) {
+    if (!result.isOk) {
       throw CharacterCreationException(
-        [for (final issue in result.issues) '${issue.field}: ${issue.message}'],
+        [for (final issue in result.errors) '${issue.field}: ${issue.message}'],
       );
     }
-    return result.character!;
+    return CharacterPreview(result.character!, result.warnings);
+  }
+
+  /// Como [buildPreview], pero además exige cero avisos (una ficha creada
+  /// aquí no debería tener ninguno).
+  CharacterModel buildValidatedCharacter() {
+    final preview = buildPreview();
+    if (preview.warnings.isNotEmpty) {
+      throw CharacterCreationException(
+        [for (final w in preview.warnings) '${w.field}: ${w.message}'],
+      );
+    }
+    return preview.character;
   }
 
   void _set(VoidCallback change) {

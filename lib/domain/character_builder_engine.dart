@@ -57,6 +57,8 @@ const Map<String, String> kSkillAbilities = {
 class CharacterCreationInput {
   final String name;
   final String race;
+  final String subclass;
+  final String background;
   final int level;
   final int speed;
   final SrdClass srdClass;
@@ -84,6 +86,8 @@ class CharacterCreationInput {
   const CharacterCreationInput({
     this.name = '',
     this.race = '',
+    this.subclass = '',
+    this.background = '',
     this.level = 1,
     this.speed = 30,
     required this.srdClass,
@@ -113,6 +117,12 @@ class ComputedStats {
   final int? spellSaveDc;
   final int? spellAttackBonus;
   final Map<int, int> spellSlots; // nivel de ranura → cantidad
+
+  /// Iniciativa = modificador de Destreza.
+  int get initiative => mods['dex']!;
+
+  /// Percepción pasiva = 10 + bono de Percepción.
+  int get passivePerception => 10 + skills['Percepción']!;
 
   const ComputedStats({
     required this.level,
@@ -355,10 +365,22 @@ abstract final class CharacterBuilderEngine {
 
   static String _signed(int n) => n == 0 ? '' : (n > 0 ? '+$n' : '$n');
 
-  static bool _isProficient(SrdClass cls, SrdWeapon w) {
+  static bool isWeaponProficient(SrdClass cls, SrdWeapon w) {
     final profs = cls.weaponProficiencies.map(normalizeSpellName).toSet();
     final category = w.category == 'marcial' ? 'armas marciales' : 'armas sencillas';
     return profs.contains(category) || profs.contains(normalizeSpellName(w.name));
+  }
+
+  /// ¿La clase domina esta armadura (o el escudo)?
+  static bool isArmorProficient(SrdClass cls, SrdArmor a) {
+    final profs = cls.armorProficiencies.map(normalizeSpellName).toSet();
+    const byCategory = {
+      'ligera': 'armaduras ligeras',
+      'media': 'armaduras medias',
+      'pesada': 'armaduras pesadas',
+      'escudo': 'escudos',
+    };
+    return profs.contains(byCategory[a.category]);
   }
 
   /// Convierte un arma SRD en [Weapon] con bono de ataque y daño resueltos.
@@ -372,7 +394,7 @@ abstract final class CharacterBuilderEngine {
       abilityKey = 'str';
     }
     final mod = stats.mods[abilityKey]!;
-    final proficient = _isProficient(cls, w);
+    final proficient = isWeaponProficient(cls, w);
     final dice = w.damageDice;
     final type = w.damageType;
     final dmgType = type ?? 'sin daño';
@@ -491,7 +513,9 @@ abstract final class CharacterBuilderEngine {
       basicInfo: BasicInfo(
         name: input.name.trim(),
         race: input.race,
-        characterClass: cls.name,
+        characterClass: input.subclass.trim().isEmpty
+            ? cls.name
+            : '${cls.name} (${input.subclass.trim()})',
         hpMax: stats.hpMax,
         currentHp: stats.hpMax,
         ac: stats.ac,
@@ -523,7 +547,9 @@ abstract final class CharacterBuilderEngine {
         for (final e in kSkillAbilities.entries)
           Skill(name: e.key, relatedStat: e.value, modifier: stats.skills[e.key]!),
       ],
-      loreInfo: LoreInfo(backstory: '', personalityTraits: '', ideals: '', bonds: '', flaws: ''),
+      loreInfo: LoreInfo(
+          backstory: input.background.trim().isEmpty ? '' : 'Trasfondo: ${input.background.trim()}',
+          personalityTraits: '', ideals: '', bonds: '', flaws: ''),
       purse: Purse(gold: input.startingGold),
       resources: resources,
     );
