@@ -46,6 +46,15 @@ abstract final class SpellCatalog {
     }).toList();
   }
 
+  /// Conjuros de la lista de una clase (por id, ej. `mago`). Usa [all] o,
+  /// si falta, el catálogo ya cargado en caché.
+  static List<SrdSpell> forClass(String classId, [List<SrdSpell>? all]) {
+    final id = _normalize(classId);
+    return (all ?? _cached ?? const <SrdSpell>[])
+        .where((s) => s.classes.any((c) => _normalize(c) == id))
+        .toList();
+  }
+
   static String _normalize(String input) => normalizeSpellName(input);
 
   /// Limpia la caché (útil para tests).

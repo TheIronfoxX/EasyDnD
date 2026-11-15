@@ -54,6 +54,9 @@ flutter:
     - assets/icon/icon.png
     # Catálogo offline de conjuros SRD 5e.
     - assets/srd/spells_5e.json
+    # Catálogos offline de clases y equipo SRD 5e (asistente de creación).
+    - assets/srd/classes_5e.json
+    - assets/srd/equipment_5e.json
 
   # Tipografía propia (Etapa 8a). Empaquetada, no descargada: la app es
   # offline y en la web CanvasKit no resuelve las familias genéricas.

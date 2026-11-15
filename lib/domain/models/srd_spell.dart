@@ -18,6 +18,9 @@ class SrdSpell {
   final String? scalingFormula;
   final String description;
 
+  /// IDs de clase (en español) que tienen el conjuro en su lista, ej. `mago`.
+  final List<String> classes;
+
   const SrdSpell({
     required this.name,
     required this.englishName,
@@ -31,6 +34,7 @@ class SrdSpell {
     this.isScalable = false,
     this.scalingFormula,
     required this.description,
+    this.classes = const [],
   });
 
   factory SrdSpell.fromJson(Map<String, dynamic> json) {
@@ -47,6 +51,9 @@ class SrdSpell {
       isScalable: json['is_scalable'] as bool? ?? false,
       scalingFormula: json['scaling_formula'] as String?,
       description: json['description'] as String? ?? '',
+      classes: ((json['classes'] as List<dynamic>?) ?? const [])
+          .map((e) => e as String)
+          .toList(),
     );
   }
 

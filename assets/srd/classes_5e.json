@@ -1,0 +1,800 @@
+[
+  {
+    "id": "barbaro",
+    "name": "Bárbaro",
+    "hit_die": 12,
+    "primary_abilities": [
+      "str"
+    ],
+    "saving_throws": [
+      "str",
+      "con"
+    ],
+    "skill_choices_count": 2,
+    "skill_options": [
+      "Trato con animales",
+      "Atletismo",
+      "Intimidación",
+      "Naturaleza",
+      "Percepción",
+      "Supervivencia"
+    ],
+    "armor_proficiencies": [
+      "Armaduras ligeras",
+      "Armaduras medias",
+      "Escudos"
+    ],
+    "weapon_proficiencies": [
+      "Armas sencillas",
+      "Armas marciales"
+    ],
+    "spellcasting_type": "none",
+    "spellcasting_ability": null,
+    "spell_list_tag": null,
+    "core_features": [
+      {
+        "name": "Furia",
+        "level": 1,
+        "action_type": "bonus_action",
+        "description": "Ventaja en pruebas y salvaciones de Fuerza, bonificador al daño cuerpo a cuerpo con Fuerza y resistencia al daño contundente, cortante y perforante durante 1 minuto.",
+        "resource": {
+          "name": "Furias",
+          "max_formula": "2",
+          "recovery": "long_rest"
+        }
+      },
+      {
+        "name": "Defensa sin armadura",
+        "level": 1,
+        "action_type": "passive",
+        "tactical_role": "defense",
+        "description": "Sin armadura, tu CA es 10 + mod. Destreza + mod. Constitución."
+      },
+      {
+        "name": "Ataque temerario",
+        "level": 2,
+        "action_type": "passive",
+        "tactical_role": "offense",
+        "description": "Ventaja en tus ataques con Fuerza este turno, pero los ataques contra ti tienen ventaja."
+      },
+      {
+        "name": "Sentido del peligro",
+        "level": 2,
+        "action_type": "passive",
+        "tactical_role": "defense",
+        "description": "Ventaja en salvaciones de Destreza contra efectos que puedas ver."
+      }
+    ]
+  },
+  {
+    "id": "bardo",
+    "name": "Bardo",
+    "hit_die": 8,
+    "primary_abilities": [
+      "cha"
+    ],
+    "saving_throws": [
+      "dex",
+      "cha"
+    ],
+    "skill_choices_count": 3,
+    "skill_options": [
+      "Acrobacias",
+      "Trato con animales",
+      "Arcanos",
+      "Atletismo",
+      "Engaño",
+      "Historia",
+      "Perspicacia",
+      "Intimidación",
+      "Investigación",
+      "Medicina",
+      "Naturaleza",
+      "Percepción",
+      "Interpretación",
+      "Persuasión",
+      "Religión",
+      "Juego de manos",
+      "Sigilo",
+      "Supervivencia"
+    ],
+    "armor_proficiencies": [
+      "Armaduras ligeras"
+    ],
+    "weapon_proficiencies": [
+      "Armas sencillas",
+      "Ballesta de mano",
+      "Espada larga",
+      "Estoque",
+      "Espada corta"
+    ],
+    "spellcasting_type": "full",
+    "spellcasting_ability": "cha",
+    "spell_list_tag": "bardo",
+    "core_features": [
+      {
+        "name": "Inspiración bárdica",
+        "level": 1,
+        "action_type": "bonus_action",
+        "description": "Concedes a una criatura un dado de inspiración que puede sumar a una prueba, ataque o salvación.",
+        "resource": {
+          "name": "Inspiración bárdica",
+          "max_formula": "mod. Carisma (mín. 1)",
+          "recovery": "long_rest"
+        }
+      },
+      {
+        "name": "Lanzamiento de conjuros",
+        "level": 1,
+        "action_type": "passive",
+        "tactical_role": "utility",
+        "description": "Lanzas conjuros de bardo usando Carisma."
+      },
+      {
+        "name": "Pericia",
+        "level": 3,
+        "action_type": "passive",
+        "tactical_role": "utility",
+        "description": "Doble competencia en dos habilidades elegidas."
+      },
+      {
+        "name": "Polivalente",
+        "level": 2,
+        "action_type": "passive",
+        "tactical_role": "utility",
+        "description": "Sumas la mitad de tu competencia a pruebas en las que no seas competente."
+      }
+    ]
+  },
+  {
+    "id": "brujo",
+    "name": "Brujo",
+    "hit_die": 8,
+    "primary_abilities": [
+      "cha"
+    ],
+    "saving_throws": [
+      "wis",
+      "cha"
+    ],
+    "skill_choices_count": 2,
+    "skill_options": [
+      "Arcanos",
+      "Engaño",
+      "Historia",
+      "Intimidación",
+      "Investigación",
+      "Naturaleza",
+      "Religión"
+    ],
+    "armor_proficiencies": [
+      "Armaduras ligeras"
+    ],
+    "weapon_proficiencies": [
+      "Armas sencillas"
+    ],
+    "spellcasting_type": "pact",
+    "spellcasting_ability": "cha",
+    "spell_list_tag": "brujo",
+    "core_features": [
+      {
+        "name": "Magia de pacto",
+        "level": 1,
+        "action_type": "passive",
+        "tactical_role": "utility",
+        "description": "Tus espacios de conjuro son pocos, de nivel máximo, y se recuperan con descanso corto."
+      },
+      {
+        "name": "Patrono sobrenatural",
+        "level": 1,
+        "action_type": "passive",
+        "tactical_role": "utility",
+        "description": "Tu patrono te otorga rasgos de subclase."
+      },
+      {
+        "name": "Invocaciones sobrenaturales",
+        "level": 2,
+        "action_type": "passive",
+        "tactical_role": "utility",
+        "description": "Obtienes dos invocaciones que mejoran tus capacidades."
+      },
+      {
+        "name": "Don del pacto",
+        "level": 3,
+        "action_type": "passive",
+        "tactical_role": "utility",
+        "description": "Eliges Pacto de la Hoja, del Grimorio o de la Cadena."
+      }
+    ]
+  },
+  {
+    "id": "clerigo",
+    "name": "Clérigo",
+    "hit_die": 8,
+    "primary_abilities": [
+      "wis"
+    ],
+    "saving_throws": [
+      "wis",
+      "cha"
+    ],
+    "skill_choices_count": 2,
+    "skill_options": [
+      "Historia",
+      "Perspicacia",
+      "Medicina",
+      "Persuasión",
+      "Religión"
+    ],
+    "armor_proficiencies": [
+      "Armaduras ligeras",
+      "Armaduras medias",
+      "Escudos"
+    ],
+    "weapon_proficiencies": [
+      "Armas sencillas"
+    ],
+    "spellcasting_type": "full",
+    "spellcasting_ability": "wis",
+    "spell_list_tag": "clerigo",
+    "core_features": [
+      {
+        "name": "Lanzamiento de conjuros",
+        "level": 1,
+        "action_type": "passive",
+        "tactical_role": "utility",
+        "description": "Preparas conjuros de clérigo usando Sabiduría."
+      },
+      {
+        "name": "Dominio divino",
+        "level": 1,
+        "action_type": "passive",
+        "tactical_role": "utility",
+        "description": "Eliges un dominio que te da conjuros y rasgos."
+      },
+      {
+        "name": "Canalizar divinidad",
+        "level": 2,
+        "action_type": "action",
+        "description": "Canalizas poder divino: Expulsar muertos vivientes y el rasgo de tu dominio.",
+        "resource": {
+          "name": "Canalizar divinidad",
+          "max_formula": "1",
+          "recovery": "short_rest"
+        }
+      }
+    ]
+  },
+  {
+    "id": "druida",
+    "name": "Druida",
+    "hit_die": 8,
+    "primary_abilities": [
+      "wis"
+    ],
+    "saving_throws": [
+      "int",
+      "wis"
+    ],
+    "skill_choices_count": 2,
+    "skill_options": [
+      "Arcanos",
+      "Trato con animales",
+      "Perspicacia",
+      "Medicina",
+      "Naturaleza",
+      "Percepción",
+      "Religión",
+      "Supervivencia"
+    ],
+    "armor_proficiencies": [
+      "Armaduras ligeras",
+      "Armaduras medias",
+      "Escudos"
+    ],
+    "weapon_proficiencies": [
+      "Garrote",
+      "Daga",
+      "Dardo",
+      "Jabalina",
+      "Maza",
+      "Bastón",
+      "Cimitarra",
+      "Hoz",
+      "Honda",
+      "Lanza"
+    ],
+    "spellcasting_type": "full",
+    "spellcasting_ability": "wis",
+    "spell_list_tag": "druida",
+    "core_features": [
+      {
+        "name": "Druídico",
+        "level": 1,
+        "action_type": "passive",
+        "tactical_role": "utility",
+        "description": "Conoces el idioma secreto de los druidas."
+      },
+      {
+        "name": "Lanzamiento de conjuros",
+        "level": 1,
+        "action_type": "passive",
+        "tactical_role": "utility",
+        "description": "Preparas conjuros de druida usando Sabiduría."
+      },
+      {
+        "name": "Forma salvaje",
+        "level": 2,
+        "action_type": "action",
+        "description": "Te transformas en una bestia que hayas visto.",
+        "resource": {
+          "name": "Forma salvaje",
+          "max_formula": "2",
+          "recovery": "short_rest"
+        }
+      }
+    ]
+  },
+  {
+    "id": "explorador",
+    "name": "Explorador",
+    "hit_die": 10,
+    "primary_abilities": [
+      "dex",
+      "wis"
+    ],
+    "saving_throws": [
+      "str",
+      "dex"
+    ],
+    "skill_choices_count": 3,
+    "skill_options": [
+      "Trato con animales",
+      "Atletismo",
+      "Perspicacia",
+      "Investigación",
+      "Naturaleza",
+      "Percepción",
+      "Sigilo",
+      "Supervivencia"
+    ],
+    "armor_proficiencies": [
+      "Armaduras ligeras",
+      "Armaduras medias",
+      "Escudos"
+    ],
+    "weapon_proficiencies": [
+      "Armas sencillas",
+      "Armas marciales"
+    ],
+    "spellcasting_type": "half",
+    "spellcasting_ability": "wis",
+    "spell_list_tag": "explorador",
+    "core_features": [
+      {
+        "name": "Enemigo predilecto",
+        "level": 1,
+        "action_type": "passive",
+        "tactical_role": "utility",
+        "description": "Ventaja para rastrear y recordar información sobre un tipo de enemigo elegido."
+      },
+      {
+        "name": "Explorador nato",
+        "level": 1,
+        "action_type": "passive",
+        "tactical_role": "utility",
+        "description": "Eres experto en terrenos predilectos: viajas y exploras con ventajas."
+      },
+      {
+        "name": "Estilo de combate",
+        "level": 2,
+        "action_type": "passive",
+        "tactical_role": "offense",
+        "description": "Adoptas un estilo de combate (Arquería, Defensa, Duelo o Combate con dos armas)."
+      },
+      {
+        "name": "Lanzamiento de conjuros",
+        "level": 2,
+        "action_type": "passive",
+        "tactical_role": "utility",
+        "description": "Preparas conjuros de explorador usando Sabiduría."
+      }
+    ]
+  },
+  {
+    "id": "guerrero",
+    "name": "Guerrero",
+    "hit_die": 10,
+    "primary_abilities": [
+      "str",
+      "dex"
+    ],
+    "saving_throws": [
+      "str",
+      "con"
+    ],
+    "skill_choices_count": 2,
+    "skill_options": [
+      "Acrobacias",
+      "Trato con animales",
+      "Atletismo",
+      "Historia",
+      "Perspicacia",
+      "Intimidación",
+      "Percepción",
+      "Supervivencia"
+    ],
+    "armor_proficiencies": [
+      "Armaduras ligeras",
+      "Armaduras medias",
+      "Armaduras pesadas",
+      "Escudos"
+    ],
+    "weapon_proficiencies": [
+      "Armas sencillas",
+      "Armas marciales"
+    ],
+    "spellcasting_type": "none",
+    "spellcasting_ability": null,
+    "spell_list_tag": null,
+    "core_features": [
+      {
+        "name": "Estilo de combate",
+        "level": 1,
+        "action_type": "passive",
+        "tactical_role": "offense",
+        "description": "Adoptas un estilo de combate con bonificaciones permanentes."
+      },
+      {
+        "name": "Tomar aliento",
+        "level": 1,
+        "action_type": "bonus_action",
+        "description": "Recuperas 1d10 + nivel de guerrero puntos de golpe.",
+        "resource": {
+          "name": "Tomar aliento",
+          "max_formula": "1",
+          "recovery": "short_rest"
+        }
+      },
+      {
+        "name": "Oleada de acción",
+        "level": 2,
+        "action_type": "bonus_action",
+        "description": "Realizas una acción adicional en tu turno.",
+        "resource": {
+          "name": "Oleada de acción",
+          "max_formula": "1",
+          "recovery": "short_rest"
+        }
+      }
+    ]
+  },
+  {
+    "id": "hechicero",
+    "name": "Hechicero",
+    "hit_die": 6,
+    "primary_abilities": [
+      "cha"
+    ],
+    "saving_throws": [
+      "con",
+      "cha"
+    ],
+    "skill_choices_count": 2,
+    "skill_options": [
+      "Arcanos",
+      "Engaño",
+      "Perspicacia",
+      "Intimidación",
+      "Persuasión",
+      "Religión"
+    ],
+    "armor_proficiencies": [],
+    "weapon_proficiencies": [
+      "Daga",
+      "Dardo",
+      "Honda",
+      "Bastón",
+      "Ballesta ligera"
+    ],
+    "spellcasting_type": "full",
+    "spellcasting_ability": "cha",
+    "spell_list_tag": "hechicero",
+    "core_features": [
+      {
+        "name": "Lanzamiento de conjuros",
+        "level": 1,
+        "action_type": "passive",
+        "tactical_role": "utility",
+        "description": "Conoces conjuros de hechicero y lanzas con Carisma."
+      },
+      {
+        "name": "Origen mágico",
+        "level": 1,
+        "action_type": "passive",
+        "tactical_role": "utility",
+        "description": "Tu linaje otorga rasgos de subclase."
+      },
+      {
+        "name": "Fuente de magia",
+        "level": 2,
+        "action_type": "bonus_action",
+        "description": "Conviertes puntos de hechicería en espacios de conjuro y viceversa.",
+        "resource": {
+          "name": "Puntos de hechicería",
+          "max_formula": "nivel de hechicero",
+          "recovery": "long_rest"
+        }
+      },
+      {
+        "name": "Metamagia",
+        "level": 3,
+        "action_type": "passive",
+        "tactical_role": "utility",
+        "description": "Modificas tus conjuros con opciones de metamagia."
+      }
+    ]
+  },
+  {
+    "id": "mago",
+    "name": "Mago",
+    "hit_die": 6,
+    "primary_abilities": [
+      "int"
+    ],
+    "saving_throws": [
+      "int",
+      "wis"
+    ],
+    "skill_choices_count": 2,
+    "skill_options": [
+      "Arcanos",
+      "Historia",
+      "Perspicacia",
+      "Investigación",
+      "Medicina",
+      "Religión"
+    ],
+    "armor_proficiencies": [],
+    "weapon_proficiencies": [
+      "Daga",
+      "Dardo",
+      "Honda",
+      "Bastón",
+      "Ballesta ligera"
+    ],
+    "spellcasting_type": "full",
+    "spellcasting_ability": "int",
+    "spell_list_tag": "mago",
+    "core_features": [
+      {
+        "name": "Lanzamiento de conjuros",
+        "level": 1,
+        "action_type": "passive",
+        "tactical_role": "utility",
+        "description": "Preparas conjuros desde tu libro de conjuros usando Inteligencia."
+      },
+      {
+        "name": "Recuperación arcana",
+        "level": 1,
+        "action_type": "action",
+        "description": "Durante un descanso corto recuperas espacios de conjuro (suman hasta la mitad de tu nivel).",
+        "resource": {
+          "name": "Recuperación arcana",
+          "max_formula": "1",
+          "recovery": "long_rest"
+        }
+      },
+      {
+        "name": "Tradición arcana",
+        "level": 2,
+        "action_type": "passive",
+        "tactical_role": "utility",
+        "description": "Eliges una escuela de magia con rasgos propios."
+      }
+    ]
+  },
+  {
+    "id": "monje",
+    "name": "Monje",
+    "hit_die": 8,
+    "primary_abilities": [
+      "dex",
+      "wis"
+    ],
+    "saving_throws": [
+      "str",
+      "dex"
+    ],
+    "skill_choices_count": 2,
+    "skill_options": [
+      "Acrobacias",
+      "Atletismo",
+      "Historia",
+      "Perspicacia",
+      "Religión",
+      "Sigilo"
+    ],
+    "armor_proficiencies": [],
+    "weapon_proficiencies": [
+      "Armas sencillas",
+      "Espada corta"
+    ],
+    "spellcasting_type": "none",
+    "spellcasting_ability": null,
+    "spell_list_tag": null,
+    "core_features": [
+      {
+        "name": "Defensa sin armadura",
+        "level": 1,
+        "action_type": "passive",
+        "tactical_role": "defense",
+        "description": "Sin armadura ni escudo, tu CA es 10 + mod. Destreza + mod. Sabiduría."
+      },
+      {
+        "name": "Artes marciales",
+        "level": 1,
+        "action_type": "bonus_action",
+        "description": "Realizas un ataque desarmado como acción adicional tras atacar con arma de monje."
+      },
+      {
+        "name": "Ki",
+        "level": 2,
+        "action_type": "bonus_action",
+        "description": "Gastas puntos de ki para Ráfaga de golpes, Defensa paciente o Paso del viento.",
+        "resource": {
+          "name": "Puntos de ki",
+          "max_formula": "nivel de monje",
+          "recovery": "short_rest"
+        }
+      },
+      {
+        "name": "Desviar proyectiles",
+        "level": 3,
+        "action_type": "reaction",
+        "description": "Reduces el daño de un ataque a distancia que te impacte."
+      }
+    ]
+  },
+  {
+    "id": "paladin",
+    "name": "Paladín",
+    "hit_die": 10,
+    "primary_abilities": [
+      "str",
+      "cha"
+    ],
+    "saving_throws": [
+      "wis",
+      "cha"
+    ],
+    "skill_choices_count": 2,
+    "skill_options": [
+      "Atletismo",
+      "Perspicacia",
+      "Intimidación",
+      "Medicina",
+      "Persuasión",
+      "Religión"
+    ],
+    "armor_proficiencies": [
+      "Armaduras ligeras",
+      "Armaduras medias",
+      "Armaduras pesadas",
+      "Escudos"
+    ],
+    "weapon_proficiencies": [
+      "Armas sencillas",
+      "Armas marciales"
+    ],
+    "spellcasting_type": "half",
+    "spellcasting_ability": "cha",
+    "spell_list_tag": "paladin",
+    "core_features": [
+      {
+        "name": "Sentido divino",
+        "level": 1,
+        "action_type": "action",
+        "description": "Detectas celestiales, infernales y muertos vivientes cercanos.",
+        "resource": {
+          "name": "Sentido divino",
+          "max_formula": "1 + mod. Carisma",
+          "recovery": "long_rest"
+        }
+      },
+      {
+        "name": "Imposición de manos",
+        "level": 1,
+        "action_type": "action",
+        "description": "Curas puntos de golpe de una reserva igual a 5 × nivel de paladín.",
+        "resource": {
+          "name": "Imposición de manos",
+          "max_formula": "5 × nivel de paladín",
+          "recovery": "long_rest"
+        }
+      },
+      {
+        "name": "Castigo divino",
+        "level": 2,
+        "action_type": "passive",
+        "tactical_role": "offense",
+        "description": "Gastas un espacio de conjuro al impactar para infligir daño radiante extra."
+      },
+      {
+        "name": "Salud divina",
+        "level": 3,
+        "action_type": "passive",
+        "tactical_role": "defense",
+        "description": "Eres inmune a enfermedades."
+      }
+    ]
+  },
+  {
+    "id": "picaro",
+    "name": "Pícaro",
+    "hit_die": 8,
+    "primary_abilities": [
+      "dex"
+    ],
+    "saving_throws": [
+      "dex",
+      "int"
+    ],
+    "skill_choices_count": 4,
+    "skill_options": [
+      "Acrobacias",
+      "Atletismo",
+      "Engaño",
+      "Perspicacia",
+      "Intimidación",
+      "Investigación",
+      "Percepción",
+      "Interpretación",
+      "Persuasión",
+      "Juego de manos",
+      "Sigilo"
+    ],
+    "armor_proficiencies": [
+      "Armaduras ligeras"
+    ],
+    "weapon_proficiencies": [
+      "Armas sencillas",
+      "Ballesta de mano",
+      "Espada larga",
+      "Estoque",
+      "Espada corta"
+    ],
+    "spellcasting_type": "none",
+    "spellcasting_ability": null,
+    "spell_list_tag": null,
+    "core_features": [
+      {
+        "name": "Pericia",
+        "level": 1,
+        "action_type": "passive",
+        "tactical_role": "utility",
+        "description": "Doble competencia en dos habilidades o herramientas de ladrón."
+      },
+      {
+        "name": "Ataque furtivo",
+        "level": 1,
+        "action_type": "passive",
+        "tactical_role": "offense",
+        "description": "Daño extra una vez por turno con ventaja o un aliado adyacente al objetivo."
+      },
+      {
+        "name": "Jerga de ladrones",
+        "level": 1,
+        "action_type": "passive",
+        "tactical_role": "utility",
+        "description": "Conoces el código secreto de los ladrones."
+      },
+      {
+        "name": "Acción astuta",
+        "level": 2,
+        "action_type": "bonus_action",
+        "description": "Usas Correr, Destrabarse o Esconderte como acción adicional."
+      }
+    ]
+  }
+]
