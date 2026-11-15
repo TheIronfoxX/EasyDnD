@@ -96,6 +96,18 @@ class AppPalette {
     success: Color(0xFF7CD69B),
   );
 
+  /// Velo Astral: violeta noche / índigo profundo, texto lavanda suave.
+  static const AppPalette astral = AppPalette(
+    background: Color(0xFF0C0919),
+    surface: Color(0xFF151030),
+    surfaceElevated: Color(0xFF211A48),
+    border: Color(0xFF3B3274),
+    textPrimary: Color(0xFFE9E3FA),
+    textSecondary: Color(0xFFA99FD0),
+    danger: Color(0xFFFF6F8F),
+    success: Color(0xFF72E3AE),
+  );
+
   static AppPalette of(Brightness brightness) =>
       brightness == Brightness.dark ? dark : light;
 }

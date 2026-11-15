@@ -1,8 +1,6 @@
-// Selector visual de temas (rework estético).
-//
-// Una fila de muestras circulares, una por tema del catálogo. Cada
-// muestra se pinta con los colores DEL TEMA QUE REPRESENTA (no con el
-// activo): fondo, borde metálico y un núcleo con su acento de firma.
+// Selector visual de skins (rework estético): una ficha por tema del
+// catálogo, pintada con sus propios tokens (color principal, forma de
+// tarjeta y de controles, grosor de borde y forma de pip).
 //
 // Se usa embebido en Apariencia y como hoja rápida desde la barra de la
 // bienvenida y el menú del HUD ([showThemePickerSheet]).
@@ -12,6 +10,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/theme/design_tokens.dart';
 import '../../core/theme/theme_presets.dart';
+import '../../core/ui/pip_shape.dart';
 import '../../core/ui/tactical_card.dart';
 import '../../state/skin_controller.dart';
 
@@ -20,7 +19,9 @@ Future<void> showThemePickerSheet(BuildContext context) {
   return showModalBottomSheet<void>(
     context: context,
     showDragHandle: true,
-    builder: (_) => const SafeArea(
+    isScrollControlled: true,
+    useSafeArea: true,
+    builder: (_) => const SingleChildScrollView(
       child: Padding(
         padding: EdgeInsets.fromLTRB(
           AppSpacing.lg,
@@ -45,7 +46,9 @@ Future<void> showThemePickerSheet(BuildContext context) {
   );
 }
 
-/// Muestras de los temas + nombre y descripción del activo.
+/// Selector de skins: una ficha por tema con su nombre, su color
+/// principal, sus pips y la forma de su tarjeta, más la descripción del
+/// tema activo.
 class ThemeSwatchPicker extends StatelessWidget {
   const ThemeSwatchPicker({super.key});
 
@@ -59,18 +62,28 @@ class ThemeSwatchPicker extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Wrap(
-          alignment: WrapAlignment.spaceBetween,
-          spacing: AppSpacing.sm,
-          runSpacing: AppSpacing.sm,
-          children: [
-            for (final preset in AppThemePreset.values)
-              _ThemeSwatch(
-                preset: preset,
-                selected: preset == active,
-                onTap: () => skin.setThemePreset(preset),
-              ),
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final columns = constraints.maxWidth >= 560 ? 3 : 2;
+            final cell =
+                (constraints.maxWidth - AppSpacing.sm * (columns - 1)) /
+                columns;
+            return Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: [
+                for (final preset in AppThemePreset.values)
+                  SizedBox(
+                    width: cell,
+                    child: _ThemeSwatch(
+                      preset: preset,
+                      selected: preset == active,
+                      onTap: () => skin.setThemePreset(preset),
+                    ),
+                  ),
+              ],
+            );
+          },
         ),
         const SizedBox(height: AppSpacing.md),
         AnimatedSwitcher(
@@ -102,6 +115,9 @@ class ThemeSwatchPicker extends StatelessWidget {
   }
 }
 
+/// Ficha de un tema. Se pinta con los tokens DEL TEMA QUE REPRESENTA (no
+/// con los del activo): su fondo, su forma de tarjeta, su borde, su color
+/// principal y su forma de pip.
 class _ThemeSwatch extends StatelessWidget {
   const _ThemeSwatch({
     required this.preset,
@@ -115,9 +131,10 @@ class _ThemeSwatch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final onAccent =
-        ThemeData.estimateBrightnessForColor(preset.accent) == Brightness.dark
+    final tokens = preset.tactical;
+    final palette = preset.palette;
+    final onPrimary =
+        ThemeData.estimateBrightnessForColor(tokens.primary) == Brightness.dark
         ? Colors.white
         : Colors.black;
 
@@ -126,45 +143,79 @@ class _ThemeSwatch extends StatelessWidget {
       child: Semantics(
         button: true,
         selected: selected,
-        child: InkWell(
-          key: ValueKey('theme-swatch-${preset.id}'),
-          onTap: onTap,
-          customBorder: const CircleBorder(),
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.xs),
-            child: AnimatedContainer(
-              duration: AppDurations.normal,
-              width: 48,
-              height: 48,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    preset.tactical.surfaceRaised,
-                    preset.palette.background,
+        child: AnimatedContainer(
+          duration: AppDurations.normal,
+          clipBehavior: Clip.antiAlias,
+          decoration: ShapeDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [tokens.surfaceRaised, palette.background],
+            ),
+            shape: tokens.cardBorder(
+              selected ? tokens.primary : tokens.metalBorder,
+              width: selected ? tokens.borderWidth + 1.4 : tokens.borderWidth,
+            ),
+            shadows: selected ? tokens.cardShadows(Colors.black) : null,
+          ),
+          child: Material(
+            type: MaterialType.transparency,
+            child: InkWell(
+              key: ValueKey('theme-swatch-${preset.id}'),
+              onTap: onTap,
+              customBorder: tokens.cardShape,
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        // Muestra del color principal, con la forma de
+                        // los controles del tema.
+                        Container(
+                          width: 30,
+                          height: 22,
+                          alignment: Alignment.center,
+                          decoration: ShapeDecoration(
+                            color: tokens.primary,
+                            shape: tokens.buttonShape,
+                          ),
+                          child: selected
+                              ? Icon(
+                                  Icons.check_rounded,
+                                  size: 15,
+                                  color: onPrimary,
+                                )
+                              : null,
+                        ),
+                        const Spacer(),
+                        for (var i = 0; i < 3; i++)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 3),
+                            child: PipGlyph(
+                              shape: tokens.pipShape,
+                              filled: i < 2,
+                              color: tokens.primary,
+                              outline: tokens.metalBorder,
+                              size: 9,
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      preset.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: palette.textPrimary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                    ),
                   ],
                 ),
-                border: Border.all(
-                  color: selected
-                      ? scheme.primary
-                      : preset.tactical.metalBorder,
-                  width: selected ? 3 : 1.5,
-                ),
-              ),
-              child: AnimatedContainer(
-                duration: AppDurations.normal,
-                width: selected ? 26 : 20,
-                height: selected ? 26 : 20,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: preset.accent,
-                ),
-                child: selected
-                    ? Icon(Icons.check_rounded, size: 16, color: onAccent)
-                    : null,
               ),
             ),
           ),

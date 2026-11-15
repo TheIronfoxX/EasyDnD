@@ -1,5 +1,5 @@
 // Sistema multi-tema (rework estético): catálogo de cinco temas,
-// TacticalPalette, persistencia y contrato con el modo claro/oscuro.
+// TacticalThemeTokens, persistencia y contrato con el modo claro/oscuro.
 //
 // El contrato que se verifica acá: "Pergamino" ES el modo claro, los
 // otros cuatro son oscuros, y el toggle de siempre alterna entre
@@ -10,11 +10,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:easydnd/app/easydnd_app.dart';
+import 'package:easydnd/core/theme/app_fonts.dart';
 import 'package:easydnd/core/theme/app_palette.dart';
 import 'package:easydnd/core/theme/app_theme.dart';
 import 'package:easydnd/core/theme/app_theme_colors.dart';
-import 'package:easydnd/core/theme/tactical_palette.dart';
+import 'package:easydnd/core/theme/tactical_theme_tokens.dart';
 import 'package:easydnd/core/theme/theme_presets.dart';
+import 'package:easydnd/core/ui/pip_shape.dart';
+import 'package:easydnd/core/ui/stat_dial.dart';
+import 'package:easydnd/core/ui/tactical_background.dart';
+import 'package:easydnd/core/ui/tactical_card.dart';
 import 'package:easydnd/data/roster_repository.dart';
 import 'package:easydnd/state/character_store.dart';
 import 'package:easydnd/state/skin_controller.dart';
@@ -42,14 +47,22 @@ void main() {
   }
 
   group('catálogo', () {
-    test('son cinco temas con id único: uno claro y cuatro oscuros', () {
-      expect(AppThemePreset.values, hasLength(5));
+    test('son seis temas con id único: uno claro y cinco oscuros', () {
+      expect(AppThemePreset.values, hasLength(6));
       expect(
         AppThemePreset.values.map((p) => p.id).toSet(),
         hasLength(AppThemePreset.values.length),
       );
       expect(AppThemePreset.values.where((p) => !p.isDark), [
         AppThemePreset.pergamino,
+      ]);
+      expect(AppThemePreset.values.map((p) => p.id), [
+        'grimorio',
+        'pergamino',
+        'velo_astral',
+        'forja_arcana',
+        'sangre_y_hierro',
+        'senda_silvestre',
       ]);
       expect(AppThemePreset.defaultDark, AppThemePreset.grimorio);
       expect(AppThemePreset.defaultLight, AppThemePreset.pergamino);
@@ -61,29 +74,33 @@ void main() {
       expect(AppThemePreset.pergamino.palette, AppPalette.light);
     });
 
-    test('cada tema arma un ThemeData con su paleta y su TacticalPalette', () {
-      for (final preset in AppThemePreset.values) {
-        final theme = AppTheme.build(preset: preset);
-        final colors = theme.extension<AppThemeColors>()!;
-        final tactical = theme.extension<TacticalPalette>()!;
+    test(
+      'cada tema arma un ThemeData con su paleta y su TacticalThemeTokens',
+      () {
+        for (final preset in AppThemePreset.values) {
+          final theme = AppTheme.build(preset: preset);
+          final colors = theme.extension<AppThemeColors>()!;
+          final tactical = theme.extension<TacticalThemeTokens>()!;
 
-        expect(theme.brightness, preset.brightness, reason: preset.id);
-        expect(theme.scaffoldBackgroundColor, preset.palette.background);
-        expect(theme.colorScheme.primary, preset.accent);
-        expect(colors.surface, preset.palette.surface);
-        expect(tactical, same(preset.tactical));
+          expect(theme.brightness, preset.brightness, reason: preset.id);
+          expect(theme.scaffoldBackgroundColor, preset.palette.background);
+          expect(theme.colorScheme.primary, preset.accent);
+          expect(colors.surface, preset.palette.surface);
+          expect(tactical, same(preset.tactical));
+          expect(tactical.primary, preset.accent);
 
-        // Los cinco roles de juego se distinguen entre sí dentro del tema.
-        final roles = {
-          tactical.weapon,
-          tactical.spell,
-          tactical.ability,
-          tactical.heal,
-          tactical.damage,
-        };
-        expect(roles, hasLength(5), reason: preset.id);
-      }
-    });
+          // Los cinco roles de juego se distinguen entre sí dentro del tema.
+          final roles = {
+            tactical.weapon,
+            tactical.spell,
+            tactical.ability,
+            tactical.heal,
+            tactical.damage,
+          };
+          expect(roles, hasLength(5), reason: preset.id);
+        }
+      },
+    );
 
     test('alto contraste: tinta y roles legibles sobre la superficie', () {
       double contrast(Color a, Color b) {
@@ -124,7 +141,7 @@ void main() {
       }
     });
 
-    test('TacticalPalette interpola y copia como ThemeExtension', () {
+    test('TacticalThemeTokens interpola y copia como ThemeExtension', () {
       final a = AppThemePreset.grimorio.tactical;
       final b = AppThemePreset.forjaArcana.tactical;
 
@@ -141,6 +158,188 @@ void main() {
       expect(AppThemePreset.byId('forja_arcana'), AppThemePreset.forjaArcana);
       expect(AppThemePreset.byId('no-existe'), isNull);
       expect(AppThemePreset.byId(null), isNull);
+    });
+  });
+
+  group('geometría y atmósfera', () {
+    OutlinedBorder card(AppThemePreset p) => p.tactical.cardShape;
+
+    test('cada skin tiene su forma de tarjeta y de botón', () {
+      const radius10 = BorderRadius.all(Radius.circular(10));
+      final grimorio = AppThemePreset.grimorio.tactical;
+      expect(grimorio.cardShape, isA<RoundedRectangleBorder>());
+      expect(
+        (grimorio.cardShape as RoundedRectangleBorder).borderRadius,
+        radius10,
+      );
+
+      expect(
+        (card(AppThemePreset.pergamino) as RoundedRectangleBorder).borderRadius,
+        const BorderRadius.all(Radius.circular(14)),
+      );
+
+      // Velo Astral: cristal tallado asimétrico, en tarjetas y botones.
+      const crystal = BorderRadius.only(
+        topLeft: Radius.circular(16),
+        bottomRight: Radius.circular(16),
+        topRight: Radius.circular(4),
+        bottomLeft: Radius.circular(4),
+      );
+      final astral = AppThemePreset.veloAstral.tactical;
+      expect(
+        (astral.cardShape as RoundedRectangleBorder).borderRadius,
+        crystal,
+      );
+      expect(
+        (astral.buttonShape as RoundedRectangleBorder).borderRadius,
+        crystal,
+      );
+
+      // Forja Arcana: biseles.
+      final forge = AppThemePreset.forjaArcana.tactical;
+      expect(forge.cardShape, isA<BeveledRectangleBorder>());
+      expect(forge.buttonShape, isA<BeveledRectangleBorder>());
+
+      // Sangre y Hierro: marcial, esquinas de 3px y borde grueso.
+      final blood = AppThemePreset.sangreYHierro.tactical;
+      expect(
+        (blood.cardShape as RoundedRectangleBorder).borderRadius,
+        const BorderRadius.all(Radius.circular(3)),
+      );
+      expect(blood.borderWidth, 1.8);
+      expect(blood.shadowStyle, ShadowStyle.hardMartial);
+
+      // Senda Silvestre: píldora y tarjetas muy redondeadas.
+      final wild = AppThemePreset.sendaSilvestre.tactical;
+      expect(wild.buttonShape, isA<StadiumBorder>());
+      expect(
+        (wild.cardShape as RoundedRectangleBorder).borderRadius,
+        const BorderRadius.all(Radius.circular(18)),
+      );
+    });
+
+    test('fondos y pips: uno distinto por skin', () {
+      expect({
+        for (final p in AppThemePreset.values) p.tactical.backgroundPattern,
+      }, hasLength(6));
+      expect(
+        [for (final p in AppThemePreset.values) p.tactical.pipShape],
+        [
+          PipShape.circle,
+          PipShape.circle,
+          PipShape.star,
+          PipShape.diamond,
+          PipShape.square,
+          PipShape.leaf,
+        ],
+      );
+    });
+
+    test('los temas de botones, chips y tipografía siguen a la skin', () {
+      for (final preset in AppThemePreset.values) {
+        final theme = AppTheme.build(preset: preset);
+        final shape = preset.tactical.buttonShape;
+
+        for (final button in [
+          theme.filledButtonTheme.style,
+          theme.elevatedButtonTheme.style,
+          theme.outlinedButtonTheme.style,
+        ]) {
+          final resolved = button!.shape!.resolve({});
+          expect(
+            resolved.runtimeType,
+            shape.runtimeType,
+            reason: '${preset.id}: botón',
+          );
+        }
+        expect(theme.chipTheme.shape.runtimeType, shape.runtimeType);
+        expect(
+          theme.outlinedButtonTheme.style!.side!.resolve({})!.width,
+          preset.tactical.borderWidth,
+        );
+        expect(
+          theme.textTheme.titleLarge?.letterSpacing,
+          preset.tactical.headerFont.letterSpacing,
+        );
+      }
+      // Cabeceras sans en Forja y Sangre; serif en el resto (preset Diario).
+      expect(
+        AppTheme.build(
+          preset: AppThemePreset.forjaArcana,
+        ).textTheme.titleLarge?.fontFamily,
+        AppFonts.inter,
+      );
+      expect(
+        AppTheme.build(
+          preset: AppThemePreset.veloAstral,
+        ).textTheme.titleLarge?.fontFamily,
+        AppFonts.cinzel,
+      );
+    });
+
+    test('pipPath devuelve un contorno no vacío para cada forma', () {
+      for (final shape in PipShape.values) {
+        final bounds = pipPath(shape, 10).getBounds();
+        expect(bounds.isEmpty, isFalse, reason: '$shape');
+        expect(bounds.width, lessThanOrEqualTo(10.01));
+        expect(bounds.height, lessThanOrEqualTo(10.01));
+      }
+    });
+
+    testWidgets('el fondo atmosférico es estático y no bloquea el settle', (
+      tester,
+    ) async {
+      for (final preset in AppThemePreset.values) {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: AppTheme.build(preset: preset),
+            home: const Scaffold(
+              body: TacticalScaffoldBackground(child: Text('contenido')),
+            ),
+          ),
+        );
+        // Si hubiera animación infinita esto agotaría el tiempo.
+        await tester.pumpAndSettle();
+        expect(find.text('contenido'), findsOneWidget, reason: preset.id);
+        expect(find.byType(CustomPaint), findsWidgets);
+      }
+    });
+
+    testWidgets('TacticalCard y ResourcePips adoptan la skin activa', (
+      tester,
+    ) async {
+      for (final preset in AppThemePreset.values) {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: AppTheme.build(preset: preset),
+            home: const Scaffold(
+              body: Column(
+                children: [
+                  TacticalCard(child: Text('carta')),
+                  ResourcePips(current: 2, max: 3),
+                ],
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final container = tester.widget<AnimatedContainer>(
+          find.ancestor(
+            of: find.text('carta'),
+            matching: find.byType(AnimatedContainer),
+          ),
+        );
+        final decoration = container.decoration! as ShapeDecoration;
+        final side = (decoration.shape as OutlinedBorder).side;
+        expect(
+          decoration.shape.runtimeType,
+          preset.tactical.cardShape.runtimeType,
+          reason: preset.id,
+        );
+        expect(side.width, preset.tactical.borderWidth, reason: preset.id);
+        expect(find.byType(PipGlyph), findsNWidgets(3), reason: preset.id);
+      }
     });
   });
 
@@ -166,7 +365,7 @@ void main() {
           preset.palette.background,
         );
         expect(
-          skin.themeData.extension<TacticalPalette>(),
+          skin.themeData.extension<TacticalThemeTokens>(),
           same(preset.tactical),
         );
       }
@@ -295,7 +494,7 @@ void main() {
     Finder swatch(AppThemePreset preset) =>
         find.byKey(ValueKey('theme-swatch-${preset.id}'));
 
-    testWidgets('la bienvenida abre el selector y recorre los cinco temas', (
+    testWidgets('la bienvenida abre el selector y recorre los seis temas', (
       tester,
     ) async {
       final store = await bootStore();
@@ -309,6 +508,7 @@ void main() {
       }
 
       for (final preset in AppThemePreset.values.reversed) {
+        await tester.ensureVisible(swatch(preset));
         await tester.tap(swatch(preset));
         await tester.pumpAndSettle();
 
@@ -337,6 +537,7 @@ void main() {
       await tester.tap(find.text('Temas'));
       await tester.pumpAndSettle();
 
+      await tester.ensureVisible(swatch(AppThemePreset.sendaSilvestre));
       await tester.tap(swatch(AppThemePreset.sendaSilvestre));
       await tester.pumpAndSettle();
 
@@ -364,11 +565,13 @@ void main() {
       await tester.tap(find.byTooltip('Apariencia'));
       await tester.pumpAndSettle();
 
+      await tester.ensureVisible(swatch(AppThemePreset.forjaArcana));
       await tester.tap(swatch(AppThemePreset.forjaArcana));
       await tester.pumpAndSettle();
       expect(skin.themePreset, AppThemePreset.forjaArcana);
 
       // El toggle de siempre lleva a Pergamino…
+      await tester.ensureVisible(find.text('Claro'));
       await tester.tap(find.text('Claro'));
       await tester.pumpAndSettle();
       expect(skin.themePreset, AppThemePreset.pergamino);
@@ -378,6 +581,7 @@ void main() {
       );
 
       // …y de vuelta al oscuro que estaba activo.
+      await tester.ensureVisible(find.text('Oscuro'));
       await tester.tap(find.text('Oscuro'));
       await tester.pumpAndSettle();
       expect(skin.themePreset, AppThemePreset.forjaArcana);

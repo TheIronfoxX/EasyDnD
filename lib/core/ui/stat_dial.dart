@@ -7,7 +7,8 @@
 import 'package:flutter/material.dart';
 
 import '../theme/design_tokens.dart';
-import '../theme/tactical_palette.dart';
+import '../theme/tactical_theme_tokens.dart';
+import 'pip_shape.dart';
 import '../theme/telemetry.dart';
 
 /// Instrumento de lectura: icono, valor grande y etiqueta. Se estira al
@@ -53,16 +54,15 @@ class StatDial extends StatelessWidget {
     return AnimatedContainer(
       duration: AppDurations.normal,
       clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: tone == null
             ? scheme.surfaceContainerHighest.withValues(alpha: 0.40)
             : Color.alphaBlend(
                 tone.withValues(alpha: 0.10),
                 scheme.surfaceContainerHighest.withValues(alpha: 0.40),
               ),
-        borderRadius: BorderRadius.circular(AppRadii.md),
-        border: Border.all(
-          color: tone == null
+        shape: tactical.insetBorder(
+          tone == null
               ? tactical.metalBorder.withValues(alpha: 0.75)
               : tone.withValues(alpha: 0.45),
         ),
@@ -71,6 +71,7 @@ class StatDial extends StatelessWidget {
         type: MaterialType.transparency,
         child: InkWell(
           onTap: onTap,
+          customBorder: tactical.insetShape,
           child: Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.sm,
@@ -173,10 +174,11 @@ class TacticalStepper extends StatelessWidget {
     }
 
     return DecoratedBox(
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: scheme.surfaceContainerHighest.withValues(alpha: 0.40),
-        borderRadius: BorderRadius.circular(AppRadii.pill),
-        border: Border.all(color: tactical.metalBorder.withValues(alpha: 0.75)),
+        shape: tactical.buttonBorder(
+          tactical.metalBorder.withValues(alpha: 0.75),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -235,25 +237,19 @@ class ResourcePips extends StatelessWidget {
       );
     }
 
+    final shape = context.tactical.pipShape;
     return ExcludeSemantics(
       child: Wrap(
         spacing: 3,
         runSpacing: 3,
         children: [
           for (var i = 0; i < max; i++)
-            AnimatedContainer(
-              duration: AppDurations.normal,
-              curve: Curves.easeOut,
-              width: size,
-              height: size,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: i < current ? tone : tone.withValues(alpha: 0),
-                border: Border.all(
-                  color: i < current ? tone : scheme.outline,
-                  width: 1.2,
-                ),
-              ),
+            PipGlyph(
+              shape: shape,
+              filled: i < current,
+              color: tone,
+              size: size,
+              outline: scheme.outline,
             ),
         ],
       ),

@@ -8,7 +8,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../theme/tactical_palette.dart';
+import '../theme/tactical_theme_tokens.dart';
 
 class ArcaneEmblem extends StatelessWidget {
   const ArcaneEmblem({super.key, this.size = 132});

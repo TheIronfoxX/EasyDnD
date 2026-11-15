@@ -2,17 +2,19 @@
 // [SectionHeader] y [TonePill].
 //
 // Son solo estructura visual — no saben de personajes ni de reglas — y
-// todos los colores salen del tema activo (`Theme.of` + `context.tactical`),
-// así los cinco temas del catálogo las visten sin tocar nada acá.
+// todo (colores, forma, borde, sombra, ornamento) sale de los tokens de la
+// skin activa (`context.tactical`), así los seis temas las visten sin
+// tocar nada acá.
 
 import 'package:flutter/material.dart';
 
 import '../theme/design_tokens.dart';
-import '../theme/tactical_palette.dart';
+import '../theme/tactical_theme_tokens.dart';
+import 'pip_shape.dart';
 
-/// Tarjeta base: degradado de superficie elevada, borde metálico fino y
-/// un filo de luz en el canto superior. Con [tone] suma una franja
-/// lateral y tiñe el borde (arma / conjuro / habilidad...).
+/// Tarjeta base: degradado de superficie elevada, forma, borde y sombra de
+/// la skin y un filo de luz en el canto superior. Con [tone] suma una
+/// franja lateral y tiñe el borde (arma / conjuro / habilidad...).
 class TacticalCard extends StatelessWidget {
   const TacticalCard({
     super.key,
@@ -21,7 +23,6 @@ class TacticalCard extends StatelessWidget {
     this.margin,
     this.tone,
     this.onTap,
-    this.radius = AppRadii.lg,
   });
 
   final Widget child;
@@ -31,7 +32,6 @@ class TacticalCard extends StatelessWidget {
   /// Color de rol. `null` = tarjeta neutra.
   final Color? tone;
   final VoidCallback? onTap;
-  final double radius;
 
   @override
   Widget build(BuildContext context) {
@@ -41,32 +41,25 @@ class TacticalCard extends StatelessWidget {
     final borderColor = tone == null
         ? tactical.metalBorder
         : Color.alphaBlend(tone.withValues(alpha: 0.45), tactical.metalBorder);
-    final borderRadius = BorderRadius.circular(radius);
 
     return AnimatedContainer(
       duration: AppDurations.normal,
       margin: margin,
       clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        borderRadius: borderRadius,
-        border: Border.all(color: borderColor),
+      decoration: ShapeDecoration(
+        shape: tactical.cardBorder(borderColor),
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [tactical.surfaceRaised, scheme.surface],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: scheme.shadow.withValues(alpha: 0.16),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        shadows: tactical.cardShadows(scheme.shadow),
       ),
       child: Material(
         type: MaterialType.transparency,
         child: InkWell(
           onTap: onTap,
+          customBorder: tactical.cardShape,
           child: Stack(
             children: [
               Padding(padding: padding, child: child),
@@ -97,7 +90,7 @@ class TacticalCard extends StatelessWidget {
                   top: 0,
                   bottom: 0,
                   left: 0,
-                  width: 3,
+                  width: tactical.borderWidth + 2,
                   child: IgnorePointer(child: ColoredBox(color: tone)),
                 ),
             ],
@@ -108,8 +101,9 @@ class TacticalCard extends StatelessWidget {
   }
 }
 
-/// Encabezado de sección: placa con icono, título en la serif de display,
-/// acción opcional y un ornamento lineal (rombo + trazo que se desvanece).
+/// Encabezado de sección: placa con icono, título en la tipografía de
+/// cabeceras de la skin, acción opcional y un ornamento lineal cuyo glifo
+/// de arranque es la forma de pip del tema.
 class SectionHeader extends StatelessWidget {
   const SectionHeader({
     super.key,
@@ -124,7 +118,7 @@ class SectionHeader extends StatelessWidget {
   final IconData? icon;
   final Widget? trailing;
 
-  /// Color del icono y del ornamento. `null` = acento del tema.
+  /// Color del icono y del ornamento. `null` = color principal del tema.
   final Color? tone;
 
   /// Variante compacta para subsecciones (título más chico).
@@ -133,6 +127,7 @@ class SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tactical = context.tactical;
     final color = tone ?? theme.colorScheme.primary;
     final titleStyle = dense
         ? theme.textTheme.titleSmall
@@ -151,10 +146,12 @@ class SectionHeader extends StatelessWidget {
               if (icon != null) ...[
                 Container(
                   padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
+                  decoration: ShapeDecoration(
                     color: color.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(AppRadii.sm),
-                    border: Border.all(color: color.withValues(alpha: 0.34)),
+                    shape: tactical.insetBorder(
+                      color.withValues(alpha: 0.34),
+                      width: 1,
+                    ),
                   ),
                   child: Icon(icon, size: dense ? 14 : 16, color: color),
                 ),
@@ -178,7 +175,9 @@ class SectionHeader extends StatelessWidget {
           child: CustomPaint(
             painter: _OrnamentPainter(
               color: color,
-              fade: context.tactical.metalBorder,
+              fade: tactical.metalBorder,
+              glyph: tactical.pipShape,
+              width: tactical.borderWidth,
             ),
           ),
         ),
@@ -188,34 +187,37 @@ class SectionHeader extends StatelessWidget {
 }
 
 class _OrnamentPainter extends CustomPainter {
-  const _OrnamentPainter({required this.color, required this.fade});
+  const _OrnamentPainter({
+    required this.color,
+    required this.fade,
+    required this.glyph,
+    required this.width,
+  });
 
   final Color color;
   final Color fade;
 
+  /// Forma de la skin: el glifo de arranque es el mismo de sus pips.
+  final PipShape glyph;
+  final double width;
+
   @override
   void paint(Canvas canvas, Size size) {
-    final midY = size.height / 2;
-    final half = size.height / 2;
-
-    // Rombo de arranque.
-    final diamond = Path()
-      ..moveTo(0, midY)
-      ..lineTo(half, 0)
-      ..lineTo(half * 2, midY)
-      ..lineTo(half, size.height)
-      ..close();
-    canvas.drawPath(diamond, Paint()..color = color.withValues(alpha: 0.85));
+    final glyphSize = size.height;
+    canvas.drawPath(
+      pipPath(glyph, glyphSize),
+      Paint()..color = color.withValues(alpha: 0.85),
+    );
 
     // Trazo que se desvanece hacia la derecha.
-    final start = Offset(half * 2 + 4, midY);
-    final end = Offset(size.width, midY);
+    final start = Offset(glyphSize + 4, size.height / 2);
+    final end = Offset(size.width, size.height / 2);
     if (end.dx <= start.dx) return;
     canvas.drawLine(
       start,
       end,
       Paint()
-        ..strokeWidth = 1
+        ..strokeWidth = width.clamp(1, 2)
         ..shader = LinearGradient(
           colors: [
             color.withValues(alpha: 0.55),
@@ -229,11 +231,14 @@ class _OrnamentPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_OrnamentPainter oldDelegate) =>
-      oldDelegate.color != color || oldDelegate.fade != fade;
+      oldDelegate.color != color ||
+      oldDelegate.fade != fade ||
+      oldDelegate.glyph != glyph ||
+      oldDelegate.width != width;
 }
 
-/// Píldora tintada con un color de rol: etiquetas cortas ("Arma",
-/// "Conjuro", "Nv. 3") que no son botones.
+/// Etiqueta tintada con un color de rol ("Truco", "Nv. 3"): toma la forma
+/// de botón de la skin (píldora, bisel, cristal...). No es un botón.
 class TonePill extends StatelessWidget {
   const TonePill({
     super.key,
@@ -256,10 +261,12 @@ class TonePill extends StatelessWidget {
         horizontal: AppSpacing.sm,
         vertical: 2,
       ),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: tone.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(AppRadii.pill),
-        border: Border.all(color: tone.withValues(alpha: 0.40)),
+        shape: context.tactical.buttonBorder(
+          tone.withValues(alpha: 0.40),
+          width: 1,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

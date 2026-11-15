@@ -18,8 +18,10 @@
 import 'package:flutter/material.dart';
 
 import 'app_theme_colors.dart';
+import 'app_fonts.dart';
 import 'design_tokens.dart';
 import 'font_presets.dart';
+import 'tactical_theme_tokens.dart';
 import 'theme_presets.dart';
 
 class AppTheme {
@@ -100,8 +102,12 @@ class AppTheme {
     );
 
     final hairline = BorderSide(color: palette.border);
-    final buttonShape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(AppRadii.md),
+    // La forma de botones y chips la decide la skin (esquinas, biseles,
+    // cristal asimétrico, píldora...).
+    final buttonShape = tactical.buttonShape;
+    const buttonPadding = EdgeInsets.symmetric(
+      horizontal: AppSpacing.lg,
+      vertical: AppSpacing.md,
     );
     const buttonText = TextStyle(
       fontWeight: FontWeight.w700,
@@ -197,21 +203,25 @@ class AppTheme {
         style: FilledButton.styleFrom(
           shape: buttonShape,
           textStyle: buttonText,
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg,
-            vertical: AppSpacing.md,
-          ),
+          padding: buttonPadding,
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          shape: buttonShape,
+          textStyle: buttonText,
+          padding: buttonPadding,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          shape: buttonShape,
+          shape: tactical.buttonShape,
           textStyle: buttonText,
-          side: BorderSide(color: tactical.metalBorder),
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg,
-            vertical: AppSpacing.md,
+          side: BorderSide(
+            color: tactical.metalBorder,
+            width: tactical.borderWidth,
           ),
+          padding: buttonPadding,
         ),
       ),
       textButtonTheme: TextButtonThemeData(
@@ -221,10 +231,8 @@ class AppTheme {
         backgroundColor: palette.surfaceElevated.withValues(alpha: 0.55),
         selectedColor: accentColor.withValues(alpha: 0.22),
         checkmarkColor: accentColor,
-        side: BorderSide(color: palette.border),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadii.sm),
-        ),
+        side: BorderSide(color: palette.border, width: tactical.borderWidth),
+        shape: tactical.buttonShape,
         labelStyle: TextStyle(
           color: palette.textPrimary,
           fontWeight: FontWeight.w600,
@@ -279,10 +287,11 @@ class AppTheme {
       ),
       dividerColor: palette.border,
       extensions: [AppThemeColors.fromPalette(palette), tactical],
-      textTheme: _typography(base.textTheme, fontPreset).apply(
-        bodyColor: palette.textPrimary,
-        displayColor: palette.textPrimary,
-      ),
+      textTheme: _typography(base.textTheme, fontPreset, tactical.headerFont)
+          .apply(
+            bodyColor: palette.textPrimary,
+            displayColor: palette.textPrimary,
+          ),
     );
   }
 
@@ -293,22 +302,34 @@ class AppTheme {
   ///
   /// Los títulos llevan un poco de tracking: la serif gana aire y se lee
   /// como grabado en piedra, que es la intención del look pergamino.
-  static TextTheme _typography(TextTheme base, FontPreset preset) {
+  static TextTheme _typography(
+    TextTheme base,
+    FontPreset preset,
+    HeaderFontStyle header,
+  ) {
     final withBody = base.apply(fontFamily: preset.bodyFamily);
 
-    TextStyle? display(TextStyle? style, {double tracking = 0.4}) => style
-        ?.copyWith(fontFamily: preset.displayFamily, letterSpacing: tracking);
+    // La familia de cabeceras de la skin solo manda con el preset "Diario"
+    // (display = Cinzel); "Mesa" y "Consola" son elección explícita del
+    // jugador y se respetan. Tracking y peso valen siempre.
+    final skinOwnsHeaders = preset.displayFamily == AppFonts.cinzel;
+
+    TextStyle? display(TextStyle? style, {double extra = 0}) => style?.copyWith(
+      fontFamily: skinOwnsHeaders ? header.family : preset.displayFamily,
+      letterSpacing: header.letterSpacing + extra,
+      fontWeight: header.weight,
+    );
 
     return withBody.copyWith(
-      displayLarge: display(withBody.displayLarge),
-      displayMedium: display(withBody.displayMedium),
-      displaySmall: display(withBody.displaySmall),
-      headlineLarge: display(withBody.headlineLarge),
-      headlineMedium: display(withBody.headlineMedium),
-      headlineSmall: display(withBody.headlineSmall),
-      titleLarge: display(withBody.titleLarge, tracking: 0.3),
-      titleMedium: display(withBody.titleMedium, tracking: 0.3),
-      titleSmall: display(withBody.titleSmall, tracking: 0.3),
+      displayLarge: display(withBody.displayLarge, extra: 0.1),
+      displayMedium: display(withBody.displayMedium, extra: 0.1),
+      displaySmall: display(withBody.displaySmall, extra: 0.1),
+      headlineLarge: display(withBody.headlineLarge, extra: 0.1),
+      headlineMedium: display(withBody.headlineMedium, extra: 0.1),
+      headlineSmall: display(withBody.headlineSmall, extra: 0.1),
+      titleLarge: display(withBody.titleLarge),
+      titleMedium: display(withBody.titleMedium),
+      titleSmall: display(withBody.titleSmall),
     );
   }
 }

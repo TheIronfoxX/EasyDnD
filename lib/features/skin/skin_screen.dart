@@ -10,10 +10,13 @@
 // modos y con cualquier acento.
 
 import 'package:flutter/material.dart';
+import '../../core/ui/tactical_card.dart';
+import '../../core/theme/tactical_theme_tokens.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/theme/accent_presets.dart';
 import '../../core/theme/app_fonts.dart';
+import '../../core/ui/tactical_background.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../core/theme/font_presets.dart';
 import '../../state/skin_controller.dart';
@@ -42,100 +45,102 @@ class SkinScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('Apariencia')),
       // Scroll no perezoso: son pocas secciones y así todas existen en el
       // árbol aunque queden bajo el pliegue.
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const _SectionTitle('Tema'),
-            const SizedBox(height: AppSpacing.sm),
-            const ThemeSwatchPicker(),
-            const SizedBox(height: AppSpacing.xl),
-            const _SectionTitle('Modo'),
-            const SizedBox(height: AppSpacing.sm),
-            SegmentedButton<bool>(
-              segments: const [
-                ButtonSegment(
-                  value: true,
-                  icon: Icon(Icons.dark_mode_rounded),
-                  label: Text('Oscuro'),
-                ),
-                ButtonSegment(
-                  value: false,
-                  icon: Icon(Icons.light_mode_rounded),
-                  label: Text('Claro'),
-                ),
-              ],
-              selected: {skin.isDarkMode},
-              onSelectionChanged: (selection) =>
-                  skin.setDarkMode(selection.first),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            const _SectionTitle('Color de acento'),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'El color se usa en botones, iconos y la barra inferior. '
-              'Cada tema trae su acento de firma; acá podés pisarlo con un '
-              'preset o con cualquier color.',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.sm,
-              children: [
-                for (final preset in AccentPresets.all)
-                  _AccentSwatch(
-                    preset: preset,
-                    selected: preset == selectedPreset,
-                    onTap: () => skin.setAccentColor(preset.color),
+      body: TacticalScaffoldBackground(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const _SectionTitle('Modo'),
+              const SizedBox(height: AppSpacing.sm),
+              SegmentedButton<bool>(
+                segments: const [
+                  ButtonSegment(
+                    value: true,
+                    icon: Icon(Icons.dark_mode_rounded),
+                    label: Text('Oscuro'),
                   ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: OutlinedButton.icon(
-                onPressed: () => _pickCustomColor(context),
-                icon: const Icon(Icons.palette_outlined),
-                label: Text(
-                  selectedPreset == null
-                      ? 'Cambiar color personalizado'
-                      : 'Elegir color personalizado',
+                  ButtonSegment(
+                    value: false,
+                    icon: Icon(Icons.light_mode_rounded),
+                    label: Text('Claro'),
+                  ),
+                ],
+                selected: {skin.isDarkMode},
+                onSelectionChanged: (selection) =>
+                    skin.setDarkMode(selection.first),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              const _SectionTitle('Color de acento'),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'El color se usa en botones, iconos y la barra inferior. '
+                'Cada tema trae su acento de firma; acá podés pisarlo con un '
+                'preset o con cualquier color.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            const _SectionTitle('Tipografía'),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'Elegí la familia del texto. "Diario" usa Cinzel en los títulos '
-              'e Inter en el cuerpo; "Consola" es JetBrains Mono.',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+              const SizedBox(height: AppSpacing.md),
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [
+                  for (final preset in AccentPresets.all)
+                    _AccentSwatch(
+                      preset: preset,
+                      selected: preset == selectedPreset,
+                      onTap: () => skin.setAccentColor(preset.color),
+                    ),
+                ],
               ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.sm,
-              children: [
-                for (final preset in FontPresets.all)
-                  ChoiceChip(
-                    label: Text(preset.label),
-                    tooltip: preset.description,
-                    selected: skin.fontPreset.id == preset.id,
-                    onSelected: (_) => skin.setFontPreset(preset),
+              const SizedBox(height: AppSpacing.md),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: OutlinedButton.icon(
+                  onPressed: () => _pickCustomColor(context),
+                  icon: const Icon(Icons.palette_outlined),
+                  label: Text(
+                    selectedPreset == null
+                        ? 'Cambiar color personalizado'
+                        : 'Elegir color personalizado',
                   ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.md),
-            const _TypographySample(),
-            const SizedBox(height: AppSpacing.xl),
-            _ThemePreview(accent: skin.accentColor),
-          ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              const _SectionTitle('Tipografía'),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Elegí la familia del texto. "Diario" usa Cinzel en los títulos '
+                'e Inter en el cuerpo; "Consola" es JetBrains Mono.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [
+                  for (final preset in FontPresets.all)
+                    ChoiceChip(
+                      label: Text(preset.label),
+                      tooltip: preset.description,
+                      selected: skin.fontPreset.id == preset.id,
+                      onSelected: (_) => skin.setFontPreset(preset),
+                    ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              const _TypographySample(),
+              const SizedBox(height: AppSpacing.xl),
+              const _SectionTitle('Tema'),
+              const SizedBox(height: AppSpacing.sm),
+              const ThemeSwatchPicker(),
+              const SizedBox(height: AppSpacing.xl),
+              _ThemePreview(accent: skin.accentColor),
+            ],
+          ),
         ),
       ),
     );
@@ -226,12 +231,11 @@ class _TypographySample extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withValues(
           alpha: 0.35,
         ),
-        borderRadius: BorderRadius.circular(AppRadii.md),
-        border: Border.all(color: theme.colorScheme.outline),
+        shape: context.tactical.insetBorder(theme.colorScheme.outline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -279,7 +283,7 @@ class _ThemePreview extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
+    return TacticalCard(padding: EdgeInsets.zero, 
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
