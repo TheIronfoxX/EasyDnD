@@ -30,7 +30,7 @@ import '../../core/dice.dart';
 import '../../core/resolution.dart';
 import '../../core/theme/app_fonts.dart';
 import '../../core/theme/design_tokens.dart';
-import '../../core/theme/tactical_palette.dart';
+import '../../core/theme/tactical_theme_tokens.dart';
 import '../../core/theme/telemetry.dart';
 import '../../core/ui/stat_dial.dart';
 
@@ -647,8 +647,8 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
             text: !_hasChargesLeft
                 ? 'Sin usos disponibles: recuperalos con un descanso.'
                 : !_hasResourceLeft
-                    ? 'No te alcanzan los puntos de ${_action.resourceName}.'
-                    : 'No te quedan ranuras de este nivel.',
+                ? 'No te alcanzan los puntos de ${_action.resourceName}.'
+                : 'No te quedan ranuras de este nivel.',
             error: true,
           ),
         ],
@@ -1152,10 +1152,11 @@ class _SheetHeader extends StatelessWidget {
             Container(
               width: 44,
               height: 44,
-              decoration: BoxDecoration(
+              decoration: ShapeDecoration(
                 color: tone.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(AppRadii.md),
-                border: Border.all(color: tone.withValues(alpha: 0.55)),
+                shape: context.tactical.insetBorder(
+                  tone.withValues(alpha: 0.55),
+                ),
               ),
               child: Icon(action.icon, size: 22, color: tone),
             ),
@@ -1263,12 +1264,17 @@ class _DiePainter extends CustomPainter {
       r,
       Paint()
         ..shader = RadialGradient(
-          colors: [color.withValues(alpha: glow), color.withValues(alpha: 0)],
+          colors: [
+            color.withValues(alpha: glow),
+            color.withValues(alpha: 0),
+          ],
         ).createShader(Rect.fromCircle(center: center, radius: r)),
     );
 
     // Contorno del d20: hexágono con un vértice arriba.
-    final vertices = [for (var i = 0; i < 6; i++) at(-pi / 2 + i * pi / 3, r * 0.78)];
+    final vertices = [
+      for (var i = 0; i < 6; i++) at(-pi / 2 + i * pi / 3, r * 0.78),
+    ];
     final hex = Path()..addPolygon(vertices, true);
     canvas.drawPath(
       hex,
@@ -1288,7 +1294,9 @@ class _DiePainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1
       ..color = color.withValues(alpha: 0.22);
-    final inner = [for (var i = 0; i < 6; i++) at(-pi / 2 + i * pi / 3, r * 0.52)];
+    final inner = [
+      for (var i = 0; i < 6; i++) at(-pi / 2 + i * pi / 3, r * 0.52),
+    ];
     canvas.drawPath(Path()..addPolygon(inner, true), facet);
     for (var i = 0; i < 6; i++) {
       canvas.drawLine(vertices[i], inner[i], facet);
@@ -1340,14 +1348,16 @@ class _ResultPanel extends StatelessWidget {
           horizontal: AppSpacing.lg,
           vertical: AppSpacing.lg,
         ),
-        decoration: BoxDecoration(
+        decoration: ShapeDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [tone.withValues(alpha: 0.16), tone.withValues(alpha: 0.05)],
+            colors: [
+              tone.withValues(alpha: 0.16),
+              tone.withValues(alpha: 0.05),
+            ],
           ),
-          borderRadius: BorderRadius.circular(AppRadii.lg),
-          border: Border.all(color: tone.withValues(alpha: 0.5)),
+          shape: context.tactical.cardBorder(tone.withValues(alpha: 0.5)),
         ),
         child: Row(
           children: [
@@ -1394,10 +1404,9 @@ class _Banner extends StatelessWidget {
         horizontal: AppSpacing.md,
         vertical: 10,
       ),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.35)),
+        shape: context.tactical.insetBorder(color.withValues(alpha: 0.35)),
       ),
       child: Row(
         children: [
@@ -1434,11 +1443,10 @@ class _FixedSlotIndicator extends StatelessWidget {
         horizontal: AppSpacing.md,
         vertical: 10,
       ),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: context.tactical.spell.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: context.tactical.spell.withValues(alpha: 0.35),
+        shape: context.tactical.insetBorder(
+          context.tactical.spell.withValues(alpha: 0.35),
         ),
       ),
       child: Row(
@@ -1494,7 +1502,7 @@ class _Verdict extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
@@ -1503,8 +1511,10 @@ class _Verdict extends StatelessWidget {
             color.withValues(alpha: 0.06),
           ],
         ),
-        borderRadius: BorderRadius.circular(AppRadii.md),
-        border: Border.all(color: color.withValues(alpha: 0.6), width: 1.4),
+        shape: context.tactical.insetBorder(
+          color.withValues(alpha: 0.6),
+          width: 1.4,
+        ),
       ),
       child: Column(
         children: [

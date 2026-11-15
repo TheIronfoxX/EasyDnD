@@ -17,7 +17,7 @@ import '../../domain/models/stats.dart';
 import '../../state/character_store.dart';
 import 'hud_widgets.dart';
 import '../../core/theme/design_tokens.dart';
-import '../../core/theme/tactical_palette.dart';
+import '../../core/theme/tactical_theme_tokens.dart';
 import '../../core/theme/telemetry.dart';
 
 class HudSheetTab extends StatelessWidget {
@@ -109,11 +109,10 @@ class _ScoreTile extends StatelessWidget {
         horizontal: AppSpacing.md,
         vertical: 10,
       ),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: scheme.surfaceContainerHighest.withValues(alpha: 0.40),
-        borderRadius: BorderRadius.circular(AppRadii.md),
-        border: Border.all(
-          color: context.tactical.metalBorder.withValues(alpha: 0.75),
+        shape: context.tactical.insetBorder(
+          context.tactical.metalBorder.withValues(alpha: 0.75),
         ),
       ),
       child: Row(
@@ -146,10 +145,11 @@ class _ScoreTile extends StatelessWidget {
             constraints: const BoxConstraints(minWidth: 44),
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             alignment: Alignment.center,
-            decoration: BoxDecoration(
+            decoration: ShapeDecoration(
               color: scheme.primary.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(AppRadii.sm),
-              border: Border.all(color: scheme.primary.withValues(alpha: 0.45)),
+              shape: context.tactical.insetBorder(
+                scheme.primary.withValues(alpha: 0.45),
+              ),
             ),
             child: Text(
               score.modFormatted,
@@ -213,15 +213,20 @@ class _SkillTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final statLabel = kStatLabels[skill.relatedStat] ??
+    final statLabel =
+        kStatLabels[skill.relatedStat] ??
         (skill.relatedStat.isEmpty ? '—' : skill.relatedStat);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 8),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 8,
+      ),
+      decoration: ShapeDecoration(
         color: scheme.surfaceContainerHighest.withValues(alpha: 0.28),
-        borderRadius: BorderRadius.circular(AppRadii.sm),
-        border: Border.all(color: scheme.outline.withValues(alpha: 0.6)),
+        shape: context.tactical.insetBorder(
+          scheme.outline.withValues(alpha: 0.6),
+        ),
       ),
       child: Row(
         children: [
@@ -324,7 +329,8 @@ class _LoreSection extends StatelessWidget {
                       if (store == null) return;
                       AvatarPickerHelper.showAvatarOptions(
                         context,
-                        currentPath: character.loreAvatarPath ?? character.avatarPath,
+                        currentPath:
+                            character.loreAvatarPath ?? character.avatarPath,
                         onSelected: store.setLoreAvatarPath,
                       );
                     },

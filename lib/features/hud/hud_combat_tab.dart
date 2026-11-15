@@ -20,7 +20,7 @@ import 'hud_actions_section.dart';
 import 'hud_dialogs.dart';
 import 'hud_widgets.dart';
 import '../../core/theme/design_tokens.dart';
-import '../../core/theme/tactical_palette.dart';
+import '../../core/theme/tactical_theme_tokens.dart';
 import '../../core/theme/telemetry.dart';
 
 class HudCombatTab extends StatelessWidget {
@@ -679,7 +679,9 @@ class _SlotsSection extends StatelessWidget {
                     duration: AppDurations.fast,
                     child: Text(
                       '${slot.current}/${slot.max}',
-                      key: ValueKey('${slot.level}:${slot.current}/${slot.max}'),
+                      key: ValueKey(
+                        '${slot.level}:${slot.current}/${slot.max}',
+                      ),
                       style: theme.textTheme.bodyMedium
                           ?.copyWith(fontWeight: FontWeight.w700)
                           .tabular,
@@ -689,8 +691,7 @@ class _SlotsSection extends StatelessWidget {
                   TacticalStepper(
                     tone: tone,
                     decrementTooltip: 'Gastar ranura de nivel ${slot.level}',
-                    incrementTooltip:
-                        'Recuperar ranura de nivel ${slot.level}',
+                    incrementTooltip: 'Recuperar ranura de nivel ${slot.level}',
                     onDecrement: slot.current <= 0
                         ? null
                         : () => store.consumeSpellSlot(slot.level),

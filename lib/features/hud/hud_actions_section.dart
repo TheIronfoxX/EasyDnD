@@ -29,7 +29,7 @@ import '../../state/character_store.dart';
 import 'hud_resolution_sheet.dart';
 import 'hud_widgets.dart';
 import '../../core/theme/design_tokens.dart';
-import '../../core/theme/tactical_palette.dart';
+import '../../core/theme/tactical_theme_tokens.dart';
 import '../../core/theme/telemetry.dart';
 
 class HudActionsSection extends StatelessWidget {
@@ -135,7 +135,8 @@ class HudActionsSection extends StatelessWidget {
     final cantrips = abilities.where((a) => a.isCantrip).toList();
     final leveledSpells = abilities.where((a) => a.isLeveledSpell).toList();
     final traits = abilities.where((a) => a.isTrait).toList();
-    final spellLevels = leveledSpells.map((a) => a.baseLevel).toSet().toList()..sort();
+    final spellLevels = leveledSpells.map((a) => a.baseLevel).toSet().toList()
+      ..sort();
 
     final showHeaders = cantrips.isNotEmpty || spellLevels.isNotEmpty;
 
@@ -179,7 +180,9 @@ class HudActionsSection extends StatelessWidget {
               count: leveledSpells.where((a) => a.baseLevel == lvl).length,
               tone: context.tactical.spell,
             ),
-            for (final ability in leveledSpells.where((a) => a.baseLevel == lvl))
+            for (final ability in leveledSpells.where(
+              (a) => a.baseLevel == lvl,
+            ))
               buildTile(ability),
           ],
           if (traits.isNotEmpty)
@@ -193,11 +196,10 @@ class HudActionsSection extends StatelessWidget {
                 AppSpacing.xs,
                 AppSpacing.xs,
               ),
-              decoration: BoxDecoration(
+              decoration: ShapeDecoration(
                 color: context.tactical.ability.withValues(alpha: 0.07),
-                borderRadius: BorderRadius.circular(AppRadii.md),
-                border: Border.all(
-                  color: context.tactical.ability.withValues(alpha: 0.38),
+                shape: context.tactical.insetBorder(
+                  context.tactical.ability.withValues(alpha: 0.38),
                 ),
               ),
               // Material propio: las filas pintan su tinta acá y no quedan
@@ -350,11 +352,10 @@ class _ActionTile extends StatelessWidget {
         duration: AppDurations.normal,
         width: 38,
         height: 38,
-        decoration: BoxDecoration(
+        decoration: ShapeDecoration(
           color: color.withValues(alpha: noCharges ? 0.08 : 0.15),
-          borderRadius: BorderRadius.circular(AppRadii.sm + 2),
-          border: Border.all(
-            color: color.withValues(alpha: noCharges ? 0.30 : 0.50),
+          shape: context.tactical.insetBorder(
+            color.withValues(alpha: noCharges ? 0.30 : 0.50),
           ),
         ),
         child: Icon(action.icon, size: 18, color: color),

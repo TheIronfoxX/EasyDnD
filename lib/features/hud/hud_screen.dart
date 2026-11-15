@@ -26,8 +26,9 @@ import 'hud_inventory_tab.dart';
 import 'hud_sheet_tab.dart';
 import 'hud_widgets.dart';
 import 'welcome_screen.dart';
+import '../../core/ui/tactical_background.dart';
 import '../../core/theme/design_tokens.dart';
-import '../../core/theme/tactical_palette.dart';
+import '../../core/theme/tactical_theme_tokens.dart';
 import '../../core/theme/telemetry.dart';
 
 /// Acciones del menú de mantenimiento de la AppBar.
@@ -141,7 +142,7 @@ class _HudScreenState extends State<HudScreen> {
     return Scaffold(
       appBar: AppBar(
         leadingWidth: 60,
-        // El degradé sale del tema activo (TacticalPalette), no de un
+        // El degradé sale del tema activo (TacticalThemeTokens), no de un
         // color fijo: cada tema del catálogo trae su propia cabecera.
         flexibleSpace: AnimatedContainer(
           duration: AppDurations.normal,
@@ -247,23 +248,25 @@ class _HudScreenState extends State<HudScreen> {
           ),
         ],
       ),
-      body: IndexedStack(
-        index: _tabIndex,
-        children: [
-          // Cada tab entra con un fundido corto al seleccionarse; los tres
-          // siguen montados (IndexedStack) para conservar el scroll.
-          for (final (index, tab) in [
-            HudCombatTab(character: character),
-            HudSheetTab(character: character),
-            HudInventoryTab(character: character),
-          ].indexed)
-            AnimatedOpacity(
-              duration: AppDurations.normal,
-              curve: Curves.easeOut,
-              opacity: index == _tabIndex ? 1 : 0,
-              child: tab,
-            ),
-        ],
+      body: TacticalScaffoldBackground(
+        child: IndexedStack(
+          index: _tabIndex,
+          children: [
+            // Cada tab entra con un fundido corto al seleccionarse; los tres
+            // siguen montados (IndexedStack) para conservar el scroll.
+            for (final (index, tab) in [
+              HudCombatTab(character: character),
+              HudSheetTab(character: character),
+              HudInventoryTab(character: character),
+            ].indexed)
+              AnimatedOpacity(
+                duration: AppDurations.normal,
+                curve: Curves.easeOut,
+                opacity: index == _tabIndex ? 1 : 0,
+                child: tab,
+              ),
+          ],
+        ),
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tabIndex,

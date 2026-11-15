@@ -19,7 +19,7 @@ import '../../state/character_store.dart';
 import 'hud_dialogs.dart';
 import 'hud_widgets.dart';
 import '../../core/theme/design_tokens.dart';
-import '../../core/theme/tactical_palette.dart';
+import '../../core/theme/tactical_theme_tokens.dart';
 import '../../core/theme/telemetry.dart';
 
 class HudInventoryTab extends StatelessWidget {
