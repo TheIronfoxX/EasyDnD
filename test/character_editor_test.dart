@@ -528,6 +528,7 @@ void main() {
       await goTab(tester, 'Arsenal');
 
       await tapKey(tester, 'add-trait');
+      await tapKey(tester, 'ability-homebrew');
       expect(find.text('Nueva habilidad'), findsOneWidget);
       await tester.enterText(find.widgetWithText(TextFormField, 'Nombre'), 'Bola de Fuego');
       await tester.pump();
@@ -566,6 +567,70 @@ void main() {
       expect(bola.magicCharges.hasCharges, isTrue);
       expect(bola.magicCharges.max, 3);
       expect(bola.magicCharges.current, 3);
+    });
+
+    testWidgets('+ Habilidad SRD crea el recurso y lo vincula', (tester) async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await openEditor(tester, store);
+      await goTab(tester, 'Arsenal');
+
+      await tapKey(tester, 'add-trait');
+      await tapKey(tester, 'ability-template-srd_guerrero_tomar_aliento');
+      expect(find.text('Nueva habilidad'), findsOneWidget);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Guardar cambios'));
+      await tester.pumpAndSettle();
+      if (find.text('Guardar igual').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Guardar igual'));
+        await tester.pumpAndSettle();
+      }
+
+      final character = store.activeCharacter!;
+      final aliento = character.abilitiesByAction.bonusAction
+          .firstWhere((a) => a.name == 'Tomar aliento');
+      expect(aliento.resourceName, 'Tomar aliento');
+      expect(aliento.healDice, '1d10+${character.basicInfo.level}');
+      final resource =
+          character.resources.firstWhere((r) => r.name == 'Tomar aliento');
+      expect(resource.recovery, 'short_rest');
+      expect(resource.current, resource.max);
+    });
+
+    testWidgets('editar curación, recurso y coste de una habilidad', (tester) async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await openEditor(tester, store);
+      await goTab(tester, 'Arsenal');
+
+      await tester.tap(find.text('Golpe Devastador'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+          find.widgetWithText(TextFormField, 'Dados de curación'), '1d10+3');
+      await tester.pump();
+
+      await tapKey(tester, 'ability-resource');
+      await tester.tap(find.text('Furia').last);
+      await tester.pumpAndSettle();
+      await tapKey(tester, 'ability-resource-cost-inc');
+      await tapKey(tester, 'ability-resource-cost-inc');
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Guardar cambios'));
+      await tester.pumpAndSettle();
+      if (find.text('Guardar igual').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Guardar igual'));
+        await tester.pumpAndSettle();
+      }
+
+      final ability = store.activeCharacter!.abilitiesByAction.action
+          .firstWhere((a) => a.name == 'Golpe Devastador');
+      expect(ability.healDice, '1d10+3');
+      expect(ability.resourceName, 'Furia');
+      expect(ability.resourceCost, 3);
     });
 
     testWidgets('borrar la única habilidad avisa al guardar (2 avisos)',

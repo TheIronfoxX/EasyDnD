@@ -14,6 +14,7 @@
 import 'package:flutter/material.dart';
 
 import '../../domain/models/ability.dart';
+import '../../domain/models/character.dart' show ResourcePoint;
 import 'editor_fields.dart';
 import '../../core/theme/design_tokens.dart';
 
@@ -52,7 +53,11 @@ class EditorAbilityPage extends StatefulWidget {
     required this.ability,
     required this.category,
     required this.isNew,
+    this.resources = const [],
   });
+
+  /// Recursos del borrador (Ki, Furia...) a los que se puede vincular.
+  final List<ResourcePoint> resources;
 
   /// Las cuatro listas del borrador: cambiar de categoría acá
   /// re-ubica la habilidad al toque.
@@ -172,6 +177,50 @@ class _EditorAbilityPageState extends State<EditorAbilityPage> {
           onChanged: (value) =>
               ability.damageDice = value.trim().isEmpty ? null : value.trim(),
         ),
+        if (_category != 'passive') ...[
+          EditorDiceField(
+            label: 'Dados de curación',
+            initialValue: ability.healDice ?? '',
+            hint: 'Ej.: 1d10+3 (vacío = no cura)',
+            onChanged: (value) =>
+                ability.healDice = value.trim().isEmpty ? null : value.trim(),
+          ),
+          DropdownButtonFormField<String?>(
+            key: const ValueKey('ability-resource'),
+            initialValue: ability.resourceName,
+            items: [
+              const DropdownMenuItem<String?>(
+                value: null,
+                child: Text('Ninguno'),
+              ),
+              for (final r in widget.resources)
+                DropdownMenuItem<String?>(value: r.name, child: Text(r.name)),
+              // Vínculo a un recurso que ya no existe: se muestra crudo
+              // para no romper el dropdown ni pisar el dato en silencio.
+              if (ability.resourceName != null &&
+                  !widget.resources.any((r) => r.name == ability.resourceName))
+                DropdownMenuItem<String?>(
+                  value: ability.resourceName,
+                  child: Text('${ability.resourceName} (no existe)'),
+                ),
+            ],
+            decoration: const InputDecoration(
+              labelText: 'Recurso que gasta',
+              border: OutlineInputBorder(),
+            ),
+            onChanged: (value) => setState(() => ability.resourceName = value),
+          ),
+          if (ability.resourceName != null)
+            EditorStepperField(
+              id: 'ability-resource-cost',
+              label: 'Coste por uso',
+              value: ability.resourceCost,
+              min: 1,
+              max: 10,
+              onChanged: (v) =>
+                  setState(() => ability.resourceCost = (v ?? 1).clamp(1, 10)),
+            ),
+        ],
         if (_category == 'passive')
           DropdownButtonFormField<String>(
             key: const ValueKey('ability-tactical-role'),

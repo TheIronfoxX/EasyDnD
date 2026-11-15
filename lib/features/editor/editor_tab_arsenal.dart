@@ -14,6 +14,7 @@ import '../../domain/models/character.dart';
 import '../../domain/models/weapon.dart';
 import '../../core/theme/design_tokens.dart';
 import 'editor_ability_page.dart';
+import 'editor_ability_templates.dart';
 import 'editor_fields.dart';
 import 'editor_srd_pickers.dart';
 import 'editor_weapon_page.dart';
@@ -127,7 +128,33 @@ class _EditorTabArsenalState extends State<EditorTabArsenal> {
 
   // ------------------------------ rasgos -------------------------------
 
-  void _addTrait() {
+  /// "+ Habilidad": plantilla SRD (con su recurso vinculado) o casera.
+  Future<void> _addTrait() async {
+    final pick = await showAbilityTemplatePicker(context);
+    if (pick == null || !mounted) return;
+    final template = pick.template;
+    if (template == null) {
+      _addHomebrewTrait();
+      return;
+    }
+
+    final draft = widget.draft;
+    final level = draft.basicInfo.level;
+    final ability = template.build(
+      level: level,
+      mods: {
+        for (final key in const ['str', 'dex', 'con', 'int', 'wis', 'cha'])
+          key: draft.stats.modFor(key),
+      },
+      proficiency: DndRules.proficiencyBonusFor(level),
+      resources: draft.resources,
+    );
+    draft.abilitiesByAction.listFor(template.category).add(ability);
+    _touch();
+    _openAbility(ability, isNew: true);
+  }
+
+  void _addHomebrewTrait() {
     final ability = Ability(
       id: 'ability_${DateTime.now().microsecondsSinceEpoch}',
       name: 'Habilidad sin nombre',
@@ -147,6 +174,7 @@ class _EditorTabArsenalState extends State<EditorTabArsenal> {
         builder: (_) => EditorAbilityPage(
           abilities: abilities,
           ability: ability,
+          resources: widget.draft.resources,
           category: categoryOf(abilities, ability),
           isNew: isNew,
         ),
@@ -201,7 +229,7 @@ class _EditorTabArsenalState extends State<EditorTabArsenal> {
             key: const Key('add-trait'),
             onPressed: _addTrait,
             icon: const Icon(Icons.add_rounded),
-            label: const Text('Agregar habilidad'),
+            label: const Text('+ Habilidad'),
           ),
         ),
         Wrap(
