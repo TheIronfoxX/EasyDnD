@@ -39,7 +39,7 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsNothing);
     expect(find.text('EasyDnD'), findsOneWidget);
     expect(find.text('Importar ficha con IA'), findsOneWidget);
-    expect(find.text('Crear ficha a mano'), findsOneWidget);
+    expect(find.text('Ficha en blanco (editor manual)'), findsOneWidget);
   });
 
   testWidgets('el modo y el acento guardados se aplican al arrancar', (

@@ -16,6 +16,7 @@ import 'package:provider/provider.dart';
 
 import '../../domain/models/character.dart';
 import '../../state/character_store.dart';
+import '../creation/character_creation_wizard_screen.dart';
 import '../editor/character_editor_screen.dart';
 import '../import/import_wizard_screen.dart';
 import '../skin/skin_screen.dart';
@@ -32,6 +33,7 @@ enum _HudMenuAction {
   edit,
   correctWithAi,
   importNew,
+  createGuided,
   createNew,
   appearance,
   delete,
@@ -76,6 +78,12 @@ class _HudScreenState extends State<HudScreen> {
         );
       case _HudMenuAction.importNew:
         await _openWizard();
+      case _HudMenuAction.createGuided:
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => const CharacterCreationWizardScreen(),
+          ),
+        );
       case _HudMenuAction.createNew:
         await Navigator.of(context).push(
           MaterialPageRoute<void>(
@@ -215,10 +223,17 @@ class _HudScreenState extends State<HudScreen> {
                 ),
               ),
               PopupMenuItem(
-                value: _HudMenuAction.createNew,
+                value: _HudMenuAction.createGuided,
                 child: _MenuRow(
                   icon: Icons.person_add_rounded,
-                  label: 'Crear ficha a mano',
+                  label: 'Crear personaje guiado',
+                ),
+              ),
+              PopupMenuItem(
+                value: _HudMenuAction.createNew,
+                child: _MenuRow(
+                  icon: Icons.edit_note_rounded,
+                  label: 'Ficha en blanco (editor manual)',
                 ),
               ),
               PopupMenuDivider(),

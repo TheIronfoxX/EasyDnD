@@ -11,12 +11,21 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/design_tokens.dart';
+import '../creation/character_creation_wizard_screen.dart';
 import '../editor/character_editor_screen.dart';
 import '../import/import_wizard_screen.dart';
 import '../skin/skin_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
+
+  void _openCreation(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const CharacterCreationWizardScreen(),
+      ),
+    );
+  }
 
   void _openImport(BuildContext context) {
     Navigator.of(
@@ -103,6 +112,15 @@ class WelcomeScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: AppSpacing.xxl),
                         FilledButton.icon(
+                          onPressed: () => _openCreation(context),
+                          icon: const Icon(Icons.person_add_rounded),
+                          label: const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 14),
+                            child: Text('Crear personaje guiado'),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        FilledButton.tonalIcon(
                           onPressed: () => _openImport(context),
                           icon: const Icon(Icons.auto_awesome_rounded),
                           label: const Padding(
@@ -110,14 +128,11 @@ class WelcomeScreen extends StatelessWidget {
                             child: Text('Importar ficha con IA'),
                           ),
                         ),
-                        const SizedBox(height: AppSpacing.md),
-                        FilledButton.tonalIcon(
+                        const SizedBox(height: AppSpacing.sm),
+                        TextButton.icon(
                           onPressed: () => _openEditor(context),
-                          icon: const Icon(Icons.person_add_rounded),
-                          label: const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 14),
-                            child: Text('Crear ficha a mano'),
-                          ),
+                          icon: const Icon(Icons.edit_note_rounded),
+                          label: const Text('Ficha en blanco (editor manual)'),
                         ),
                         const SizedBox(height: AppSpacing.xl),
                         Text(

@@ -44,7 +44,7 @@ void main() {
       expect(find.text('EasyDnD'), findsOneWidget);
       expect(find.textContaining('funciona sin conexión'), findsOneWidget);
 
-      await tester.tap(find.text('Crear ficha a mano'));
+      await tester.tap(find.text('Ficha en blanco (editor manual)'));
       await tester.pumpAndSettle();
       expect(find.text('Nueva ficha'), findsOneWidget);
 
@@ -57,7 +57,7 @@ void main() {
 
       await tester.pageBack();
       await tester.pumpAndSettle();
-      expect(find.text('Crear ficha a mano'), findsOneWidget);
+      expect(find.text('Ficha en blanco (editor manual)'), findsOneWidget);
     });
   });
 
@@ -141,7 +141,7 @@ void main() {
 
       await tester.tap(find.byTooltip('Más opciones'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Crear ficha a mano'));
+      await tester.tap(find.text('Ficha en blanco (editor manual)'));
       await tester.pumpAndSettle();
       expect(find.text('Nueva ficha'), findsOneWidget);
     });

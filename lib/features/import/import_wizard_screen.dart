@@ -182,7 +182,7 @@ class _ImportWizardScreenState extends State<ImportWizardScreen> {
       ),
       body: Column(
         children: [
-          _StepIndicator(current: _step, labels: _stepLabels),
+          WizardStepIndicator(current: _step, labels: _stepLabels),
           const Divider(height: 1),
           Expanded(
             // El Paso 1 se mantiene montado (Offstage) aunque se avance:
@@ -321,8 +321,8 @@ class _BottomBar extends StatelessWidget {
 /// Indicador de pasos: tres puntos numerados unidos por líneas que se
 /// van "encendiendo". Rehecho en M3 con colorScheme (Etapa 6 lo reskinnea
 /// cambiando tokens, sin tocar este layout).
-class _StepIndicator extends StatelessWidget {
-  const _StepIndicator({required this.current, required this.labels});
+class WizardStepIndicator extends StatelessWidget {
+  const WizardStepIndicator({super.key, required this.current, required this.labels});
 
   final int current;
   final List<String> labels;
