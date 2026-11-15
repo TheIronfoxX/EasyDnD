@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:easydnd/data/roster_repository.dart';
 import 'package:easydnd/domain/character_validator.dart';
+import 'package:easydnd/domain/models/ability.dart';
 import 'package:easydnd/domain/models/character.dart';
 import 'package:easydnd/features/editor/character_editor_screen.dart';
 import 'package:easydnd/state/character_store.dart';
@@ -835,7 +836,10 @@ void main() {
       await tester.pump();
       await tester.enterText(dialogField('Dados de daño'), '3d8');
       await tester.enterText(dialogField('Resumen táctico'), 'Cadena de 3 objetivos');
-      await tester.pump();
+      await tester.tap(find.byKey(const Key('homebrew-category')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Adicional').last);
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Guardar'));
       await tester.pumpAndSettle();
 
@@ -856,6 +860,36 @@ void main() {
       expect(spell.damageDice, '3d8');
       expect(spell.tacticalSummary, 'Cadena de 3 objetivos');
       expect(spell.id, startsWith('spell_'));
+      // Eligió "Adicional" en el alta: vive en esa lista, no en Acción.
+      expect(store.activeCharacter!.abilitiesByAction.bonusAction, contains(spell));
+    });
+
+    testWidgets('un conjuro se reclasifica en 1 toque entre acción, adicional y reacción',
+        (tester) async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      final spell = Ability(
+        id: 'spell_x',
+        name: 'Palabra de curación',
+        type: 'spell',
+        relatedStat: 'wis',
+        successDescription: '',
+        failureDescription: '',
+        baseLevel: 1,
+      );
+      store.activeCharacter!.abilitiesByAction.action.add(spell);
+      await openEditor(tester, store);
+      await goTab(tester, 'Grimorio');
+
+      await tapKey(tester, 'cat-spell_x-bonusAction');
+      await tester.tap(find.text('Guardar cambios'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Guardar igual'));
+      await tester.pumpAndSettle();
+
+      final abilities = store.activeCharacter!.abilitiesByAction;
+      expect(abilities.action.any((a) => a.id == 'spell_x'), isFalse);
+      expect(abilities.bonusAction.single.id, 'spell_x');
     });
 
     testWidgets('+ Conjuro SRD agrega el conjuro del catálogo y se edita en línea',

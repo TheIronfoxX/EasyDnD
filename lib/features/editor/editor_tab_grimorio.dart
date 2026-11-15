@@ -10,7 +10,7 @@ import '../../domain/models/ability.dart';
 import '../../domain/models/character.dart';
 import 'editor_ability_page.dart';
 import 'editor_fields.dart';
-import 'editor_tab_arsenal.dart' show categoryOf;
+import 'editor_tab_arsenal.dart' show categoryOf, kCategoryChipLabels, reclassifyAbility;
 import 'spell_picker_sheet.dart';
 
 /// Recargas de un recurso: clave del shape → etiqueta.
@@ -47,12 +47,12 @@ class _EditorTabGrimorioState extends State<EditorTabGrimorio> {
   }
 
   Future<void> _addHomebrewSpell() async {
-    final ability = await showDialog<Ability>(
+    final result = await showDialog<(Ability, String)>(
       context: context,
       builder: (_) => const _HomebrewSpellDialog(),
     );
-    if (ability == null) return;
-    widget.draft.abilitiesByAction.action.add(ability);
+    if (result == null) return;
+    widget.draft.abilitiesByAction.listFor(result.$2).add(result.$1);
     _touch();
   }
 
@@ -136,6 +136,11 @@ class _EditorTabGrimorioState extends State<EditorTabGrimorio> {
           _SpellCard(
             key: ObjectKey(spell),
             spell: spell,
+            category: categoryOf(draft.abilitiesByAction, spell),
+            onReclassify: (target) {
+              reclassifyAbility(draft.abilitiesByAction, spell, target);
+              _touch();
+            },
             onOpen: () => _openSpell(spell),
             onDelete: () {
               for (final key in ['action', 'bonusAction', 'reaction', 'passive']) {
@@ -215,12 +220,18 @@ class _SpellCard extends StatelessWidget {
   const _SpellCard({
     super.key,
     required this.spell,
+    required this.category,
+    required this.onReclassify,
     required this.onOpen,
     required this.onDelete,
     required this.onChanged,
   });
 
   final Ability spell;
+
+  /// Economía de acciones donde vive hoy ('action', 'bonusAction'...).
+  final String category;
+  final ValueChanged<String> onReclassify;
   final VoidCallback onOpen;
   final VoidCallback onDelete;
   final VoidCallback onChanged;
@@ -257,6 +268,20 @@ class _SpellCard extends StatelessWidget {
                   icon: const Icon(Icons.delete_outline_rounded),
                   onPressed: onDelete,
                 ),
+              ],
+            ),
+            Wrap(
+              spacing: AppSpacing.xs,
+              children: [
+                // Un conjuro no es pasivo: solo las tres categorías activas.
+                for (final e in kCategoryChipLabels.entries)
+                  if (e.key != 'passive')
+                    ChoiceChip(
+                      key: Key('cat-${spell.id}-${e.key}'),
+                      label: Text(e.value),
+                      selected: category == e.key,
+                      onSelected: (_) => onReclassify(e.key),
+                    ),
               ],
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -419,12 +444,13 @@ class _HomebrewSpellDialogState extends State<_HomebrewSpellDialog> {
   int _level = 1;
   String _dice = '';
   String _attackType = 'save';
+  String _category = 'action';
   String _summary = '';
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
     final dice = _dice.trim();
-    Navigator.of(context).pop(
+    Navigator.of(context).pop((
       Ability(
         id: 'spell_${DateTime.now().microsecondsSinceEpoch}',
         name: _name.trim(),
@@ -437,7 +463,8 @@ class _HomebrewSpellDialogState extends State<_HomebrewSpellDialog> {
         damageDice: dice.isEmpty ? null : dice,
         tacticalSummary: _summary.trim().isEmpty ? null : _summary.trim(),
       ),
-    );
+      _category,
+    ));
   }
 
   @override
@@ -486,6 +513,21 @@ class _HomebrewSpellDialogState extends State<_HomebrewSpellDialog> {
                     DropdownMenuItem(value: e.key, child: Text(e.value)),
                 ],
                 onChanged: (v) => _attackType = v ?? _attackType,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              DropdownButtonFormField<String>(
+                key: const Key('homebrew-category'),
+                initialValue: _category,
+                decoration: const InputDecoration(
+                  labelText: 'Se lanza como',
+                  border: OutlineInputBorder(),
+                ),
+                items: [
+                  for (final e in kCategoryChipLabels.entries)
+                    if (e.key != 'passive')
+                      DropdownMenuItem(value: e.key, child: Text(e.value)),
+                ],
+                onChanged: (v) => _category = v ?? _category,
               ),
               const SizedBox(height: AppSpacing.sm),
               EditorTextField(
