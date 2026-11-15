@@ -18,6 +18,8 @@ import 'package:flutter/material.dart';
 import '../../domain/character_validator.dart';
 import '../../core/theme/app_fonts.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/theme/tactical_palette.dart';
+import '../../core/ui/tactical_card.dart';
 
 class WizardStepPaste extends StatefulWidget {
   const WizardStepPaste({
@@ -62,23 +64,77 @@ class _WizardStepPasteState extends State<WizardStepPaste> {
         ),
         const SizedBox(height: AppSpacing.lg),
 
-        TextField(
-          controller: widget.controller,
-          maxLines: 10,
-          minLines: 6,
-          style: theme.textTheme.bodySmall?.copyWith(
-            fontFamily: AppFonts.jetBrainsMono,
-          ),
-          decoration: InputDecoration(
-            labelText: 'JSON de la ficha',
-            hintText: '{ "basic_info": { "name": ... }, ... }',
-            border: const OutlineInputBorder(),
-            errorText: widget.errors.isEmpty
-                ? null
-                // El texto del error visible resume; el detalle va en la
-                // lista de abajo.
-                : 'El JSON no pasó la validación — mirá el detalle:',
-            errorMaxLines: 2,
+        // Área de pegado con marco de "códice": cabecera con el tipo de
+        // contenido y el campo monoespaciado adentro, sin doble borde.
+        TacticalCard(
+          padding: EdgeInsets.zero,
+          tone: widget.errors.isEmpty ? null : context.tactical.damage,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.sm,
+                ),
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  border: Border(
+                    bottom: BorderSide(
+                      color: context.tactical.metalBorder.withValues(
+                        alpha: 0.7,
+                      ),
+                    ),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.data_object_rounded,
+                      size: 16,
+                      color: scheme.primary,
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Text(
+                      'ficha.json',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontFamily: AppFonts.jetBrainsMono,
+                        color: scheme.onSurfaceVariant,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                child: TextField(
+                  controller: widget.controller,
+                  maxLines: 10,
+                  minLines: 6,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontFamily: AppFonts.jetBrainsMono,
+                    height: 1.45,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: 'JSON de la ficha',
+                    hintText: '{ "basic_info": { "name": ... }, ... }',
+                    filled: false,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    errorBorder: InputBorder.none,
+                    focusedErrorBorder: InputBorder.none,
+                    errorText: widget.errors.isEmpty
+                        ? null
+                        // El texto del error visible resume; el detalle va
+                        // en la lista de abajo.
+                        : 'El JSON no pasó la validación — mirá el detalle:',
+                    errorMaxLines: 2,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
 

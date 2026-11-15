@@ -23,6 +23,9 @@ import '../../domain/character_validator.dart';
 import '../../domain/models/character.dart';
 import '../../core/theme/app_fonts.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/theme/tactical_palette.dart';
+import '../../core/theme/telemetry.dart';
+import '../../core/ui/tactical_card.dart';
 
 class WizardStepPreview extends StatelessWidget {
   const WizardStepPreview({
@@ -96,9 +99,10 @@ class _SummaryCard extends StatelessWidget {
       if (basic.characterClass.isNotEmpty) basic.characterClass,
     ].join(' · ');
 
-    return Card(
+    return TacticalCard(
+      tone: theme.colorScheme.primary,
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: EdgeInsets.zero,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -118,7 +122,12 @@ class _SummaryCard extends StatelessWidget {
             ),
             if (subtitle.isNotEmpty) ...[
               const SizedBox(height: 2),
-              Text(subtitle, style: theme.textTheme.bodyMedium),
+              Text(
+                subtitle,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
             ],
             const SizedBox(height: 14),
             Wrap(
@@ -171,15 +180,22 @@ class _Chip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.secondaryContainer,
+        color: Theme.of(
+          context,
+        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(AppRadii.pill),
+        border: Border.all(
+          color: context.tactical.metalBorder.withValues(alpha: 0.7),
+        ),
       ),
       child: Text(
         label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: Theme.of(context).colorScheme.onSecondaryContainer,
-          fontWeight: FontWeight.w600,
-        ),
+        style: Theme.of(context).textTheme.labelSmall
+            ?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontWeight: FontWeight.w600,
+            )
+            .tabular,
       ),
     );
   }
@@ -200,9 +216,13 @@ class _StatChip extends StatelessWidget {
         horizontal: AppSpacing.md,
         vertical: AppSpacing.sm,
       ),
+      constraints: const BoxConstraints(minWidth: 76),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(10),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        border: Border.all(
+          color: context.tactical.metalBorder.withValues(alpha: 0.75),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -210,14 +230,15 @@ class _StatChip extends StatelessWidget {
           Text(
             label,
             style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.outline,
+              color: theme.colorScheme.onSurfaceVariant,
+              letterSpacing: 0.4,
             ),
           ),
           Text(
             value,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: theme.textTheme.titleLarge
+                ?.copyWith(fontWeight: FontWeight.w800)
+                .tabular,
           ),
         ],
       ),
@@ -243,14 +264,15 @@ class _NoWarningsCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: scheme.primaryContainer,
+        color: context.tactical.heal.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(AppRadii.md),
+        border: Border.all(color: context.tactical.heal.withValues(alpha: 0.5)),
       ),
       child: Row(
         children: [
           Icon(
             Icons.verified_rounded,
-            color: scheme.onPrimaryContainer,
+            color: context.tactical.heal,
             size: 20,
           ),
           const SizedBox(width: 10),
@@ -264,7 +286,7 @@ class _NoWarningsCard extends StatelessWidget {
                         'Inspiración, Furia...), y casi ninguna clase de 5e '
                         'tiene cero.',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: scheme.onPrimaryContainer,
+                color: scheme.onSurface,
               ),
             ),
           ),
@@ -285,7 +307,9 @@ class _WarningsCard extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
-    return Card(
+    return TacticalCard(
+      tone: scheme.tertiary,
+      padding: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(

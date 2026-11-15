@@ -33,6 +33,8 @@ import 'wizard_step_paste.dart';
 import 'wizard_step_preview.dart';
 import 'wizard_step_source.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/theme/tactical_palette.dart';
+import '../../core/theme/telemetry.dart';
 
 class ImportWizardScreen extends StatefulWidget {
   const ImportWizardScreen({super.key, this.replaceIndex});
@@ -342,35 +344,57 @@ class _StepIndicator extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
+    final tactical = context.tactical;
+
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.lg,
         vertical: AppSpacing.md,
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           for (var i = 0; i < labels.length; i++) ...[
             if (i > 0)
               Expanded(
-                child: Divider(
-                  color: i <= current ? scheme.primary : scheme.outlineVariant,
-                  thickness: 2,
+                child: Padding(
+                  // Alineado con el centro de los círculos (34 / 2).
+                  padding: const EdgeInsets.only(top: 16),
+                  child: AnimatedContainer(
+                    duration: AppDurations.normal,
+                    height: 2,
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: i <= current
+                          ? scheme.primary
+                          : tactical.metalBorder.withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(AppRadii.pill),
+                    ),
+                  ),
                 ),
               ),
             Column(
               children: [
-                Container(
-                  width: 30,
-                  height: 30,
+                AnimatedContainer(
+                  duration: AppDurations.normal,
+                  width: 34,
+                  height: 34,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: i <= current
+                    color: i < current
                         ? scheme.primary
-                        : scheme.surfaceContainerHighest,
+                        : i == current
+                        ? scheme.primary.withValues(alpha: 0.16)
+                        : scheme.surfaceContainerHighest.withValues(
+                            alpha: 0.5,
+                          ),
                     border: Border.all(
                       color: i <= current
                           ? scheme.primary
-                          : scheme.outlineVariant,
+                          : tactical.metalBorder,
+                      width: i == current ? 2 : 1,
                     ),
                   ),
                   alignment: Alignment.center,
@@ -382,20 +406,27 @@ class _StepIndicator extends StatelessWidget {
                         )
                       : Text(
                           '${i + 1}',
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: i <= current
-                                ? scheme.onPrimary
-                                : scheme.outline,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: theme.textTheme.labelLarge
+                              ?.copyWith(
+                                color: i == current
+                                    ? scheme.primary
+                                    : scheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w800,
+                              )
+                              .tabular,
                         ),
                 ),
-                const SizedBox(height: AppSpacing.xs),
+                const SizedBox(height: 6),
                 Text(
                   labels[i],
                   style: theme.textTheme.labelSmall?.copyWith(
-                    color: i <= current ? scheme.primary : scheme.outline,
-                    fontWeight: i == current ? FontWeight.bold : null,
+                    color: i <= current
+                        ? scheme.primary
+                        : scheme.onSurfaceVariant,
+                    fontWeight: i == current
+                        ? FontWeight.w800
+                        : FontWeight.w500,
+                    letterSpacing: 0.3,
                   ),
                 ),
               ],

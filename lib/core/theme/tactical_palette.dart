@@ -13,6 +13,8 @@
 
 import 'package:flutter/material.dart';
 
+import 'theme_presets.dart';
+
 @immutable
 class TacticalPalette extends ThemeExtension<TacticalPalette> {
   const TacticalPalette({
@@ -137,6 +139,14 @@ class TacticalPalette extends ThemeExtension<TacticalPalette> {
 }
 
 /// Azúcar sintáctico: `context.tactical.spell`.
+///
+/// Si el árbol no instala la extensión (un MaterialApp pelado, como en
+/// algunos tests) cae a la paleta de fábrica del brillo actual en vez de
+/// reventar.
 extension TacticalPaletteX on BuildContext {
-  TacticalPalette get tactical => Theme.of(this).extension<TacticalPalette>()!;
+  TacticalPalette get tactical {
+    final theme = Theme.of(this);
+    return theme.extension<TacticalPalette>() ??
+        AppThemePreset.forBrightness(theme.brightness).tactical;
+  }
 }
