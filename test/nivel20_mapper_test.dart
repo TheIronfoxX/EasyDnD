@@ -109,6 +109,100 @@ void main() {
       expect(w['properties'], ['Versátil']);
       expect(w['tactical_summary'], contains('+4'));
     });
+
+    test('items.armas y attacks[] duplicados cuentan una sola vez', () {
+      final fullRaw = jsonDecode(
+        File('test/fixtures/nivel20/kael_nar_ardinys.full.json').readAsStringSync(),
+      ) as Map<String, dynamic>;
+      final weapons =
+          Nivel20Mapper.toJson(fullRaw)['inventory']['weapons'] as List;
+      expect(weapons.where((w) => w['name'] == 'Bastón'), hasLength(1));
+    });
+
+    test('alcance, munición y bonos extra se preservan en properties', () {
+      final inner = jsonDecode(jsonEncode(raw['printable_hash']))
+          as Map<String, dynamic>;
+      final arma =
+          (inner['items']['armas'] as List).first as Map<String, dynamic>;
+      (arma['attack'] as Map)['range'] = '120 pies';
+      ((arma['attack'] as Map)['to_hit'] as Map)['bonus'] = '+1 mágico';
+      ((arma['attack'] as Map)['damage'] as Map)['bonus'] = '+1 fuego';
+      (arma['fields'] as Map)['municion'] = 'Flechas';
+
+      final w = (Nivel20Mapper.toJson(inner)['inventory']['weapons'] as List)
+          .single;
+      expect(w['properties'], containsAll([
+        'Alcance: 120 pies',
+        'Munición: Flechas',
+        'Bono de ataque adicional: +1 mágico',
+        'Bono de daño adicional: +1 fuego',
+      ]));
+    });
+  });
+
+  group('inventario: objetos y oro', () {
+    test('protections[] se importa como objeto mundano', () {
+      final inner = jsonDecode(jsonEncode(raw['printable_hash']))
+          as Map<String, dynamic>;
+      inner['protections'] = [
+        {'name': 'Escudo de madera', 'description': 'Un escudo sencillo.', 'quantity': 1},
+      ];
+      final items =
+          Nivel20Mapper.toJson(inner)['inventory']['mundane_items'] as List;
+      expect(items.any((i) => i['name'] == 'Escudo de madera'), isTrue);
+    });
+
+    test('equipo libre con varios objetos se divide por comas', () {
+      final inner = jsonDecode(jsonEncode(raw['printable_hash']))
+          as Map<String, dynamic>;
+      inner['equipment'] = 'Una cuerda, un saco de dormir, 10 antorchas';
+      final items =
+          Nivel20Mapper.toJson(inner)['inventory']['mundane_items'] as List;
+      expect(items.map((i) => i['name']),
+          ['Una cuerda', 'un saco de dormir', '10 antorchas']);
+    });
+
+    test('equipo libre de una sola frase sigue como ítem único "Equipo"', () {
+      final inner = jsonDecode(jsonEncode(raw['printable_hash']))
+          as Map<String, dynamic>;
+      inner['equipment'] = 'Un amuleto sin nada especial.';
+      final items =
+          Nivel20Mapper.toJson(inner)['inventory']['mundane_items'] as List;
+      expect(items.single['name'], 'Equipo');
+      expect(items.single['description'], 'Un amuleto sin nada especial.');
+    });
+
+    test('oro en el equipo (50 po) va a purse y se excluye de mundane_items', () {
+      final inner = jsonDecode(jsonEncode(raw['printable_hash']))
+          as Map<String, dynamic>;
+      inner['equipment'] = '50 po y una capa de viaje';
+      final jsonOut = Nivel20Mapper.toJson(inner);
+      expect(jsonOut['purse'], {'gold': 50, 'silver': 0, 'copper': 0});
+      final items = jsonOut['inventory']['mundane_items'] as List;
+      expect(items.single['description'], isNot(contains('50')));
+      expect(items.single['description'], contains('capa'));
+    });
+
+    test('plata en fields.notas también se suma a purse', () {
+      final inner = jsonDecode(jsonEncode(raw['printable_hash']))
+          as Map<String, dynamic>;
+      (inner['fields'] as Map)['notas'] = 'Guarda 20 piezas de plata escondidas.';
+      final jsonOut = Nivel20Mapper.toJson(inner);
+      expect(jsonOut['purse'], {'gold': 0, 'silver': 20, 'copper': 0});
+    });
+
+    test('equipo y notas se suman en el mismo purse', () {
+      final inner = jsonDecode(jsonEncode(raw['printable_hash']))
+          as Map<String, dynamic>;
+      inner['equipment'] = '10 po';
+      (inner['fields'] as Map)['notas'] = '5 pc sueltas en el bolsillo';
+      final jsonOut = Nivel20Mapper.toJson(inner);
+      expect(jsonOut['purse'], {'gold': 10, 'silver': 0, 'copper': 5});
+    });
+
+    test('sin menciones de monedas, purse queda en cero', () {
+      expect(json['purse'], {'gold': 0, 'silver': 0, 'copper': 0});
+    });
   });
 
   group('conjuros y acciones', () {

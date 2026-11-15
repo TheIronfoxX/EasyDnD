@@ -68,6 +68,53 @@ class Nivel20Import {
       equipment: sources.equipment,
     );
   }
+
+  /// Fusiona sobre la ficha base (Nivel20Mapper.toJson) un parche sparse
+  /// que solo trae las claves opcionales "purse" y/o "companions" (ver
+  /// AiPrompt.forNivel20Enrichment, puntos 5 y 6), sin pisar lo que el
+  /// mapeador ya detectó:
+  /// - "purse" en [patch] son monedas ADICIONALES: se suman (nunca se
+  ///   restan ni reemplazan) sobre lo que ya traía la ficha base.
+  /// - "companions" en [patch] se añaden los que no estén ya (comparando
+  ///   por nombre), sin duplicar ni tocar los existentes.
+  static Map<String, dynamic> mergeAiPatch(
+    Map<String, dynamic> baseJson,
+    Map<String, dynamic> patch,
+  ) {
+    final merged = Map<String, dynamic>.from(baseJson);
+
+    final patchPurse = patch['purse'];
+    if (patchPurse is Map) {
+      final basePurse = Map<String, dynamic>.from(
+        (merged['purse'] as Map?)?.cast<String, dynamic>() ?? {},
+      );
+      for (final key in ['gold', 'silver', 'copper']) {
+        final base = (basePurse[key] as num?)?.toInt() ?? 0;
+        final patched = (patchPurse[key] as num?)?.toInt() ?? 0;
+        basePurse[key] = base + patched;
+      }
+      merged['purse'] = basePurse;
+    }
+
+    final patchCompanions = patch['companions'];
+    if (patchCompanions is List) {
+      final baseCompanions = List<dynamic>.from(
+        (merged['companions'] as List?) ?? const [],
+      );
+      final existingNames = baseCompanions
+          .map((c) => (c as Map)['name']?.toString())
+          .toSet();
+      for (final c in patchCompanions) {
+        if (c is! Map) continue;
+        if (existingNames.add(c['name']?.toString())) {
+          baseCompanions.add(c);
+        }
+      }
+      merged['companions'] = baseCompanions;
+    }
+
+    return merged;
+  }
 }
 
 /// Las dos acciones del Paso 1 cuando hay una ficha de Nivel20 lista.
