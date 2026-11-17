@@ -145,81 +145,81 @@ class _SpellPickerSheetState extends State<SpellPickerSheet> {
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : results.isEmpty
-                    ? Center(
-                        child: Text(
-                          'No se encontraron conjuros para "${_searchController.text}"',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: scheme.onSurfaceVariant,
+                ? Center(
+                    child: Text(
+                      'No se encontraron conjuros para "${_searchController.text}"',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  )
+                : ListView.separated(
+                    itemCount: results.length,
+                    separatorBuilder: (_, __) =>
+                        const Divider(height: 1, indent: 16, endIndent: 16),
+                    itemBuilder: (context, index) {
+                      final spell = results[index];
+                      return ListTile(
+                        leading: Container(
+                          width: 38,
+                          height: 38,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: scheme.primary.withValues(alpha: 0.14),
+                            border: Border.all(
+                              color: scheme.primary.withValues(alpha: 0.35),
+                            ),
+                          ),
+                          child: Text(
+                            spell.level == 0 ? 'T' : '${spell.level}',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              color: scheme.primary,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                         ),
-                      )
-                    : ListView.separated(
-                        itemCount: results.length,
-                        separatorBuilder: (_, __) =>
-                            const Divider(height: 1, indent: 16, endIndent: 16),
-                        itemBuilder: (context, index) {
-                          final spell = results[index];
-                          return ListTile(
-                            leading: Container(
-                              width: 38,
-                              height: 38,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: scheme.primary.withValues(alpha: 0.14),
-                                border: Border.all(
-                                  color: scheme.primary.withValues(alpha: 0.35),
+                        title: Text(
+                          spell.name,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        subtitle: Text(
+                          '${spell.level == 0 ? "Truco" : "Nivel ${spell.level}"} · ${spell.school} · ${spell.castingTime}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        trailing: spell.damageDice != null
+                            ? Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
                                 ),
-                              ),
-                              child: Text(
-                                spell.level == 0 ? 'T' : '${spell.level}',
-                                style: theme.textTheme.titleSmall?.copyWith(
-                                  color: scheme.primary,
-                                  fontWeight: FontWeight.w800,
+                                decoration: BoxDecoration(
+                                  color: scheme.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadii.pill,
+                                  ),
+                                  border: Border.all(color: scheme.outline),
                                 ),
-                              ),
-                            ),
-                            title: Text(
-                              spell.name,
-                              style: const TextStyle(fontWeight: FontWeight.w600),
-                            ),
-                            subtitle: Text(
-                              '${spell.level == 0 ? "Truco" : "Nivel ${spell.level}"} · ${spell.school} · ${spell.castingTime}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            trailing: spell.damageDice != null
-                                ? Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 3,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: scheme.surfaceContainerHighest,
-                                      borderRadius:
-                                          BorderRadius.circular(AppRadii.pill),
-                                      border: Border.all(color: scheme.outline),
-                                    ),
-                                    child: Text(
-                                      spell.damageDice!,
-                                      style:
-                                          theme.textTheme.labelSmall?.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  )
-                                : null,
-                            onTap: () {
-                              final result = spell.toAbility(
-                                relatedStat: widget.defaultStat,
-                                preferredActionCategory:
-                                    widget.preferredActionCategory,
-                              );
-                              Navigator.of(context).pop(result);
-                            },
+                                child: Text(
+                                  spell.damageDice!,
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              )
+                            : null,
+                        onTap: () {
+                          final result = spell.toAbility(
+                            relatedStat: widget.defaultStat,
+                            preferredActionCategory:
+                                widget.preferredActionCategory,
                           );
+                          Navigator.of(context).pop(result);
                         },
-                      ),
+                      );
+                    },
+                  ),
           ),
         ],
       ),

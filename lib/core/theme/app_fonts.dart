@@ -19,4 +19,13 @@ abstract final class AppFonts {
 
   /// Números y bloques crudos (JSON, notaciones, prompts).
   static const String jetBrainsMono = 'JetBrainsMono';
+
+  /// Títulos en uncial: letras de manuscrito medieval.
+  static const String uncialAntiqua = 'UncialAntiqua';
+
+  /// Cuerpo serif de lectura larga, estilo libro.
+  static const String crimsonText = 'CrimsonText';
+
+  /// Fantasía de cuento: serif caligráfica para títulos y cuerpo.
+  static const String almendra = 'Almendra';
 }

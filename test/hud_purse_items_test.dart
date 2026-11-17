@@ -8,9 +8,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:easydnd/core/theme/app_theme.dart';
 import 'package:easydnd/data/roster_repository.dart';
 import 'package:easydnd/domain/models/character.dart';
-import 'package:easydnd/features/hud/hud_inventory_tab.dart';
 import 'package:easydnd/state/character_store.dart';
 
+import 'fakes/backpack_harness.dart';
 import 'fakes/test_fichas.dart';
 
 void main() {
@@ -18,7 +18,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  Future<CharacterStore> boot(WidgetTester tester) async {
+  Future<CharacterStore> boot(WidgetTester tester, {String? subTab}) async {
     final prefs = await SharedPreferences.getInstance();
     final store = CharacterStore(RosterRepository(prefs));
     await store.init();
@@ -30,17 +30,21 @@ void main() {
       ChangeNotifierProvider<CharacterStore>.value(
         value: store,
         child: MaterialApp(
-          theme: AppTheme.dark(),
+          theme: AppTheme.clean(brightness: Brightness.dark),
           home: Scaffold(
             body: Consumer<CharacterStore>(
               builder: (_, current, __) =>
-                  HudInventoryTab(character: current.activeCharacter!),
+                  BackpackHarness(character: current.activeCharacter!),
             ),
           ),
         ),
       ),
     );
     await tester.pumpAndSettle();
+    if (subTab != null) {
+      await tester.tap(find.text(subTab));
+      await tester.pumpAndSettle();
+    }
     return store;
   }
 
@@ -48,7 +52,7 @@ void main() {
 
   group('dinero', () {
     testWidgets('agregar oro suma al stack y avisa', (tester) async {
-      final store = await boot(tester);
+      final store = await boot(tester, subTab: 'Dinero');
       final before = purseOf(store).gold;
 
       await tester.tap(find.byKey(const Key('hud-add-money')));
@@ -64,7 +68,7 @@ void main() {
     testWidgets('platino y electro se agregan y aparecen en la bolsa', (
       tester,
     ) async {
-      final store = await boot(tester);
+      final store = await boot(tester, subTab: 'Dinero');
       expect(find.text('Platino'), findsNothing);
 
       await tester.tap(find.byKey(const Key('hud-add-money')));
@@ -80,7 +84,7 @@ void main() {
     });
 
     testWidgets('gastar descuenta y no deja gastar de más', (tester) async {
-      final store = await boot(tester);
+      final store = await boot(tester, subTab: 'Dinero');
       final gold = purseOf(store).gold;
 
       await tester.tap(find.byKey(const Key('hud-spend-money')));
@@ -103,7 +107,7 @@ void main() {
     });
 
     testWidgets('cancelar no toca la bolsa', (tester) async {
-      final store = await boot(tester);
+      final store = await boot(tester, subTab: 'Dinero');
       final before = purseOf(store).toJson();
 
       await tester.tap(find.byKey(const Key('hud-add-money')));

@@ -19,21 +19,73 @@ extension CharacterStoreCombat on CharacterStore {
   // Vida.
   // -------------------------------------------------------------------
 
-  /// Resta vida al personaje activo. Clampea entre 0 y hpMax, así un
-  /// golpe sobredimensionado no puede dejar el HP en negativo eterno.
+  /// Resta vida al personaje activo. Los PG temporales absorben primero;
+  /// el resto baja currentHp (clampeado a 0, así un golpe sobredimensionado
+  /// no deja el HP en negativo). Si el personaje ya estaba a 0 PG, el golpe
+  /// cuenta como un fallo de salvación de muerte.
   void applyDamage(int amount) {
     final info = activeCharacter?.basicInfo;
     if (info == null) return;
-    info.currentHp = (info.currentHp - amount).clamp(0, info.hpMax);
+    if (amount <= 0) return;
+    final wasDown = info.currentHp <= 0;
+
+    final absorbed = amount < info.tempHp ? amount : info.tempHp;
+    info.tempHp -= absorbed;
+    final rest = amount - absorbed;
+
+    info.currentHp = (info.currentHp - rest).clamp(0, info.hpMax);
+    if (wasDown && rest > 0) {
+      info.deathSaveFailures = (info.deathSaveFailures + 1).clamp(0, 3);
+    }
     _notifyAndPersist();
   }
 
-  /// Suma vida al personaje activo. Nunca supera hpMax.
+  /// Suma vida al personaje activo. Nunca supera hpMax. Si estaba a 0 PG
+  /// y se levanta, las salvaciones de muerte se reinician.
   void applyHealing(int amount) {
     final info = activeCharacter?.basicInfo;
     if (info == null) return;
+    final wasDown = info.currentHp <= 0;
     info.currentHp = (info.currentHp + amount).clamp(0, info.hpMax);
+    if (wasDown && info.currentHp > 0) _clearDeathSavesNoNotify(info);
     _notifyAndPersist();
+  }
+
+  /// Fija los PG temporales. Regla 5e: no se acumulan, se conserva el
+  /// mayor entre el valor actual y el nuevo. Con [replace] se sobreescribe
+  /// (corrección manual, p. ej. poner 0).
+  void setTempHp(int amount, {bool replace = false}) {
+    final info = activeCharacter?.basicInfo;
+    if (info == null) return;
+    final value = amount < 0 ? 0 : amount;
+    info.tempHp = replace ? value : (value > info.tempHp ? value : info.tempHp);
+    _notifyAndPersist();
+  }
+
+  /// Registra una salvación de muerte. Con 3 éxitos el personaje queda
+  /// estable (se mantiene a 0 PG, contadores a la vista); con 3 fallos
+  /// está muerto. La UI deriva ambos estados de los contadores.
+  void addDeathSave({required bool success}) {
+    final info = activeCharacter?.basicInfo;
+    if (info == null) return;
+    if (success) {
+      info.deathSaveSuccesses = (info.deathSaveSuccesses + 1).clamp(0, 3);
+    } else {
+      info.deathSaveFailures = (info.deathSaveFailures + 1).clamp(0, 3);
+    }
+    _notifyAndPersist();
+  }
+
+  void resetDeathSaves() {
+    final info = activeCharacter?.basicInfo;
+    if (info == null) return;
+    _clearDeathSavesNoNotify(info);
+    _notifyAndPersist();
+  }
+
+  void _clearDeathSavesNoNotify(BasicInfo info) {
+    info.deathSaveSuccesses = 0;
+    info.deathSaveFailures = 0;
   }
 
   // -------------------------------------------------------------------
@@ -90,6 +142,8 @@ extension CharacterStoreCombat on CharacterStore {
     if (character == null) return;
 
     character.basicInfo.currentHp = character.basicInfo.hpMax;
+    character.basicInfo.tempHp = 0;
+    _clearDeathSavesNoNotify(character.basicInfo);
     _restoreAllSpellSlotsNoNotify(character);
     _restoreAllWeaponCharges(character);
     _restoreAllAbilityCharges(character);
@@ -109,7 +163,10 @@ extension CharacterStoreCombat on CharacterStore {
     final character = activeCharacter;
     if (character == null) return;
 
-    if (healMax) character.basicInfo.currentHp = character.basicInfo.hpMax;
+    if (healMax) {
+      character.basicInfo.currentHp = character.basicInfo.hpMax;
+      _clearDeathSavesNoNotify(character.basicInfo);
+    }
     if (restoreSpells) _restoreAllSpellSlotsNoNotify(character);
     if (restoreCharges) {
       _restoreAllWeaponCharges(character);
@@ -166,8 +223,10 @@ extension CharacterStoreCombat on CharacterStore {
     final info = character.basicInfo;
     if (info.hitDiceMax <= 0) return;
     final recovered = (info.hitDiceMax / 2).ceil().clamp(1, info.hitDiceMax);
-    info.hitDiceCurrent =
-        (info.hitDiceCurrent + recovered).clamp(0, info.hitDiceMax);
+    info.hitDiceCurrent = (info.hitDiceCurrent + recovered).clamp(
+      0,
+      info.hitDiceMax,
+    );
   }
 
   // -------------------------------------------------------------------
@@ -305,8 +364,10 @@ extension CharacterStoreCombat on CharacterStore {
   void setMovementRemaining(int value) {
     final character = activeCharacter;
     if (character == null) return;
-    character.turnStatus.movementRemaining =
-        value.clamp(0, character.basicInfo.speed);
+    character.turnStatus.movementRemaining = value.clamp(
+      0,
+      character.basicInfo.speed,
+    );
     _notifyAndPersist();
   }
 
@@ -320,6 +381,9 @@ extension CharacterStoreCombat on CharacterStore {
     status.bonusActionUsed = false;
     status.reactionUsed = false;
     status.movementRemaining = character.basicInfo.speed;
+    for (final pet in character.companions) {
+      _resetCompanionTurnNoNotify(pet);
+    }
     _notifyAndPersist();
   }
 
@@ -400,5 +464,65 @@ extension CharacterStoreCombat on CharacterStore {
     if (!pet.hasHp) return;
     pet.currentHp = (pet.currentHp + amount).clamp(0, pet.maxHp);
     _notifyAndPersist();
+  }
+
+  // Compañeros por id (la UI de combate los direcciona así).
+
+  Companion? companionById(String id) {
+    final list = activeCharacter?.companions;
+    if (list == null) return null;
+    for (final c in list) {
+      if (c.id == id) return c;
+    }
+    return null;
+  }
+
+  /// Daño (negativo) o curación (positivo) por id, con clamp. No-op si
+  /// el id no existe o el compañero no gestiona vida.
+  void applyCompanionHp(String id, int amount) {
+    final pet = companionById(id);
+    if (pet == null || !pet.hasHp) return;
+    pet.currentHp = (pet.currentHp + amount).clamp(0, pet.maxHp);
+    _notifyAndPersist();
+  }
+
+  /// Alterna acción, adicional o reacción gastada ('action' | 'bonus' |
+  /// 'reaction'). Clave desconocida = no-op.
+  void toggleCompanionAction(String id, String kind) {
+    final pet = companionById(id);
+    if (pet == null) return;
+    switch (kind) {
+      case 'action':
+        pet.turn.actionUsed = !pet.turn.actionUsed;
+      case 'bonus':
+        pet.turn.bonusActionUsed = !pet.turn.bonusActionUsed;
+      case 'reaction':
+        pet.turn.reactionUsed = !pet.turn.reactionUsed;
+      default:
+        return;
+    }
+    _notifyAndPersist();
+  }
+
+  void toggleCompanionCondition(String id, String condition) {
+    final pet = companionById(id);
+    if (pet == null) return;
+    if (!pet.conditions.remove(condition)) pet.conditions.add(condition);
+    _notifyAndPersist();
+  }
+
+  void resetCompanionTurn(String id) {
+    final pet = companionById(id);
+    if (pet == null) return;
+    _resetCompanionTurnNoNotify(pet);
+    _notifyAndPersist();
+  }
+
+  void _resetCompanionTurnNoNotify(Companion pet) {
+    pet.turn
+      ..actionUsed = false
+      ..bonusActionUsed = false
+      ..reactionUsed = false
+      ..movementRemaining = pet.speed;
   }
 }

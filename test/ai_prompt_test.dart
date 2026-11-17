@@ -25,8 +25,9 @@ void main() {
       expect(
         prompt.trim(),
         endsWith(
-            '--- PEGA AQUÍ LOS DATOS DE TU PERSONAJE (texto de la ficha, '
-            'copia de PDF, lo que tengas) ---'),
+          '--- PEGA AQUÍ LOS DATOS DE TU PERSONAJE (texto de la ficha, '
+          'copia de PDF, lo que tengas) ---',
+        ),
       );
     });
 
@@ -51,43 +52,55 @@ void main() {
       }
     });
 
-    test('el prompt maestro clasifica poderes activos y pide los campos nuevos',
-        () {
-      final variants = [
-        AiPrompt.forEmptySheet(),
-        AiPrompt.forEmbeddedSource('x'),
-        AiPrompt.forNivel20Link('https://nivel20.com/games/g/characters/1-x'),
-      ];
+    test(
+      'el prompt maestro clasifica poderes activos y pide los campos nuevos',
+      () {
+        final variants = [
+          AiPrompt.forEmptySheet(),
+          AiPrompt.forEmbeddedSource('x'),
+          AiPrompt.forNivel20Link('https://nivel20.com/games/g/characters/1-x'),
+        ];
 
-      for (final prompt in variants) {
-        // Los poderes activos no son pasivos, vengan de donde vengan.
-        expect(prompt, contains('CLASIFICACIÓN DE PODERES ACTIVOS'));
-        expect(prompt, contains('NUNCA va en "passive"'));
-        // Origen con los cinco valores exactos.
-        for (final type in ['"spell"', '"class"', '"racial"', '"feat"', '"item"']) {
-          expect(prompt, contains(type));
+        for (final prompt in variants) {
+          // Los poderes activos no son pasivos, vengan de donde vengan.
+          expect(prompt, contains('CLASIFICACIÓN DE PODERES ACTIVOS'));
+          expect(prompt, contains('NUNCA va en "passive"'));
+          // Origen con los cinco valores exactos.
+          for (final type in [
+            '"spell"',
+            '"class"',
+            '"racial"',
+            '"feat"',
+            '"item"',
+          ]) {
+            expect(prompt, contains(type));
+          }
+          // Recursos, curación y concentración.
+          expect(prompt, contains('"resource_name"'));
+          expect(prompt, contains('"resource_cost"'));
+          expect(prompt, contains('"heal_dice"'));
+          expect(prompt, contains('"concentration"'));
+          // Y el ejemplo los enseña (la IA no puede usar campos que el
+          // ejemplo no muestre).
+          final example = prompt.substring(
+            prompt.indexOf('"Kaelen el Luminoso"'),
+          );
+          expect(example, contains('"resource_name": "Imposición de Manos"'));
+          expect(example, contains('"concentration": true'));
+          expect(example, contains('"type": "class"'));
         }
-        // Recursos, curación y concentración.
-        expect(prompt, contains('"resource_name"'));
-        expect(prompt, contains('"resource_cost"'));
-        expect(prompt, contains('"heal_dice"'));
-        expect(prompt, contains('"concentration"'));
-        // Y el ejemplo los enseña (la IA no puede usar campos que el
-        // ejemplo no muestre).
-        final example = prompt.substring(prompt.indexOf('"Kaelen el Luminoso"'));
-        expect(example, contains('"resource_name": "Imposición de Manos"'));
-        expect(example, contains('"concentration": true'));
-        expect(example, contains('"type": "class"'));
-      }
-    });
+      },
+    );
 
     test('el ejemplo no deja campos de activas dentro de las pasivas', () {
       final prompt = AiPrompt.forEmbeddedSource('fuente');
       const header =
           'FORMATO EXACTO A SEGUIR (ejemplo mínimo con todos los campos):';
-      final example = jsonDecode(
-        prompt.substring(prompt.indexOf(header) + header.length).trim(),
-      ) as Map<String, dynamic>;
+      final example =
+          jsonDecode(
+                prompt.substring(prompt.indexOf(header) + header.length).trim(),
+              )
+              as Map<String, dynamic>;
       final abilities = example['abilities_by_action'] as Map<String, dynamic>;
 
       for (final passive in abilities['passive'] as List) {
@@ -115,24 +128,29 @@ void main() {
       }
     });
 
-    test('forNivel20Enrichment pide origen, recursos, curación y concentración',
-        () {
-      final prompt = AiPrompt.forNivel20Enrichment(
-        name: 'Rook',
-        characterClass: 'Bárbaro',
-        level: 5,
-        feats: 'Furia: ...',
-      );
+    test(
+      'forNivel20Enrichment pide origen, recursos, curación y concentración',
+      () {
+        final prompt = AiPrompt.forNivel20Enrichment(
+          name: 'Rook',
+          characterClass: 'Bárbaro',
+          level: 5,
+          feats: 'Furia: ...',
+        );
 
-      expect(prompt, contains('"type": "class" | "racial" | "feat" | "item"'));
-      expect(prompt, contains('"resource_name"'));
-      expect(prompt, contains('"resource_cost"'));
-      expect(prompt, contains('"heal_dice"'));
-      expect(prompt, contains('"concentration": true'));
-      expect(prompt, contains('NO son pasivos'));
-      // Los campos de activas siguen prohibidos en pasivas.
-      expect(prompt, contains('NUNCA en pasivas'));
-    });
+        expect(
+          prompt,
+          contains('"type": "class" | "racial" | "feat" | "item"'),
+        );
+        expect(prompt, contains('"resource_name"'));
+        expect(prompt, contains('"resource_cost"'));
+        expect(prompt, contains('"heal_dice"'));
+        expect(prompt, contains('"concentration": true'));
+        expect(prompt, contains('NO son pasivos'));
+        // Los campos de activas siguen prohibidos en pasivas.
+        expect(prompt, contains('NUNCA en pasivas'));
+      },
+    );
 
     test('forEmbeddedSource incrusta la fuente ARRIBA de las reglas', () {
       final prompt = AiPrompt.forEmbeddedSource('  FICHA-FUENTE  ');
@@ -155,19 +173,23 @@ void main() {
     });
 
     test('forCorrection: ficha actual + problemas + no pisar notas', () {
-      final prompt = AiPrompt.forCorrection(
-        '{"basic_info": {"name": "Kaelen"}}',
-        [
-          'basic_info.speed: Sin "speed"; se asume 30 pies.',
-          'abilities_by_action.passive[X].scaling_formula: irresoluble',
-        ],
-      );
+      final prompt =
+          AiPrompt.forCorrection('{"basic_info": {"name": "Kaelen"}}', [
+            'basic_info.speed: Sin "speed"; se asume 30 pies.',
+            'abilities_by_action.passive[X].scaling_formula: irresoluble',
+          ]);
 
       expect(prompt, contains('{"basic_info": {"name": "Kaelen"}}'));
-      expect(prompt,
-          contains('- basic_info.speed: Sin "speed"; se asume 30 pies.'));
-      expect(prompt,
-          contains('- abilities_by_action.passive[X].scaling_formula: irresoluble'));
+      expect(
+        prompt,
+        contains('- basic_info.speed: Sin "speed"; se asume 30 pies.'),
+      );
+      expect(
+        prompt,
+        contains(
+          '- abilities_by_action.passive[X].scaling_formula: irresoluble',
+        ),
+      );
       // La orden explícita de no pisar los campos del jugador.
       expect(prompt, contains('"user_tactics"'));
     });
@@ -176,7 +198,9 @@ void main() {
       final prompt = AiPrompt.forEmbeddedSource('fuente');
       const header =
           'FORMATO EXACTO A SEGUIR (ejemplo mínimo con todos los campos):';
-      final example = prompt.substring(prompt.indexOf(header) + header.length).trim();
+      final example = prompt
+          .substring(prompt.indexOf(header) + header.length)
+          .trim();
 
       final decoded = jsonDecode(example) as Map<String, dynamic>;
       final result = CharacterValidator.validateMap(
@@ -185,8 +209,11 @@ void main() {
 
       // El ejemplo le enseña el shape a la IA: si deja de ser una ficha
       // válida, el prompt entero está enseñando mal.
-      expect(result.isOk, isTrue,
-          reason: 'errores: ${result.errors} / avisos: ${result.warnings}');
+      expect(
+        result.isOk,
+        isTrue,
+        reason: 'errores: ${result.errors} / avisos: ${result.warnings}',
+      );
     });
   });
 }

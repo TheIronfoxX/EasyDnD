@@ -48,7 +48,9 @@ class SrdClassFeature {
       actionType: json['action_type'] as String? ?? 'passive',
       tacticalRole: json['tactical_role'] as String?,
       description: json['description'] as String? ?? '',
-      resource: res is Map<String, dynamic> ? SrdClassResource.fromJson(res) : null,
+      resource: res is Map<String, dynamic>
+          ? SrdClassResource.fromJson(res)
+          : null,
     );
   }
 }
@@ -89,7 +91,9 @@ class SrdClass {
 
   factory SrdClass.fromJson(Map<String, dynamic> json) {
     List<String> strings(String key) =>
-        ((json[key] as List<dynamic>?) ?? const []).map((e) => e as String).toList();
+        ((json[key] as List<dynamic>?) ?? const [])
+            .map((e) => e as String)
+            .toList();
     return SrdClass(
       id: json['id'] as String? ?? '',
       name: json['name'] as String? ?? 'Sin nombre',

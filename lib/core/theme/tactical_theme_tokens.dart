@@ -16,6 +16,7 @@
 import 'package:flutter/material.dart';
 
 import 'theme_presets.dart';
+import 'theme_style_tokens.dart';
 
 /// Trama de fondo atmosférica de una skin (ver TacticalScaffoldBackground).
 enum BackgroundPatternStyle {
@@ -36,10 +37,71 @@ enum BackgroundPatternStyle {
 
   /// Nervaduras orgánicas.
   organicVeins,
+
+  /// Cristales de hielo: copos de seis brazos dispersos.
+  frostCrystals,
+
+  /// Arcos apuntados de cripta a lo largo del borde superior.
+  cryptArches,
+
+  /// Escamas de dragón superpuestas.
+  dragonScales,
+
+  /// Olas: ondulaciones horizontales.
+  deepWaves,
+
+  /// Muro de ladrillo con juntas desfasadas.
+  brickWall,
+
+  /// Puntos de vitela en retícula, sobre papel claro.
+  vellumDots,
+
+  /// Señal perdida: scanlines, barras de glitch con separación RGB y
+  /// rayas diagonales rojas.
+  glitchNoise,
+
+  /// Huellas y cabecitas de animal en rejilla desfasada.
+  skzooPaws,
+
+  /// Mar de luces: círculos blandos tipo bokeh y corazones finos.
+  purpleOcean,
+
+  /// Rodajas de cítrico en naranja y hojas en verde claro.
+  citrusGrove,
+
+  /// Luna carmesí con anillos a medio salir por la esquina y corrientes
+  /// largas de humo cruzando la pantalla.
+  kitsuneSmoke,
+
+  /// Sol carmesí a medio salir por la esquina, corrientes de humo y una
+  /// máscara de bardo ladeada de marca de agua.
+  silkSmoke,
+
+  /// Celosía de bambú (líneas verticales segmentadas), trazos heráldicos
+  /// diagonales y destellos de estrella de ocho puntas. Solo geometría.
+  bambooHeraldry,
+
+  /// Arcos concéntricos de eclipse, aro orbital y destellos de cuatro
+  /// puntas sobre fondo abisal. Solo geometría.
+  eclipseOrbits,
+
+  /// Niebla violeta, dobles bandas horizontales (marca tatuada), dos
+  /// círculos simétricos con eje vertical y líneas segmentadas. Solo
+  /// geometría.
+  bandAndBuns,
+
+  /// Retícula angular rúnica (45° y 60°) con grano de piedra, estilo
+  /// Khazalid. Solo geometría.
+  runicLattice,
+
+  /// Filigrana élfica: volutas y espirales simétricas de trazo continuo
+  /// sobre un tejido de hilos finos, con destellos de rombo. Solo
+  /// geometría abstracta.
+  elvenFiligree,
 }
 
 /// Forma de los indicadores de carga (pips).
-enum PipShape { circle, diamond, square, leaf, star }
+enum PipShape { circle, diamond, square, leaf, star, bolt, paw, heart, flame }
 
 /// Estilo de sombra de las tarjetas.
 enum ShadowStyle {
@@ -51,6 +113,9 @@ enum ShadowStyle {
 
   /// Dura y marcial: desplazada, sin difuminar.
   hardMartial,
+
+  /// Sin sombra: superficies planas (tema limpio).
+  none,
 }
 
 /// Tipografía de cabeceras. [family] solo se aplica con el preset
@@ -96,6 +161,13 @@ class TacticalThemeTokens extends ThemeExtension<TacticalThemeTokens> {
     required this.backgroundPattern,
     required this.pipShape,
     required this.headerFont,
+    this.shapes = const ShapeTokens(),
+    this.icons = const IconTokens(),
+    this.motion = const MotionTokens(),
+    this.density = const DensityTokens(),
+    this.background = const BackgroundTokens(),
+    this.cards = const CardTokens(),
+    this.components = const ComponentTokens(),
   });
 
   /// Color principal de la skin (el acento de firma).
@@ -152,6 +224,16 @@ class TacticalThemeTokens extends ThemeExtension<TacticalThemeTokens> {
   final PipShape pipShape;
   final HeaderFontStyle headerFont;
 
+  /// Radios/elevaciones Material, iconografía, movimiento, densidad,
+  /// fondo y tarjetas. Los defaults reproducen el estilo anterior.
+  final ShapeTokens shapes;
+  final IconTokens icons;
+  final MotionTokens motion;
+  final DensityTokens density;
+  final BackgroundTokens background;
+  final CardTokens cards;
+  final ComponentTokens components;
+
   /// Degradado de cabecera listo para un BoxDecoration.
   LinearGradient get headerGradient => LinearGradient(
     begin: Alignment.topLeft,
@@ -198,6 +280,7 @@ class TacticalThemeTokens extends ThemeExtension<TacticalThemeTokens> {
         offset: const Offset(3, 3),
       ),
     ],
+    ShadowStyle.none => const [],
   };
 
   @override
@@ -226,6 +309,13 @@ class TacticalThemeTokens extends ThemeExtension<TacticalThemeTokens> {
     BackgroundPatternStyle? backgroundPattern,
     PipShape? pipShape,
     HeaderFontStyle? headerFont,
+    ShapeTokens? shapes,
+    IconTokens? icons,
+    MotionTokens? motion,
+    DensityTokens? density,
+    BackgroundTokens? background,
+    CardTokens? cards,
+    ComponentTokens? components,
   }) {
     return TacticalThemeTokens(
       primary: primary ?? this.primary,
@@ -252,6 +342,13 @@ class TacticalThemeTokens extends ThemeExtension<TacticalThemeTokens> {
       backgroundPattern: backgroundPattern ?? this.backgroundPattern,
       pipShape: pipShape ?? this.pipShape,
       headerFont: headerFont ?? this.headerFont,
+      shapes: shapes ?? this.shapes,
+      icons: icons ?? this.icons,
+      motion: motion ?? this.motion,
+      density: density ?? this.density,
+      background: background ?? this.background,
+      cards: cards ?? this.cards,
+      components: components ?? this.components,
     );
   }
 
@@ -290,6 +387,13 @@ class TacticalThemeTokens extends ThemeExtension<TacticalThemeTokens> {
       backgroundPattern: next ? other.backgroundPattern : backgroundPattern,
       pipShape: next ? other.pipShape : pipShape,
       headerFont: next ? other.headerFont : headerFont,
+      shapes: ShapeTokens.lerp(shapes, other.shapes, t),
+      icons: IconTokens.lerp(icons, other.icons, t),
+      motion: MotionTokens.lerp(motion, other.motion, t),
+      density: DensityTokens.lerp(density, other.density, t),
+      background: BackgroundTokens.lerp(background, other.background, t),
+      cards: CardTokens.lerp(cards, other.cards, t),
+      components: ComponentTokens.lerp(components, other.components, t),
     );
   }
 }

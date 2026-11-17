@@ -14,7 +14,9 @@ abstract final class ClassCatalog {
   static Future<List<SrdClass>> load([AssetBundle? bundle]) async {
     if (_cached != null) return _cached!;
     try {
-      final jsonStr = await (bundle ?? rootBundle).loadString('assets/srd/classes_5e.json');
+      final jsonStr = await (bundle ?? rootBundle).loadString(
+        'assets/srd/classes_5e.json',
+      );
       _cached = parse(jsonStr);
     } catch (_) {
       _cached = const [];
@@ -23,15 +25,18 @@ abstract final class ClassCatalog {
   }
 
   /// Construye el catálogo desde un String JSON (útil para tests).
-  static List<SrdClass> parse(String jsonStr) => (jsonDecode(jsonStr) as List<dynamic>)
-      .map((e) => SrdClass.fromJson(e as Map<String, dynamic>))
-      .toList();
+  static List<SrdClass> parse(String jsonStr) =>
+      (jsonDecode(jsonStr) as List<dynamic>)
+          .map((e) => SrdClass.fromJson(e as Map<String, dynamic>))
+          .toList();
 
   /// Busca por id o nombre (sin tildes ni mayúsculas). Null si no existe.
   static SrdClass? byIdOrName(List<SrdClass> all, String key) {
     final k = normalizeSpellName(key);
     for (final c in all) {
-      if (normalizeSpellName(c.id) == k || normalizeSpellName(c.name) == k) return c;
+      if (normalizeSpellName(c.id) == k || normalizeSpellName(c.name) == k) {
+        return c;
+      }
     }
     return null;
   }
@@ -44,7 +49,9 @@ abstract final class ClassCatalog {
   }) {
     final q = normalizeSpellName(query);
     return all.where((c) {
-      if (spellcastingType != null && c.spellcastingType != spellcastingType) return false;
+      if (spellcastingType != null && c.spellcastingType != spellcastingType) {
+        return false;
+      }
       return q.isEmpty || normalizeSpellName(c.name).contains(q);
     }).toList();
   }

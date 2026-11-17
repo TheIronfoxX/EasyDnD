@@ -31,16 +31,21 @@ void main() {
   Future<void> flush() => Future<void>.delayed(Duration.zero);
 
   group('arranque', () {
-    test('instalación nueva: ready, sin personaje activo, sin migración', () async {
-      final store = await boot();
-      expect(store.isReady, isTrue);
-      expect(store.activeCharacter, isNull);
-      expect(store.migratedFromLegacy, isFalse);
-    });
+    test(
+      'instalación nueva: ready, sin personaje activo, sin migración',
+      () async {
+        final store = await boot();
+        expect(store.isReady, isTrue);
+        expect(store.activeCharacter, isNull);
+        expect(store.migratedFromLegacy, isFalse);
+      },
+    );
 
     test('arranca migrando el roster de la app vieja', () async {
       SharedPreferences.setMockInitialValues({
-        'character_roster_v2': [jsonEncode(buildFichaJson(id: 'char_a', name: 'A'))],
+        'character_roster_v2': [
+          jsonEncode(buildFichaJson(id: 'char_a', name: 'A')),
+        ],
         'active_character_index': 0,
         'weapon_quantity_w1': 4,
       });
@@ -70,29 +75,33 @@ void main() {
       expect(store.activeIndex, 0);
     });
 
-    test('deleteCharacter reajusta el índice para no apuntar al vacío', () async {
-      final store = await boot();
-      store.addCharacter(buildCharacter(id: 'a', name: 'A'));
-      store.addCharacter(buildCharacter(id: 'b', name: 'B'));
-      store.addCharacter(buildCharacter(id: 'c', name: 'C'));
-      store.switchCharacter(2); // activo: C
+    test(
+      'deleteCharacter reajusta el índice para no apuntar al vacío',
+      () async {
+        final store = await boot();
+        store.addCharacter(buildCharacter(id: 'a', name: 'A'));
+        store.addCharacter(buildCharacter(id: 'b', name: 'B'));
+        store.addCharacter(buildCharacter(id: 'c', name: 'C'));
+        store.switchCharacter(2); // activo: C
 
-      store.deleteCharacter(0); // borro A → C corre a índice 1
-      expect(store.activeCharacter!.basicInfo.name, 'C');
+        store.deleteCharacter(0); // borro A → C corre a índice 1
+        expect(store.activeCharacter!.basicInfo.name, 'C');
 
-      store.deleteCharacter(store.activeIndex); // borro el activo (C)
-      expect(store.activeCharacter!.basicInfo.name, 'B'); // cae al anterior
+        store.deleteCharacter(store.activeIndex); // borro el activo (C)
+        expect(store.activeCharacter!.basicInfo.name, 'B'); // cae al anterior
 
-      store.deleteCharacter(0);
-      store.deleteCharacter(0);
-      expect(store.roster, isEmpty);
-      expect(store.activeCharacter, isNull);
-    });
+        store.deleteCharacter(0);
+        store.deleteCharacter(0);
+        expect(store.roster, isEmpty);
+        expect(store.activeCharacter, isNull);
+      },
+    );
 
     test('importCharacterFromText válido añade y selecciona', () async {
       final store = await boot();
-      final result =
-          store.importCharacterFromText(jsonEncode(buildFichaJson(name: 'Importado')));
+      final result = store.importCharacterFromText(
+        jsonEncode(buildFichaJson(name: 'Importado')),
+      );
       expect(result.isOk, isTrue);
       expect(store.roster, hasLength(1));
       expect(store.activeCharacter!.basicInfo.name, 'Importado');
@@ -118,24 +127,26 @@ void main() {
       expect(store.activeCharacter!.basicInfo.name, 'Corregido');
     });
 
-    test('replaceCharacter (modelo directo, la vía del wizard) sustituye; índice vencido añade',
-        () async {
-      final store = await boot();
-      store.addCharacter(buildCharacter(id: 'a', name: 'Original'));
+    test(
+      'replaceCharacter (modelo directo, la vía del wizard) sustituye; índice vencido añade',
+      () async {
+        final store = await boot();
+        store.addCharacter(buildCharacter(id: 'a', name: 'Original'));
 
-      // El wizard valida en la vista previa y commitea el modelo ya
-      // construido: mismo resultado que la variante texto.
-      store.replaceCharacter(0, buildCharacter(id: 'b', name: 'Nuevo'));
-      expect(store.roster, hasLength(1));
-      expect(store.activeCharacter!.basicInfo.name, 'Nuevo');
-      expect(store.activeIndex, 0);
+        // El wizard valida en la vista previa y commitea el modelo ya
+        // construido: mismo resultado que la variante texto.
+        store.replaceCharacter(0, buildCharacter(id: 'b', name: 'Nuevo'));
+        expect(store.roster, hasLength(1));
+        expect(store.activeCharacter!.basicInfo.name, 'Nuevo');
+        expect(store.activeIndex, 0);
 
-      // Índice fuera de rango (el roster cambió con el wizard abierto):
-      // añade al final en vez de fallar en silencio.
-      store.replaceCharacter(9, buildCharacter(id: 'c', name: 'Extra'));
-      expect(store.roster, hasLength(2));
-      expect(store.activeCharacter!.basicInfo.name, 'Extra');
-    });
+        // Índice fuera de rango (el roster cambió con el wizard abierto):
+        // añade al final en vez de fallar en silencio.
+        store.replaceCharacter(9, buildCharacter(id: 'c', name: 'Extra'));
+        expect(store.roster, hasLength(2));
+        expect(store.activeCharacter!.basicInfo.name, 'Extra');
+      },
+    );
   });
 
   group('vida y dados de golpe', () {
@@ -154,6 +165,98 @@ void main() {
       expect(store.activeCharacter!.basicInfo.currentHp, 18);
     });
 
+    test('los PG temporales absorben el daño antes que los PG', () async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(hpMax: 20, hpCurrent: 20));
+      store.setTempHp(5);
+
+      store.applyDamage(3);
+      expect(store.activeCharacter!.basicInfo.tempHp, 2);
+      expect(store.activeCharacter!.basicInfo.currentHp, 20);
+
+      store.applyDamage(6);
+      expect(store.activeCharacter!.basicInfo.tempHp, 0);
+      expect(store.activeCharacter!.basicInfo.currentHp, 16);
+    });
+
+    test('setTempHp no acumula: conserva el mayor salvo replace', () async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(hpMax: 20, hpCurrent: 20));
+      store.setTempHp(5);
+      store.setTempHp(3);
+      expect(store.activeCharacter!.basicInfo.tempHp, 5);
+      store.setTempHp(8);
+      expect(store.activeCharacter!.basicInfo.tempHp, 8);
+      store.setTempHp(0, replace: true);
+      expect(store.activeCharacter!.basicInfo.tempHp, 0);
+    });
+
+    test(
+      'daño a 0 PG cuenta fallo de muerte; curar reinicia contadores',
+      () async {
+        final store = await boot();
+        store.addCharacter(buildCharacter(hpMax: 20, hpCurrent: 20));
+        final info = store.activeCharacter!.basicInfo;
+
+        store.applyDamage(20); // cae a 0: aún sin fallos
+        expect(info.deathSaveFailures, 0);
+        store.applyDamage(4); // ya a 0: un fallo
+        expect(info.deathSaveFailures, 1);
+
+        store.addDeathSave(success: true);
+        store.addDeathSave(success: true);
+        expect(info.deathSaveSuccesses, 2);
+
+        store.applyHealing(1);
+        expect(info.currentHp, 1);
+        expect(info.deathSaveSuccesses, 0);
+        expect(info.deathSaveFailures, 0);
+      },
+    );
+
+    test('las salvaciones de muerte se clampean a 3', () async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(hpMax: 20, hpCurrent: 0));
+      for (var i = 0; i < 5; i++) {
+        store.addDeathSave(success: false);
+      }
+      expect(store.activeCharacter!.basicInfo.deathSaveFailures, 3);
+      store.resetDeathSaves();
+      expect(store.activeCharacter!.basicInfo.deathSaveFailures, 0);
+    });
+
+    test('el descanso largo limpia PG temporales y salvaciones', () async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(hpMax: 20, hpCurrent: 0));
+      store.setTempHp(4);
+      store.addDeathSave(success: false);
+      store.longRest();
+      final info = store.activeCharacter!.basicInfo;
+      expect(info.tempHp, 0);
+      expect(info.deathSaveFailures, 0);
+      expect(info.currentHp, 20);
+    });
+
+    test(
+      'los campos nuevos sobreviven al reinicio y faltan sin romper',
+      () async {
+        var store = await boot();
+        store.addCharacter(buildCharacter(hpMax: 20, hpCurrent: 0));
+        store.setTempHp(3);
+        store.addDeathSave(success: true);
+        await flush();
+        store = await boot();
+        final info = store.activeCharacter!.basicInfo;
+        expect(info.tempHp, 3);
+        expect(info.deathSaveSuccesses, 1);
+
+        // Ficha anterior sin los campos: fallback a 0.
+        final old = CharacterModel.fromJson(buildFichaJson());
+        expect(old.basicInfo.tempHp, 0);
+        expect(old.basicInfo.deathSaveFailures, 0);
+      },
+    );
+
     test('sin personaje activo, las mutaciones son no-op', () async {
       final store = await boot();
       store.applyDamage(10);
@@ -169,7 +272,9 @@ void main() {
     test('spendHitDice es determinístico con Random inyectable', () async {
       final store = await boot();
       // Con mod +2 y dado d10: nextInt=3 → dado 4 → 4+2 = 6 de curación.
-      store.addCharacter(buildCharacter(hpMax: 20, hpCurrent: 20, conMod: 2, hitDieSides: 10));
+      store.addCharacter(
+        buildCharacter(hpMax: 20, hpCurrent: 20, conMod: 2, hitDieSides: 10),
+      );
       store.applyDamage(10); // hp 10
 
       final healed = store.spendHitDice(1, random: FakeRandom([3]));
@@ -181,7 +286,9 @@ void main() {
     test('spendHitDice nunca cura menos de 1 por dado', () async {
       final store = await boot();
       // Con mod -5: dado 4 + (-5) = -1 → mínimo 1.
-      store.addCharacter(buildCharacter(hpMax: 20, hpCurrent: 20, conMod: -5, hitDieSides: 10));
+      store.addCharacter(
+        buildCharacter(hpMax: 20, hpCurrent: 20, conMod: -5, hitDieSides: 10),
+      );
       store.applyDamage(10);
 
       final healed = store.spendHitDice(1, random: FakeRandom([3]));
@@ -191,12 +298,22 @@ void main() {
     test('spendHitDice clama los dados a los disponibles', () async {
       final store = await boot();
       store.addCharacter(
-        buildCharacter(hpMax: 20, hpCurrent: 20, conMod: 2, hitDieSides: 10, hitDiceMax: 5, hitDiceCurrent: 5),
+        buildCharacter(
+          hpMax: 20,
+          hpCurrent: 20,
+          conMod: 2,
+          hitDieSides: 10,
+          hitDiceMax: 5,
+          hitDiceCurrent: 5,
+        ),
       );
       store.applyDamage(20); // hp 0
 
       // Pide 10, tiene 5. Cada dado: nextInt(10)=0 → 1 + 2 = 3.
-      final healed = store.spendHitDice(10, random: FakeRandom([0, 0, 0, 0, 0]));
+      final healed = store.spendHitDice(
+        10,
+        random: FakeRandom([0, 0, 0, 0, 0]),
+      );
       expect(healed, 15);
       expect(store.activeCharacter!.basicInfo.hitDiceCurrent, 0);
       expect(store.activeCharacter!.basicInfo.currentHp, 15);
@@ -205,47 +322,63 @@ void main() {
       expect(store.spendHitDice(3), 0);
     });
 
-    test('longRest restaura vida, ranuras, cargas y mitad de los dados de golpe', () async {
-      final store = await boot();
-      store.addCharacter(buildCharacter(
-        hpMax: 20,
-        hpCurrent: 20,
-        hitDiceMax: 5,
-        hitDiceCurrent: 5,
-      ));
+    test(
+      'longRest restaura vida, ranuras, cargas y mitad de los dados de golpe',
+      () async {
+        final store = await boot();
+        store.addCharacter(
+          buildCharacter(
+            hpMax: 20,
+            hpCurrent: 20,
+            hitDiceMax: 5,
+            hitDiceCurrent: 5,
+          ),
+        );
 
-      // Llevarlo a un estado gastado de todo.
-      store.applyDamage(20); // hp 0
-      store.spendHitDice(4, random: FakeRandom([0, 0, 0, 0])); // dados 1, hp 12
-      store.applyDamage(7); // hp 5
-      store.consumeSpellSlot(1);
-      store.consumeSpellSlot(1);
-      store.consumeSpellSlot(1); // ranura 1/4
-      store.consumeWeaponCharge('w1');
-      store.consumeWeaponCharge('w1');
-      store.consumeWeaponCharge('w1'); // cargas arma 0/3
-      store.consumeAbilityCharge('a1'); // cargas habilidad 0/3
+        // Llevarlo a un estado gastado de todo.
+        store.applyDamage(20); // hp 0
+        store.spendHitDice(
+          4,
+          random: FakeRandom([0, 0, 0, 0]),
+        ); // dados 1, hp 12
+        store.applyDamage(7); // hp 5
+        store.consumeSpellSlot(1);
+        store.consumeSpellSlot(1);
+        store.consumeSpellSlot(1); // ranura 1/4
+        store.consumeWeaponCharge('w1');
+        store.consumeWeaponCharge('w1');
+        store.consumeWeaponCharge('w1'); // cargas arma 0/3
+        store.consumeAbilityCharge('a1'); // cargas habilidad 0/3
 
-      store.longRest();
+        store.longRest();
 
-      final character = store.activeCharacter!;
-      expect(character.basicInfo.currentHp, 20);
-      expect(character.spellSlots.slots.single.current, 4);
-      expect(character.inventory.weapons.single.magicCharges.current, 3);
-      expect(character.abilitiesByAction.action.single.magicCharges.current, 3);
-      // 1 dado + ceil(5/2)=3 recuperados, clampeado a 5.
-      expect(character.basicInfo.hitDiceCurrent, 4);
-    });
+        final character = store.activeCharacter!;
+        expect(character.basicInfo.currentHp, 20);
+        expect(character.spellSlots.slots.single.current, 4);
+        expect(character.inventory.weapons.single.magicCharges.current, 3);
+        expect(
+          character.abilitiesByAction.action.single.magicCharges.current,
+          3,
+        );
+        // 1 dado + ceil(5/2)=3 recuperados, clampeado a 5.
+        expect(character.basicInfo.hitDiceCurrent, 4);
+      },
+    );
 
     test('customRest ejecuta solo lo marcado', () async {
       final store = await boot();
-      store.addCharacter(buildCharacter(hpCurrent: 5, weaponChargesCurrent: 0, slotCurrent: 1));
+      store.addCharacter(
+        buildCharacter(hpCurrent: 5, weaponChargesCurrent: 0, slotCurrent: 1),
+      );
 
       store.customRest(healMax: true);
       final character = store.activeCharacter!;
       expect(character.basicInfo.currentHp, 20);
       expect(character.spellSlots.slots.single.current, 1); // sin tocar
-      expect(character.inventory.weapons.single.magicCharges.current, 0); // sin tocar
+      expect(
+        character.inventory.weapons.single.magicCharges.current,
+        0,
+      ); // sin tocar
 
       store.customRest(restoreSpells: true, restoreCharges: true);
       expect(character.spellSlots.slots.single.current, 4);
@@ -296,11 +429,17 @@ void main() {
       store.addCharacter(buildCharacter(weaponChargesCurrent: 3));
 
       store.consumeWeaponCharge('w1');
-      expect(store.activeCharacter!.inventory.weapons.single.magicCharges.current, 2);
+      expect(
+        store.activeCharacter!.inventory.weapons.single.magicCharges.current,
+        2,
+      );
 
       store.consumeWeaponCharge('arma-inexistente'); // no-op
       store.restoreWeaponCharges('w1');
-      expect(store.activeCharacter!.inventory.weapons.single.magicCharges.current, 3);
+      expect(
+        store.activeCharacter!.inventory.weapons.single.magicCharges.current,
+        3,
+      );
     });
 
     test('cargas de habilidades por id, con guards', () async {
@@ -308,32 +447,53 @@ void main() {
       store.addCharacter(buildCharacter(abilityChargesCurrent: 2));
 
       store.consumeAbilityCharge('a1');
-      expect(store.activeCharacter!.abilitiesByAction.action.single.magicCharges.current, 1);
+      expect(
+        store
+            .activeCharacter!
+            .abilitiesByAction
+            .action
+            .single
+            .magicCharges
+            .current,
+        1,
+      );
 
       store.consumeAbilityCharge('habilidad-inexistente'); // no-op
       store.restoreAbilityCharges('a1');
-      expect(store.activeCharacter!.abilitiesByAction.action.single.magicCharges.current, 3);
+      expect(
+        store
+            .activeCharacter!
+            .abilitiesByAction
+            .action
+            .single
+            .magicCharges
+            .current,
+        3,
+      );
     });
   });
 
   group('condiciones y turno', () {
-    test('toggleCondition activa y desactiva; hasDisadvantage resuelve', () async {
-      final store = await boot();
-      store.addCharacter(buildCharacter());
+    test(
+      'toggleCondition activa y desactiva; hasDisadvantage resuelve',
+      () async {
+        final store = await boot();
+        store.addCharacter(buildCharacter());
 
-      store.toggleCondition('Envenenado');
-      expect(store.activeCharacter!.activeConditions, ['Envenenado']);
-      expect(store.hasDisadvantage, isTrue);
+        store.toggleCondition('Envenenado');
+        expect(store.activeCharacter!.activeConditions, ['Envenenado']);
+        expect(store.hasDisadvantage, isTrue);
 
-      store.toggleCondition('Apresado'); // no impone desventaja
-      expect(store.hasDisadvantage, isTrue);
+        store.toggleCondition('Apresado'); // no impone desventaja
+        expect(store.hasDisadvantage, isTrue);
 
-      store.toggleCondition('Envenenado'); // off
-      expect(store.hasDisadvantage, isFalse);
+        store.toggleCondition('Envenenado'); // off
+        expect(store.hasDisadvantage, isFalse);
 
-      store.toggleCondition('Condición Casera'); // fuera del catálogo
-      expect(store.hasDisadvantage, isFalse); // se ignora, no rompe
-    });
+        store.toggleCondition('Condición Casera'); // fuera del catálogo
+        expect(store.hasDisadvantage, isFalse); // se ignora, no rompe
+      },
+    );
 
     test('economía de acción del turno', () async {
       final store = await boot();
@@ -382,8 +542,18 @@ void main() {
       final resources = store.activeCharacter!.resources
         ..clear()
         ..addAll([
-          ResourcePoint(name: 'Corto', current: 0, max: 2, recovery: 'short_rest'),
-          ResourcePoint(name: 'Largo', current: 0, max: 2, recovery: 'long_rest'),
+          ResourcePoint(
+            name: 'Corto',
+            current: 0,
+            max: 2,
+            recovery: 'short_rest',
+          ),
+          ResourcePoint(
+            name: 'Largo',
+            current: 0,
+            max: 2,
+            recovery: 'long_rest',
+          ),
           ResourcePoint(name: 'Manual', current: 0, max: 2),
         ]);
 
@@ -492,36 +662,45 @@ void main() {
       expect(character.basicInfo.nivel20Link, 'https://nivel20.com/x');
     });
 
-    test('cantidad de armas: steppers con floor y armas únicas congeladas', () async {
-      final store = await boot();
-      store.addCharacter(buildCharacter(weaponQuantity: 2));
+    test(
+      'cantidad de armas: steppers con floor y armas únicas congeladas',
+      () async {
+        final store = await boot();
+        store.addCharacter(buildCharacter(weaponQuantity: 2));
 
-      store.incrementQuantity('w1');
-      expect(store.activeCharacter!.inventory.weapons.single.quantity, 3);
-      store.decrementQuantity('w1');
-      store.decrementQuantity('w1');
-      store.decrementQuantity('w1'); // floor en 0
-      expect(store.activeCharacter!.inventory.weapons.single.quantity, 0);
+        store.incrementQuantity('w1');
+        expect(store.activeCharacter!.inventory.weapons.single.quantity, 3);
+        store.decrementQuantity('w1');
+        store.decrementQuantity('w1');
+        store.decrementQuantity('w1'); // floor en 0
+        expect(store.activeCharacter!.inventory.weapons.single.quantity, 0);
 
-      store.incrementQuantity('arma-inexistente'); // no-op
+        store.incrementQuantity('arma-inexistente'); // no-op
 
-      store.switchCharacter(0);
-      store.addCharacter(buildCharacter(
-        id: 'unique-char',
-        name: 'Unic',
-        weaponIsUnique: true,
-        weaponQuantity: 1,
-      ));
-      store.incrementQuantity('w1'); // única: siempre 1
-      expect(store.activeCharacter!.inventory.weapons.single.quantity, 1);
-    });
+        store.switchCharacter(0);
+        store.addCharacter(
+          buildCharacter(
+            id: 'unique-char',
+            name: 'Unic',
+            weaponIsUnique: true,
+            weaponQuantity: 1,
+          ),
+        );
+        store.incrementQuantity('w1'); // única: siempre 1
+        expect(store.activeCharacter!.inventory.weapons.single.quantity, 1);
+      },
+    );
 
     test('REGRESIÓN: cantidades independientes por personaje', () async {
       final store = await boot();
       // Dos fichas con el MISMO id de arma ('w1'): el mapa global de
       // la app vieja las pisaba entre sí.
-      store.addCharacter(buildCharacter(id: 'char_a', name: 'A', weaponQuantity: 1));
-      store.addCharacter(buildCharacter(id: 'char_b', name: 'B', weaponQuantity: 1));
+      store.addCharacter(
+        buildCharacter(id: 'char_a', name: 'A', weaponQuantity: 1),
+      );
+      store.addCharacter(
+        buildCharacter(id: 'char_b', name: 'B', weaponQuantity: 1),
+      );
 
       // B está activa (la última añadida): subo su cantidad.
       store.incrementQuantity('w1');
@@ -553,7 +732,10 @@ void main() {
 
       store.addEmptyMundaneItem();
       expect(store.activeCharacter!.inventory.mundaneItems, hasLength(2));
-      expect(store.activeCharacter!.inventory.mundaneItems.last.name, 'Nuevo Objeto');
+      expect(
+        store.activeCharacter!.inventory.mundaneItems.last.name,
+        'Nuevo Objeto',
+      );
 
       store.updateMundaneItemQuantity(0, -5); // clamp a 0
       expect(store.activeCharacter!.inventory.mundaneItems[0].quantity, 0);
@@ -565,61 +747,94 @@ void main() {
       expect(store.activeCharacter!.inventory.mundaneItems, hasLength(1));
     });
 
-    test('habilidades: alta, edición con mudanza de categoría y baja', () async {
-      final store = await boot();
-      store.addCharacter(buildCharacter());
+    test(
+      'habilidades: alta, edición con mudanza de categoría y baja',
+      () async {
+        final store = await boot();
+        store.addCharacter(buildCharacter());
 
-      store.addAbility(
-        actionType: 'passive',
-        name: 'Visión en la Oscuridad',
-        description: 'Ve en penumbra',
-        tacticalRole: 'Ofensivo',
-      );
-      final passives = store.activeCharacter!.abilitiesByAction.passive;
-      expect(passives, hasLength(1));
-      expect(passives.single.name, 'Visión en la Oscuridad');
-      expect(passives.single.tacticalRole, 'Ofensivo');
-      expect(passives.single.type, 'passive'); // forzado en pasivas
+        store.addAbility(
+          actionType: 'passive',
+          name: 'Visión en la Oscuridad',
+          description: 'Ve en penumbra',
+          tacticalRole: 'Ofensivo',
+        );
+        final passives = store.activeCharacter!.abilitiesByAction.passive;
+        expect(passives, hasLength(1));
+        expect(passives.single.name, 'Visión en la Oscuridad');
+        expect(passives.single.tacticalRole, 'Ofensivo');
+        expect(passives.single.type, 'passive'); // forzado en pasivas
 
-      // Mudar la pasiva a "action" conserva el id.
-      final abilityId = passives.single.id;
-      store.updateAbility(abilityId: abilityId, actionType: 'action', name: 'Renombrada');
-      expect(store.activeCharacter!.abilitiesByAction.passive, isEmpty);
-      expect(
-        store.activeCharacter!.abilitiesByAction.action.any((a) => a.id == abilityId),
-        isTrue,
-      );
-      // El resto de habilidades sigue intacto.
-      expect(store.activeCharacter!.abilitiesByAction.action, hasLength(2));
+        // Mudar la pasiva a "action" conserva el id.
+        final abilityId = passives.single.id;
+        store.updateAbility(
+          abilityId: abilityId,
+          actionType: 'action',
+          name: 'Renombrada',
+        );
+        expect(store.activeCharacter!.abilitiesByAction.passive, isEmpty);
+        expect(
+          store.activeCharacter!.abilitiesByAction.action.any(
+            (a) => a.id == abilityId,
+          ),
+          isTrue,
+        );
+        // El resto de habilidades sigue intacto.
+        expect(store.activeCharacter!.abilitiesByAction.action, hasLength(2));
 
-      store.removeAbility(abilityId);
-      store.removeAbility(abilityId); // doble tap: no-op la segunda
-      expect(store.activeCharacter!.abilitiesByAction.action, hasLength(1));
-    });
+        store.removeAbility(abilityId);
+        store.removeAbility(abilityId); // doble tap: no-op la segunda
+        expect(store.activeCharacter!.abilitiesByAction.action, hasLength(1));
+      },
+    );
   });
 
   group('persistencia (las dos regresiones de la app vieja)', () {
-    test('REGRESIÓN: las cargas de habilidades sobreviven un reinicio', () async {
-      final store = await boot();
-      store.addCharacter(buildCharacter(abilityChargesCurrent: 2));
+    test(
+      'REGRESIÓN: las cargas de habilidades sobreviven un reinicio',
+      () async {
+        final store = await boot();
+        store.addCharacter(buildCharacter(abilityChargesCurrent: 2));
 
-      store.consumeAbilityCharge('a1');
-      store.consumeAbilityCharge('a1'); // 0/3
-      expect(store.activeCharacter!.abilitiesByAction.action.single.magicCharges.current, 0);
+        store.consumeAbilityCharge('a1');
+        store.consumeAbilityCharge('a1'); // 0/3
+        expect(
+          store
+              .activeCharacter!
+              .abilitiesByAction
+              .action
+              .single
+              .magicCharges
+              .current,
+          0,
+        );
 
-      await flush();
-      final reloaded = await boot();
-      // En la app vieja esto volvía a 3: el toJson de Ability perdía
-      // magic_charges y el arranque las recargaba al máximo.
-      expect(
-        reloaded.activeCharacter!.abilitiesByAction.action.single.magicCharges.current,
-        0,
-      );
-      expect(
-        reloaded.activeCharacter!.abilitiesByAction.action.single.magicCharges.max,
-        3,
-      );
-    });
+        await flush();
+        final reloaded = await boot();
+        // En la app vieja esto volvía a 3: el toJson de Ability perdía
+        // magic_charges y el arranque las recargaba al máximo.
+        expect(
+          reloaded
+              .activeCharacter!
+              .abilitiesByAction
+              .action
+              .single
+              .magicCharges
+              .current,
+          0,
+        );
+        expect(
+          reloaded
+              .activeCharacter!
+              .abilitiesByAction
+              .action
+              .single
+              .magicCharges
+              .max,
+          3,
+        );
+      },
+    );
 
     test('las cargas de armas sobreviven un reinicio', () async {
       final store = await boot();

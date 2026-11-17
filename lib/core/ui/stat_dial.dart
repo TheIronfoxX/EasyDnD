@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/design_tokens.dart';
 import '../theme/tactical_theme_tokens.dart';
+import '../theme/theme_style_tokens.dart';
 import 'pip_shape.dart';
 import '../theme/telemetry.dart';
 
@@ -231,7 +232,9 @@ class ResourcePips extends StatelessWidget {
             value: value,
             minHeight: 5,
             color: tone,
-            borderRadius: BorderRadius.circular(AppRadii.pill),
+            borderRadius: BorderRadius.circular(
+              context.tactical.shapes.pillRadius,
+            ),
           ),
         ),
       );
@@ -276,46 +279,112 @@ class VitalBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final tactical = context.tactical;
-    final radius = BorderRadius.circular(height / 2);
+    final style = tactical.components.bar;
+    final barHeight = style == BarStyle.thin ? height.clamp(3.0, 6.0) : height;
+    final radius = BorderRadius.circular(
+      style == BarStyle.segmented
+          ? 2.0
+          : tactical.shapes.pillRadius.clamp(0.0, barHeight / 2),
+    );
 
-    return Container(
-      height: height,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest,
-        borderRadius: radius,
-        border: Border.all(color: tactical.metalBorder.withValues(alpha: 0.6)),
+    final fill = TweenAnimationBuilder<double>(
+      duration: tactical.motion.scale(const Duration(milliseconds: 420)),
+      curve: tactical.motion.dialCurve,
+      tween: Tween(end: value.clamp(0.0, 1.0)),
+      builder: (context, fraction, child) => FractionallySizedBox(
+        alignment: Alignment.centerLeft,
+        widthFactor: fraction,
+        child: child,
       ),
-      child: TweenAnimationBuilder<double>(
-        duration: const Duration(milliseconds: 420),
-        curve: Curves.easeOutCubic,
-        tween: Tween(end: value.clamp(0.0, 1.0)),
-        builder: (context, fraction, child) => FractionallySizedBox(
-          alignment: Alignment.centerLeft,
-          widthFactor: fraction,
-          child: child,
-        ),
-        child: AnimatedContainer(
-          duration: AppDurations.normal,
-          decoration: BoxDecoration(
-            borderRadius: radius,
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color.alphaBlend(
-                  tactical.metalHighlight.withValues(alpha: 0.28),
-                  color,
-                ),
-                color,
-                Color.alphaBlend(scheme.shadow.withValues(alpha: 0.22), color),
-              ],
-            ),
-          ),
+      child: AnimatedContainer(
+        duration: AppDurations.normal,
+        decoration: BoxDecoration(
+          borderRadius: radius,
+          color: style == BarStyle.smooth ? null : color,
+          gradient: style == BarStyle.smooth
+              ? LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color.alphaBlend(
+                      tactical.metalHighlight.withValues(alpha: 0.28),
+                      color,
+                    ),
+                    color,
+                    Color.alphaBlend(
+                      scheme.shadow.withValues(alpha: 0.22),
+                      color,
+                    ),
+                  ],
+                )
+              : null,
         ),
       ),
     );
+
+    final glow = tactical.components.barGlow && style != BarStyle.thin;
+    return Container(
+      height: barHeight,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        boxShadow: glow
+            ? [
+                BoxShadow(
+                  color: color.withValues(alpha: 0.40),
+                  blurRadius: 8,
+                  spreadRadius: 0.5,
+                ),
+              ]
+            : null,
+        color: style == BarStyle.thin
+            ? color.withValues(alpha: 0.18)
+            : scheme.surfaceContainerHighest,
+        borderRadius: radius,
+        border: style == BarStyle.thin
+            ? null
+            : Border.all(
+                color: glow
+                    ? tactical.metalHighlight.withValues(alpha: 0.7)
+                    : tactical.metalBorder.withValues(alpha: 0.6),
+              ),
+      ),
+      child: style == BarStyle.segmented
+          ? Stack(
+              fit: StackFit.expand,
+              children: [
+                fill,
+                // Las muescas cortan la barra en segmentos.
+                CustomPaint(
+                  painter: _SegmentPainter(
+                    gap: scheme.surfaceContainerHighest,
+                    step: barHeight * 1.8,
+                  ),
+                ),
+              ],
+            )
+          : fill,
+    );
   }
+}
+
+class _SegmentPainter extends CustomPainter {
+  const _SegmentPainter({required this.gap, required this.step});
+
+  final Color gap;
+  final double step;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = gap
+      ..strokeWidth = 2;
+    for (var x = step; x < size.width; x += step) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_SegmentPainter old) => old.gap != gap || old.step != step;
 }
 
 /// Escudo de Clase de Armadura: la silueta lleva el número adentro y la

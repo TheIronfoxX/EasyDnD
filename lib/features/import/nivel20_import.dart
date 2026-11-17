@@ -75,11 +75,39 @@ class Nivel20Import {
     try {
       final base = Nivel20Mapper.map(raw, srd: srd);
       final merged = Nivel20Patch.apply(base, patch);
-      return CharacterValidator.validateMap(merged.toJson());
+      final validated = CharacterValidator.validateMap(
+        merged.character.toJson(),
+      );
+      if (!validated.isOk) return validated;
+      // Resumen del parche como avisos no bloqueantes (ADR-0002), tras los
+      // del validador: la vista previa los muestra igual que a ellos.
+      return CharacterValidationResult(
+        character: validated.character,
+        issues: [...validated.issues, ...patchWarnings(merged)],
+      );
     } on FormatException catch (e) {
       return _error(e.message);
     }
   }
+
+  /// Avisos no bloqueantes con lo que el parche creó e ignoró.
+  static List<ValidationIssue> patchWarnings(PatchResult r) => [
+    for (final a in r.created)
+      ValidationIssue(
+        severity: ValidationSeverity.warning,
+        field: 'parche.${a.id}',
+        message:
+            'El parche creó el poder "${a.name}" porque no coincide '
+            'con ningún rasgo importado. Si la IA renombró un rasgo, '
+            'quedará duplicado: revisá que no repita uno existente.',
+      ),
+    for (final i in r.ignored)
+      ValidationIssue(
+        severity: ValidationSeverity.warning,
+        field: 'parche.${i.field}',
+        message: i.reason,
+      ),
+  ];
 
   static CharacterValidationResult _error(String message) =>
       CharacterValidationResult(
@@ -104,7 +132,24 @@ class Nivel20Import {
       feats: sources.feats,
       customActions: sources.customActions,
       equipment: sources.equipment,
+      purse: Nivel20Mapper.detectedPurse(raw),
+      spells: _spellNames(raw),
     );
+  }
+
+  /// Nombres de los conjuros que el mapeador ya importa, para que la IA
+  /// les escriba categoría y frase en llano ("spell_notes"). Si la ficha
+  /// no se puede mapear, el prompt va sin conjuros.
+  static List<String> _spellNames(Map<String, dynamic> raw) {
+    try {
+      return Nivel20Mapper.map(raw).abilitiesByAction.all
+          .where((a) => a.isSpell)
+          .map((a) => a.name)
+          .toSet()
+          .toList();
+    } on FormatException {
+      return const [];
+    }
   }
 
   /// Fusiona sobre la ficha base (Nivel20Mapper.toJson) un parche sparse
@@ -118,8 +163,7 @@ class Nivel20Import {
   static Map<String, dynamic> mergeAiPatch(
     Map<String, dynamic> baseJson,
     Map<String, dynamic> patch,
-  ) =>
-      Nivel20Patch.mergePurseAndCompanions(baseJson, patch);
+  ) => Nivel20Patch.mergePurseAndCompanions(baseJson, patch);
 }
 
 /// Las dos acciones del Paso 1 cuando hay una ficha de Nivel20 lista.
@@ -172,7 +216,9 @@ class Nivel20ImportChoice extends StatelessWidget {
           width: double.infinity,
           child: OutlinedButton.icon(
             onPressed: onEnrich,
-            icon: Icon(enriched ? Icons.check_rounded : Icons.auto_awesome_rounded),
+            icon: Icon(
+              enriched ? Icons.check_rounded : Icons.auto_awesome_rounded,
+            ),
             label: Text(
               enriched
                   ? 'Prompt enriquecido listo (abajo)'
@@ -182,7 +228,10 @@ class Nivel20ImportChoice extends StatelessWidget {
         ),
         if (error != null) ...[
           const SizedBox(height: AppSpacing.sm),
-          Text(error!, style: theme.textTheme.bodySmall?.copyWith(color: scheme.error)),
+          Text(
+            error!,
+            style: theme.textTheme.bodySmall?.copyWith(color: scheme.error),
+          ),
         ],
       ],
     );

@@ -11,9 +11,9 @@
 // - Sin recursos gastables: resources vacío.
 // - Monedas: Nivel20 no trae un bloque de monedas estructurado, así que
 //   se detectan por regex en el texto libre de equipo y notas (ver
-//   _purse/_extractCurrency). Solo se reconocen oro/plata/cobre (po/pp/pc
-//   y sus formas largas) porque el modelo Purse no tiene campos para
-//   electro ni platino; lo que la regex no detecte lo puede completar el
+//   _purse/_currencyRegex). Se reconocen las cinco denominaciones de
+//   Purse: platino (ppt), oro (po), electro (pe), plata (pp) y cobre (pc),
+//   y sus formas largas; lo que la regex no detecte lo puede completar el
 //   parche de IA (AiPrompt.forNivel20Enrichment).
 // - Sin clasificación de rasgos: todo rasgo va a "passive" con rol
 //   "Utilidad" (el jugador lo ajusta en el editor).
@@ -36,20 +36,24 @@ class Nivel20Mapper {
 
   /// Construye el [CharacterModel]. Lanza [FormatException] si el JSON no
   /// parece una ficha de Nivel20 (sin "info" ni nombre).
-  static CharacterModel map(Map<String, dynamic> raw,
-          {List<SrdSpell> srd = const []}) =>
-      CharacterModel.fromJson(toJson(raw, srd: srd));
+  static CharacterModel map(
+    Map<String, dynamic> raw, {
+    List<SrdSpell> srd = const [],
+  }) => CharacterModel.fromJson(toJson(raw, srd: srd));
 
   /// Igual que [map] pero devuelve el JSON en formato EasyDnD, útil para
   /// pasarlo por CharacterValidator.validateMap o para inspeccionarlo.
-  static Map<String, dynamic> toJson(Map<String, dynamic> raw,
-      {List<SrdSpell> srd = const []}) {
+  static Map<String, dynamic> toJson(
+    Map<String, dynamic> raw, {
+    List<SrdSpell> srd = const [],
+  }) {
     final root = _unwrap(raw);
     final info = _map(root['info']);
     final name = info['name'];
     if (name is! String || name.trim().isEmpty) {
       throw const FormatException(
-          'El JSON no parece una ficha de Nivel20 (falta "info.name").');
+        'El JSON no parece una ficha de Nivel20 (falta "info.name").',
+      );
     }
 
     final professions = _list(root['professions']).map(_map).toList();
@@ -74,7 +78,8 @@ class Nivel20Mapper {
         'hp_max': _int(info['hit_points']) ?? 1,
         'hp_current': _int(info['hit_points']) ?? 1,
         'ac': _ac(root),
-        'speed': _int(_map(root['speed'])['total']) ?? _int(info['speed']) ?? 30,
+        'speed':
+            _int(_map(root['speed'])['total']) ?? _int(info['speed']) ?? 30,
         'spell_save_dc': spellDc,
         if (professions.isNotEmpty &&
             _int(professions.first['hit_points_dice']) != null)
@@ -111,9 +116,13 @@ class Nivel20Mapper {
   /// Sirve para decidir si ofrecer la importación directa.
   static bool looksLikeNivel20(Map<String, dynamic> raw) {
     final root = _unwrap(raw);
-    return _map(root['info']).containsKey('name') &&
-        root['ability'] is Map;
+    return _map(root['info']).containsKey('name') && root['ability'] is Map;
   }
+
+  /// Monedas que el mapeador detecta por regex en [raw] (las mismas que
+  /// quedan en la clave `purse` de la ficha base).
+  static Map<String, int> detectedPurse(Map<String, dynamic> raw) =>
+      _purse(_unwrap(raw)).map((k, v) => MapEntry(k, v as int));
 
   /// Textos crudos que el mapeador NO puede clasificar solo (rasgos,
   /// acciones caseras, equipo), para el prompt de enriquecimiento con IA.
@@ -159,7 +168,9 @@ class Nivel20Mapper {
       for (final e in _list(a['elements']).map(_map)) {
         final name = _str(e['name']);
         if (name.isEmpty) continue;
-        custom.writeln('- [${_str(a['name'])}] $name: ${_str(e['description'])}');
+        custom.writeln(
+          '- [${_str(a['name'])}] $name: ${_str(e['description'])}',
+        );
       }
     }
 
@@ -167,7 +178,11 @@ class Nivel20Mapper {
     final free = _str(root['equipment']);
     if (free.isNotEmpty) equipment.writeln(free);
     final items = _map(root['items']);
-    for (final key in ['armaduras', 'equipo_de_aventuras', 'monturas_y_vehiculos']) {
+    for (final key in [
+      'armaduras',
+      'equipo_de_aventuras',
+      'monturas_y_vehiculos',
+    ]) {
       for (final i in _list(items[key]).map(_map)) {
         final name = _str(i['name']);
         if (name.isNotEmpty) {
@@ -191,19 +206,25 @@ class Nivel20Mapper {
   // ---------------------------------------------------------------------
 
   static String _classText(
-      Map<String, dynamic> info, List<Map<String, dynamic>> professions) {
+    Map<String, dynamic> info,
+    List<Map<String, dynamic>> professions,
+  ) {
     final named = professions.where((p) => _str(p['name']).isNotEmpty);
     if (named.isEmpty) return _str(info['level_desc']);
-    return named.map((p) {
-      final arch = _str(p['archetype_name']);
-      final lvl = _int(p['level']);
-      return '${_str(p['name'])}${lvl != null ? ' $lvl' : ''}'
-          '${arch.isNotEmpty ? ' ($arch)' : ''}';
-    }).join(' / ');
+    return named
+        .map((p) {
+          final arch = _str(p['archetype_name']);
+          final lvl = _int(p['level']);
+          return '${_str(p['name'])}${lvl != null ? ' $lvl' : ''}'
+              '${arch.isNotEmpty ? ' ($arch)' : ''}';
+        })
+        .join(' / ');
   }
 
   static int _level(
-      Map<String, dynamic> info, List<Map<String, dynamic>> professions) {
+    Map<String, dynamic> info,
+    List<Map<String, dynamic>> professions,
+  ) {
     final direct = _int(info['level']);
     if (direct != null && direct > 0) return direct;
     final sum = professions.fold<int>(0, (a, p) => a + (_int(p['level']) ?? 0));
@@ -215,8 +236,9 @@ class Nivel20Mapper {
   static int _ac(Map<String, dynamic> root) {
     final normal = _int(_map(root['armor'])['normal']);
     if (normal != null) return normal;
-    final fallback = _int(_map(_map(_map(root['originals'])['static'])
-        ['armor_normal'])['total']);
+    final fallback = _int(
+      _map(_map(_map(root['originals'])['static'])['armor_normal'])['total'],
+    );
     return fallback ?? 10;
   }
 
@@ -276,7 +298,9 @@ class Nivel20Mapper {
   // ---------------------------------------------------------------------
 
   static List<Map<String, dynamic>> _spellSlots(
-      Map<String, dynamic> root, Map<String, dynamic> spellBook) {
+    Map<String, dynamic> root,
+    Map<String, dynamic> spellBook,
+  ) {
     var source = _map(spellBook['current_level_slots']);
     if (source.isEmpty) source = _map(_map(root['resources'])['spell_slots']);
     final out = <Map<String, dynamic>>[];
@@ -320,11 +344,11 @@ class Nivel20Mapper {
   );
 
   static Map<String, List<Map<String, dynamic>>> _emptyBuckets() => {
-        'action': [],
-        'bonus_action': [],
-        'reaction': [],
-        'passive': [],
-      };
+    'action': [],
+    'bonus_action': [],
+    'reaction': [],
+    'passive': [],
+  };
 
   static Map<String, dynamic> _abilities(
     Map<String, dynamic> root,
@@ -361,15 +385,17 @@ class Nivel20Mapper {
             'reaction' => 'reaction',
             _ => 'action',
           };
-          buckets[bucket]!.add(_spell(
-            spell,
-            id: uniqueId('spell-${_slug(_str(spell['name']))}'),
-            spellDc: spellDc,
-            spellAtk: spellAtk,
-            castStat: castStat,
-            actionDice: actionDice,
-            srd: srdIndex[normalizeSpellName(_str(spell['name']))],
-          ));
+          buckets[bucket]!.add(
+            _spell(
+              spell,
+              id: uniqueId('spell-${_slug(_str(spell['name']))}'),
+              spellDc: spellDc,
+              spellAtk: spellAtk,
+              castStat: castStat,
+              actionDice: actionDice,
+              srd: srdIndex[normalizeSpellName(_str(spell['name']))],
+            ),
+          );
         }
       }
     }
@@ -387,22 +413,26 @@ class Nivel20Mapper {
       // Sin ese dato se sigue asumiendo pasivo (no se adivina por texto).
       final active = _activeCategory(f);
       if (active != null) {
-        buckets[active]!.add(_activeFeat(
+        buckets[active]!.add(
+          _activeFeat(
+            id: uniqueId('feat-${_slug(fname)}'),
+            name: fname,
+            type: type,
+            description: desc.isNotEmpty ? desc : summary,
+            summary: summary,
+          ),
+        );
+        return;
+      }
+      buckets['passive']!.add(
+        _passive(
           id: uniqueId('feat-${_slug(fname)}'),
           name: fname,
           type: type,
           description: desc.isNotEmpty ? desc : summary,
           summary: summary,
-        ));
-        return;
-      }
-      buckets['passive']!.add(_passive(
-        id: uniqueId('feat-${_slug(fname)}'),
-        name: fname,
-        type: type,
-        description: desc.isNotEmpty ? desc : summary,
-        summary: summary,
-      ));
+        ),
+      );
     }
 
     for (final p in professions) {
@@ -432,13 +462,15 @@ class Nivel20Mapper {
         final desc = _str(e['description']);
         if (ename.isEmpty || desc.isEmpty) continue;
         if (_str(e['action_type']) != 'none') continue;
-        buckets['passive']!.add(_passive(
-          id: uniqueId('custom-${_slug(ename)}'),
-          name: ename,
-          type: 'trait',
-          description: desc,
-          summary: '',
-        ));
+        buckets['passive']!.add(
+          _passive(
+            id: uniqueId('custom-${_slug(ename)}'),
+            name: ename,
+            type: 'trait',
+            description: desc,
+            summary: '',
+          ),
+        );
       }
     }
 
@@ -463,15 +495,16 @@ class Nivel20Mapper {
     required String type,
     required String description,
     required String summary,
-  }) =>
-      {
-        'id': id,
-        'name': name,
-        'type': type,
-        'attack_type': 'none',
-        'lore_description': description,
-        'tactical_summary': summary.isNotEmpty ? summary : _firstSentence(description),
-      };
+  }) => {
+    'id': id,
+    'name': name,
+    'type': type,
+    'attack_type': 'none',
+    'lore_description': description,
+    'tactical_summary': summary.isNotEmpty
+        ? summary
+        : _firstSentence(description),
+  };
 
   static Map<String, dynamic> _passive({
     required String id,
@@ -479,15 +512,16 @@ class Nivel20Mapper {
     required String type,
     required String description,
     required String summary,
-  }) =>
-      {
-        'id': id,
-        'name': name,
-        'type': type,
-        'lore_description': description,
-        'tactical_summary': summary.isNotEmpty ? summary : _firstSentence(description),
-        'tactical_role': 'Utilidad',
-      };
+  }) => {
+    'id': id,
+    'name': name,
+    'type': type,
+    'lore_description': description,
+    'tactical_summary': summary.isNotEmpty
+        ? summary
+        : _firstSentence(description),
+    'tactical_role': 'Utilidad',
+  };
 
   static Map<String, dynamic> _spell(
     Map<String, dynamic> spell, {
@@ -591,7 +625,9 @@ class Nivel20Mapper {
   /// Último tramo textual tras el dado: "A distancia 1d10 fuego" ->
   /// "Fuego". Vacío si no hay.
   static String _damageType(String attackText) {
-    final m = RegExp(r'\d+d\d+(?:\s*[+-]\s*\d+)?\s+(\S.*)$').firstMatch(attackText);
+    final m = RegExp(
+      r'\d+d\d+(?:\s*[+-]\s*\d+)?\s+(\S.*)$',
+    ).firstMatch(attackText);
     final t = m?.group(1)?.trim() ?? '';
     return t.isEmpty ? '' : t[0].toUpperCase() + t.substring(1);
   }
@@ -613,7 +649,8 @@ class Nivel20Mapper {
       case 'save':
         final stat = saveText.split(' ').first;
         final half = saveText.toLowerCase().contains('mitad');
-        roll = 'Los objetivos tiran un d20'
+        roll =
+            'Los objetivos tiran un d20'
             '${stat.isNotEmpty ? ' (prueba de $stat)' : ''}; '
             'si superan tu CD$dc '
             '${half ? 'reciben solo la mitad del daño' : 'evitan el efecto'}, '
@@ -623,11 +660,13 @@ class Nivel20Mapper {
         final bonus = spellAtk != null
             ? (spellAtk >= 0 ? '+$spellAtk' : '$spellAtk')
             : '+X';
-        roll = 'Tiras un d20 y sumas $bonus; le dices el resultado al máster '
+        roll =
+            'Tiras un d20 y sumas $bonus; le dices el resultado al máster '
             'y él te dice si le has dado';
       default:
         final first = _firstSentence(summary);
-        roll = 'No tienes que tirar nada'
+        roll =
+            'No tienes que tirar nada'
             '${first.isNotEmpty ? ': ${_lowerFirst(first)}' : ''}';
     }
     final cost = switch (castingUnit) {
@@ -669,7 +708,8 @@ class Nivel20Mapper {
 
       final baseDice = _str(dmg['dice']);
       // Bono plano: lo que sobra de "1d6 -1" tras el dado ("-1").
-      final flat = RegExp(r'([+-]\s*\d+)\s*$')
+      final flat =
+          RegExp(r'([+-]\s*\d+)\s*$')
               .firstMatch(_str(dmg['value']))
               ?.group(1)
               ?.replaceAll(RegExp(r'\s+'), '') ??
@@ -740,7 +780,11 @@ class Nivel20Mapper {
   static List<Map<String, dynamic>> _mundaneItems(Map<String, dynamic> root) {
     final items = _map(root['items']);
     final out = <Map<String, dynamic>>[];
-    for (final key in ['armaduras', 'equipo_de_aventuras', 'monturas_y_vehiculos']) {
+    for (final key in [
+      'armaduras',
+      'equipo_de_aventuras',
+      'monturas_y_vehiculos',
+    ]) {
       for (final i in _list(items[key]).map(_map)) {
         final name = _str(i['name']);
         if (name.isEmpty) continue;
@@ -785,28 +829,40 @@ class Nivel20Mapper {
   // MONEDAS
   // ---------------------------------------------------------------------
 
-  /// Abreviatura o palabra de Nivel20 -> clave del modelo Purse. Solo
-  /// oro/plata/cobre: el modelo no tiene campos para electro ni platino
-  /// (ver nota de "Límites conocidos" al inicio del archivo).
+  /// Abreviatura o palabra de Nivel20 -> clave del modelo Purse (las cinco
+  /// denominaciones).
   static const _currencyKeys = {
-    'po': 'gold', 'oro': 'gold',
-    'pp': 'silver', 'plata': 'silver',
-    'pc': 'copper', 'cobre': 'copper',
+    'ppt': 'platinum',
+    'platino': 'platinum',
+    'po': 'gold',
+    'oro': 'gold',
+    'pe': 'electrum',
+    'electro': 'electrum',
+    'pp': 'silver',
+    'plata': 'silver',
+    'pc': 'copper',
+    'cobre': 'copper',
   };
 
   static final RegExp _currencyRegex = RegExp(
-    r'(\d+)\s*(?:piezas?|monedas?)?\s*(?:de\s+)?(po|pp|pc|oro|plata|cobre)\b',
+    r'(\d+)\s*(?:piezas?|monedas?)?\s*(?:de\s+)?(ppt|po|pe|pp|pc|platino|oro|electro|plata|cobre)\b',
     caseSensitive: false,
   );
 
   /// Suma las menciones de monedas en [equipment] y [notas] (regex sobre
   /// texto libre, ver _currencyRegex) en un único purse. Si la ficha no
-  /// menciona monedas da 0/0/0; el parche de IA puede completar lo que
+  /// menciona monedas da todo a 0; el parche de IA puede completar lo que
   /// esta regex no cubra.
   static Map<String, dynamic> _purse(Map<String, dynamic> root) {
     final equipment = _str(root['equipment']);
     final notas = _str(_map(root['fields'])['notas']);
-    final out = {'gold': 0, 'silver': 0, 'copper': 0};
+    final out = {
+      'platinum': 0,
+      'gold': 0,
+      'electrum': 0,
+      'silver': 0,
+      'copper': 0,
+    };
     for (final text in [equipment, notas]) {
       for (final m in _currencyRegex.allMatches(text)) {
         final key = _currencyKeys[m.group(2)!.toLowerCase()];
@@ -892,7 +948,13 @@ class Nivel20Mapper {
       t.isEmpty ? t : t[0].toLowerCase() + t.substring(1);
 
   static const _accents = {
-    'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u', 'ü': 'u', 'ñ': 'n',
+    'á': 'a',
+    'é': 'e',
+    'í': 'i',
+    'ó': 'o',
+    'ú': 'u',
+    'ü': 'u',
+    'ñ': 'n',
   };
 
   /// "Rayo de Fuego " -> "rayo-de-fuego" (ids estables y comparación de

@@ -39,8 +39,7 @@ Tambien, si de algun rasgo te falta informacion, NO DUDES EN PREGUNTAR ESTO ES M
   /// economía de acciones, tactical_role, attack_type, damage_dice,
   /// escalado, lenguaje llano, recursos, inventario, monedas, velocidad,
   /// CD de salvación... y el cierre ("devuélveme el JSON completo").
-  static const String _rules =
-      '''REGLAS OBLIGATORIAS:
+  static const String _rules = '''REGLAS OBLIGATORIAS:
 
 NO añadas ningún campo, clave o sección que no exista en el JSON de ejemplo. La app que lo lee no soporta campos extra y se romperá.
 
@@ -64,6 +63,11 @@ Los objetos mágicos con un poder activable (más allá de su bonificador de ata
 "type": obligatorio en cada habilidad, con uno de estos valores EXACTOS (sin sinónimos ni variaciones): "spell" (conjuros y trucos), "class" (rasgos de clase y subclase), "racial" (rasgos de raza o linaje), "feat" (dotes), "item" (poder activable de un objeto mágico). La app usa este campo para mostrar de dónde viene cada poder.
 
 Cada pasiva (cada objeto dentro de "passive") debe incluir además el campo "tactical_role", clasificándola en una de estas tres categorías EXACTAS (respeta mayúsculas, sin variaciones ni sinónimos): "Ofensivo" (aumenta daño propio, habilita ataques o efectos ofensivos), "Defensivo" (resistencias, PG extra, protección propia o de aliados), "Utilidad" (recursos, exploración, rasgos base/definición que no encajan en las dos anteriores). Si una pasiva combina varios usos, elige la función PRINCIPAL, no inventes una cuarta categoría. Este campo es EXCLUSIVO de "passive": no lo añadas a habilidades de "action", "bonus_action" ni "reaction".
+
+Cada habilidad y conjuro (de cualquier lista, también "passive") incluye además dos campos para jugadores novatos:
+   - "power_role": su categoría, uno de estos valores EXACTOS: "Daño" (hace daño a enemigos), "Defensa" (te protege o te ayuda a escapar), "Apoyo" (cura o ayuda a aliados) o "Utilidad" (todo lo demás: exploración, social, efectos menores). Elige la función PRINCIPAL.
+   - "plain_summary": UNA frase corta (máx. 12 palabras) en lenguaje llano, sin jerga de D&D, que explica qué hace a alguien que nunca ha jugado (ej. "Lanzas fuego a un enemigo.").
+   - "when_to_use": UNA frase corta en llano sobre cuándo conviene usarlo (ej. "Cuando varios enemigos están juntos.").
 
 "attack_type": obligatorio en cada habilidad de "action", "bonus_action" y "reaction" (NUNCA en "passive" — las pasivas no lo llevan). Determina si el modal de resolución te pide tirar un ataque, muestra la CD de salvación fija, o ninguna de las dos. Valores EXACTOS permitidos, sin variaciones: "save", "attack", "none".
    - "save" → el OBJETIVO es quien tira, contra tu CD. Úsalo si el texto del conjuro/rasgo menciona una "tirada de salvación de [característica]" que el objetivo debe superar (ej. "el objetivo debe superar una salvación de Destreza").
@@ -150,8 +154,7 @@ Devuélveme el JSON completo, sin comentarios ni texto fuera del bloque de códi
       '''FORMATO EXACTO A SEGUIR (ejemplo mínimo con todos los campos):''';
 
   /// Ejemplo mínimo con TODOS los campos del shape (Kaelen el Luminoso).
-  static const String _exampleJson =
-      '''{
+  static const String _exampleJson = '''{
   "basic_info": {
     "name": "Kaelen el Luminoso",
     "race": "Humano",
@@ -567,6 +570,20 @@ Devuélveme el JSON completo, sin comentarios ni texto fuera del bloque de códi
         '$_exampleHeader\n$_exampleJson';
   }
 
+  /// Categoría y frase en llano (rework para novatos). Se usa en el
+  /// parche de Nivel20 y en las fichas completas.
+  static const _plainFieldsRule =
+      '"power_role" es la categoría del poder para jugadores novatos, uno '
+      'de estos valores EXACTOS: "Daño" (hace daño a enemigos), '
+      '"Defensa" (te protege o te ayuda a escapar), "Apoyo" (cura o '
+      'ayuda a aliados) o "Utilidad" (todo lo demás: exploración, '
+      'social, efectos menores). Elige la función PRINCIPAL. '
+      '"plain_summary" es UNA frase corta (máx. 12 palabras) en lenguaje '
+      'llano, sin jerga de D&D, que explica qué hace a alguien que nunca '
+      'ha jugado (ej. "Lanzas fuego a un enemigo."). '
+      '"when_to_use" es UNA frase corta en llano sobre cuándo conviene '
+      'usarlo (ej. "Cuando varios enemigos están juntos."). ';
+
   /// Enriquecimiento de una ficha de Nivel20 por "parche". La app ya
   /// construyó la ficha de forma determinista (atributos, PG, CA, ranuras,
   /// armas y conjuros del SRD), así que la IA NO la recibe ni la devuelve:
@@ -580,6 +597,8 @@ Devuélveme el JSON completo, sin comentarios ni texto fuera del bloque de códi
     String feats = '',
     String customActions = '',
     String equipment = '',
+    Map<String, int> purse = const {},
+    List<String> spells = const [],
   }) {
     String section(String title, String body) =>
         '$title\n${body.trim().isEmpty ? '(sin datos)' : body.trim()}';
@@ -589,6 +608,17 @@ Devuélveme el JSON completo, sin comentarios ni texto fuera del bloque de códi
       if (characterClass.trim().isNotEmpty) 'Clase: ${characterClass.trim()}',
       if (level != null) 'Nivel: $level',
     ].join('\n');
+
+    const coinLabels = {
+      'platinum': 'platino',
+      'gold': 'oro',
+      'electrum': 'electro',
+      'silver': 'plata',
+      'copper': 'cobre',
+    };
+    final detected = coinLabels.entries
+        .map((e) => '${e.value}: ${purse[e.key] ?? 0}')
+        .join(', ');
 
     return 'Actúa como experto en D&D 5e. Mi app ya ha importado '
         'automáticamente los números de este personaje (atributos, PG, CA, '
@@ -600,17 +630,25 @@ Devuélveme el JSON completo, sin comentarios ni texto fuera del bloque de códi
         '${section('RASGOS (texto original de Nivel20):', feats)}\n\n'
         '${section('ACCIONES CASERAS DEL JUGADOR (texto original):', customActions)}\n\n'
         '${section('EQUIPO (texto original):', equipment)}\n\n'
+        '${section('CONJUROS (solo nombres; la app ya tiene su mecánica):', spells.join(', '))}\n\n'
         'DEVUELVE un único objeto JSON con ESTAS claves, todas '
         'opcionales (omite las que no apliquen). NO añadas ninguna otra '
-        'clave: nada de "basic_info", "stats", "spell_slots", conjuros ni '
-        'armas. La app ya detectó las monedas explícitas y los atributos.\n\n'
+        'clave: nada de "basic_info", "stats", "spell_slots", ni datos '
+        'de conjuros o armas (de los conjuros solo "spell_notes"). La app ya detectó las monedas explícitas y los atributos.\n\n'
+        'MONEDAS YA DETECTADAS POR LA APP (en EQUIPO y notas): $detected. '
+        'Ya están en la bolsa: NO las repitas en "purse".\n\n'
         '1. "classified_features": lista con un objeto por cada rasgo o '
-        'acción casera de arriba: { "name" (EXACTO como en el texto), '
+        'acción casera de arriba: { "name" (EXACTO como en el texto: '
+        'copia el nombre original carácter por carácter, sin renombrarlo, '
+        'traducirlo, ampliarlo ni abreviarlo; la app empareja por nombre '
+        'y un nombre distinto crearía un duplicado), '
         '"category": "action" | "bonus_action" | "reaction" | "passive" '
         '(según lo que gasta), "type": "class" | "racial" | "feat" | '
         '"item" (de dónde viene: clase o subclase, raza, dote u objeto '
         'mágico; un poder activable de un objeto mágico es "item"), '
-        '"tactical_summary", "lore_description" }. '
+        '"tactical_summary", "lore_description", "power_role", '
+        '"plain_summary", "when_to_use" }. '
+        '$_plainFieldsRule'
         'Los poderes de clase, raza o dotes que se ACTIVAN (Furia, Tomar '
         'aliento, Inspiración bárdica, Aliento de dragón, Ki...) y no son '
         'conjuros NO son pasivos: clasifícalos en "action", '
@@ -642,29 +680,35 @@ Devuélveme el JSON completo, sin comentarios ni texto fuera del bloque de códi
         '4. "lore_info": { "tactical_summary", "lore_description" } con '
         'un resumen táctico corto del personaje y un par de frases de '
         'sabor, ambos en lenguaje llano.\n'
-        '5. "purse": { "gold", "silver", "copper" } con SOLO las monedas '
-        'ADICIONALES que menciones el resto del texto (rasgos, trasfondo, '
-        'acciones caseras) y que la app no haya sumado ya (la app ya '
-        'detectó las del EQUIPO y las notas). Se SUMAN a la bolsa; nunca '
-        'las restes ni repitas las ya contadas. Si no hay ninguna, omite '
-        'la clave.\n'
+        '5. "purse": { "platinum", "gold", "electrum", "silver", "copper" } '
+        'con SOLO las monedas ADICIONALES que menciones el resto del texto '
+        '(rasgos, trasfondo, acciones caseras) o que la app no reconoce '
+        '(platino, electro, menciones narrativas) y que NO estén ya en '
+        '"MONEDAS YA DETECTADAS" (el EQUIPO de arriba las menciona en '
+        'crudo: no las releas). Se SUMAN a la bolsa; nunca las restes ni '
+        'repitas las ya contadas. Si no hay ninguna, omite la clave.\n'
         '6. "companions": lista de familiares, monturas o aliados con '
         'nombre propio mencionados en rasgos, equipo o trasfondo, como '
         '{ "name", "type", "has_hp", "current_hp", "max_hp", "ac" }. Usa '
         '"has_hp": true solo si el texto da o permite deducir sus PG '
         'reales; si no, "has_hp": false, "current_hp"/"max_hp" en 0 y "ac" '
         'en 10. No inventes compañeros. Si no hay ninguno, omite la '
-        'clave.\n\n'
+        'clave.\n'
+        '7. "spell_notes": un objeto por cada conjuro de la lista CONJUROS, '
+        'como { "name" (EXACTO como en la lista), "power_role", '
+        '"plain_summary", "when_to_use" }. Solo esos campos: no devuelvas dados, '
+        'niveles ni ningún otro dato del conjuro. Si no hay conjuros, '
+        'omite la clave.\n\n'
         'Ejemplo del formato:\n'
         '{"classified_features":[{"name":"Ataque furtivo","category":'
         '"passive","type":"class","tactical_role":"Ofensivo","tactical_summary":"...",'
         '"lore_description":"..."},{"name":"Paso nublado","category":'
         '"bonus_action","type":"racial","attack_type":"none","resource_name":"Forma '
         'cambiante","resource_cost":1,"concentration":false,"tactical_summary":"...",'
-        '"lore_description":"..."}],"resources":[{"name":"Forma '
+        '"lore_description":"...","power_role":"Defensa","plain_summary":"Te teletransportas a un sitio cercano."}],"spell_notes":[{"name":"Rayo de fuego","power_role":"Daño","plain_summary":"Lanzas fuego a un enemigo."}],"resources":[{"name":"Forma '
         'cambiante","current":2,"max":2}],"inventory":{"mundane_items":'
         '[{"name":"Cuerda de cáñamo","description":"15 m","quantity":1}]},'
-        '"lore_info":{"tactical_summary":"...","lore_description":"..."},"purse":{"gold":5,"silver":0,"copper":0},"companions":[{"name":"Sombra","type":"Familiar","has_hp":false,"current_hp":0,"max_hp":0,"ac":10}]}\n\n'
+        '"lore_info":{"tactical_summary":"...","lore_description":"..."},"purse":{"platinum":0,"gold":5,"electrum":0,"silver":0,"copper":0},"companions":[{"name":"Sombra","type":"Familiar","has_hp":false,"current_hp":0,"max_hp":0,"ac":10}]}\n\n'
         'Si algo es ambiguo, PREGÚNTAME antes de asumir. Devuélveme solo el '
         'JSON, sin comentarios ni texto fuera del bloque de código.';
   }

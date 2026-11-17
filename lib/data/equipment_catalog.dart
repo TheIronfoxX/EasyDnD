@@ -24,7 +24,9 @@ abstract final class EquipmentCatalog {
   static Future<void> _ensureLoaded(AssetBundle? bundle) async {
     if (_weapons != null && _armors != null) return;
     try {
-      final jsonStr = await (bundle ?? rootBundle).loadString('assets/srd/equipment_5e.json');
+      final jsonStr = await (bundle ?? rootBundle).loadString(
+        'assets/srd/equipment_5e.json',
+      );
       final parsed = parse(jsonStr);
       _weapons = parsed.$1;
       _armors = parsed.$2;
@@ -80,7 +82,9 @@ abstract final class EquipmentCatalog {
   static SrdWeapon? weaponByIdOrName(List<SrdWeapon> all, String key) {
     final k = normalizeSpellName(key);
     for (final w in all) {
-      if (normalizeSpellName(w.id) == k || normalizeSpellName(w.name) == k) return w;
+      if (normalizeSpellName(w.id) == k || normalizeSpellName(w.name) == k) {
+        return w;
+      }
     }
     return null;
   }
@@ -88,7 +92,9 @@ abstract final class EquipmentCatalog {
   static SrdArmor? armorByIdOrName(List<SrdArmor> all, String key) {
     final k = normalizeSpellName(key);
     for (final a in all) {
-      if (normalizeSpellName(a.id) == k || normalizeSpellName(a.name) == k) return a;
+      if (normalizeSpellName(a.id) == k || normalizeSpellName(a.name) == k) {
+        return a;
+      }
     }
     return null;
   }

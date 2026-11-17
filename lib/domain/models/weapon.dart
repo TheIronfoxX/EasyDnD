@@ -16,10 +16,7 @@ class WeaponDamage {
   String baseDice;
   String baseType;
 
-  WeaponDamage({
-    required this.baseDice,
-    required this.baseType,
-  });
+  WeaponDamage({required this.baseDice, required this.baseType});
 
   factory WeaponDamage.fromJson(Map<String, dynamic> json) {
     return WeaponDamage(
@@ -29,10 +26,7 @@ class WeaponDamage {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'base_dice': baseDice,
-      'base_type': baseType,
-    };
+    return {'base_dice': baseDice, 'base_type': baseType};
   }
 }
 
@@ -60,11 +54,7 @@ class ConditionalDamage {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'trigger': trigger,
-      'dice': dice,
-      'type': type,
-    };
+    return {'trigger': trigger, 'dice': dice, 'type': type};
   }
 }
 
@@ -98,11 +88,7 @@ class MagicCharges {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'has_charges': hasCharges,
-      'max': max,
-      'current': current,
-    };
+    return {'has_charges': hasCharges, 'max': max, 'current': current};
   }
 
   void consumeCharge() {
@@ -196,9 +182,7 @@ class Weapon {
       // Rework v2: fichas de la app vieja no traen "quantity" — la
       // migración de RosterRepository la inyecta desde las claves
       // legacy. Para fichas nuevas el default es 1.
-      quantity: isUnique
-          ? 1
-          : ((json['quantity'] as num?) ?? 1).toInt(),
+      quantity: isUnique ? 1 : ((json['quantity'] as num?) ?? 1).toInt(),
     );
   }
 

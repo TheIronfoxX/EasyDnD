@@ -1,14 +1,13 @@
-// Pestaña Ficha (Etapa 5d): la hoja del personaje de SOLO LECTURA.
+// Pestaña Personaje: la hoja del personaje, partida en subpestañas
+// (Atributos · Habilidades · Recursos · Compañeros · Trasfondo) para
+// que nunca haya más de un tema en pantalla.
 //
-// Cuatro bloques, en el orden en que se consultan en mesa:
-//   atributos → competencias → historia y personalidad → códice.
-//
-// La edición vive en CharacterEditorScreen. Acá no hay campos ni
-// botones que muten nada: el jugador lee, el editor escribe. Eso permite
-// que esta pestaña sea un widget puro (sin store) y que el shell la
-// reconstruya con la ficha activa cuando cambie de personaje.
+// La edición vive en CharacterEditorScreen. Atributos, habilidades y
+// trasfondo son de solo lectura; recursos y compañeros sí se gastan en
+// mesa y llaman al store.
 
 import 'package:flutter/material.dart';
+import '../../core/ui/app_icons.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/dnd_rules.dart';
@@ -20,36 +19,12 @@ import '../../core/theme/design_tokens.dart';
 import '../../core/theme/tactical_theme_tokens.dart';
 import '../../core/theme/telemetry.dart';
 
-class HudSheetTab extends StatelessWidget {
-  const HudSheetTab({super.key, required this.character});
-
-  final CharacterModel character;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.lg,
-        AppSpacing.lg,
-        AppSpacing.xl,
-      ),
-      children: [
-        _AttributesSection(stats: character.stats),
-        _SkillsSection(skills: character.skills),
-        _LoreSection(character: character),
-        _CodexSection(character: character),
-      ],
-    );
-  }
-}
-
 // ---------------------------------------------------------------------
 // Atributos: valor y modificador de las seis características.
 // ---------------------------------------------------------------------
 
-class _AttributesSection extends StatelessWidget {
-  const _AttributesSection({required this.stats});
+class HudAttributesSection extends StatelessWidget {
+  const HudAttributesSection({super.key, required this.stats});
 
   final StatsBlock stats;
 
@@ -168,15 +143,15 @@ class _ScoreTile extends StatelessWidget {
 // Competencias: cuadrícula de 2 columnas con indicador, atributo y modificador.
 // ---------------------------------------------------------------------
 
-class _SkillsSection extends StatelessWidget {
-  const _SkillsSection({required this.skills});
+class HudSkillsSection extends StatelessWidget {
+  const HudSkillsSection({super.key, required this.skills});
 
   final List<Skill> skills;
 
   @override
   Widget build(BuildContext context) {
     return HudSectionCard(
-      icon: Icons.military_tech_rounded,
+      icon: AppIcons.of(context).classFeature,
       title: 'Competencias',
       child: skills.isEmpty
           ? const HudEmptyHint('La ficha no trae competencias.')
@@ -269,7 +244,9 @@ class _SkillTile extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
             decoration: BoxDecoration(
               color: scheme.primary.withValues(alpha: 0.16),
-              borderRadius: BorderRadius.circular(AppRadii.pill),
+              borderRadius: BorderRadius.circular(
+                context.tactical.shapes.pillRadius,
+              ),
               border: Border.all(color: scheme.primary.withValues(alpha: 0.35)),
             ),
             child: Text(
@@ -290,8 +267,8 @@ class _SkillTile extends StatelessWidget {
 // Historia y personalidad (cinco campos narrativos + foto del personaje).
 // ---------------------------------------------------------------------
 
-class _LoreSection extends StatelessWidget {
-  const _LoreSection({required this.character});
+class HudLoreSection extends StatelessWidget {
+  const HudLoreSection({super.key, required this.character});
 
   final CharacterModel character;
 
@@ -309,7 +286,7 @@ class _LoreSection extends StatelessWidget {
     final portraitPath = character.loreAvatarPath ?? character.avatarPath;
 
     return HudSectionCard(
-      icon: Icons.auto_stories_rounded,
+      icon: AppIcons.of(context).spellbook,
       title: 'Historia y personalidad',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -368,8 +345,8 @@ class _LoreSection extends StatelessWidget {
 // Códice: notas de IA, tácticas del jugador y diario de aventura.
 // ---------------------------------------------------------------------
 
-class _CodexSection extends StatelessWidget {
-  const _CodexSection({required this.character});
+class HudCodexSection extends StatelessWidget {
+  const HudCodexSection({super.key, required this.character});
 
   final CharacterModel character;
 
@@ -382,7 +359,7 @@ class _CodexSection extends StatelessWidget {
     ].where((entry) => entry.$2.trim().isNotEmpty).toList();
 
     return HudSectionCard(
-      icon: Icons.menu_book_rounded,
+      icon: AppIcons.of(context).notes,
       title: 'Códice',
       child: entries.isEmpty
           ? const HudEmptyHint('Sin notas en el códice todavía.')
@@ -415,11 +392,11 @@ class _ReadOnlyField extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            label.toUpperCase(),
-            style: theme.textTheme.labelSmall?.copyWith(
+            label,
+            style: theme.textTheme.labelLarge?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0,
             ),
           ),
           const SizedBox(height: AppSpacing.xs),

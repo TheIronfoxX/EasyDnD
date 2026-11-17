@@ -164,7 +164,8 @@ class _EditorWeaponPageState extends State<EditorWeaponPage> {
             'Sin daño condicional: el arma solo hace su daño base.',
           ),
         for (final conditional in weapon.conditionalDamage)
-          TacticalCard(padding: EdgeInsets.zero,
+          TacticalCard(
+            padding: EdgeInsets.zero,
             // Por IDENTIDAD: si se borra una tarjeta del medio, las
             // demás conservan su texto (con keys por índice se
             // pisarían entre sí).

@@ -31,7 +31,10 @@ class ConditionDetail {
   /// Cegado). Lo consume el aviso de desventaja del HUD.
   final bool causesDisadvantage;
 
-  const ConditionDetail({required this.description, this.causesDisadvantage = false});
+  const ConditionDetail({
+    required this.description,
+    this.causesDisadvantage = false,
+  });
 }
 
 class DndRules {
@@ -60,10 +63,25 @@ class DndRules {
   static int hitDieSidesFromClass(String characterClass) {
     final normalized = characterClass.toLowerCase();
     const d12Classes = ['bárbaro', 'barbaro'];
-    const d10Classes = ['guerrero', 'paladín', 'paladin', 'explorador', 'ranger'];
+    const d10Classes = [
+      'guerrero',
+      'paladín',
+      'paladin',
+      'explorador',
+      'ranger',
+    ];
     const d8Classes = [
-      'clérigo', 'clerigo', 'druida', 'monje', 'pícaro', 'picaro',
-      'bardo', 'brujo', 'artillero', 'artífice', 'artifice',
+      'clérigo',
+      'clerigo',
+      'druida',
+      'monje',
+      'pícaro',
+      'picaro',
+      'bardo',
+      'brujo',
+      'artillero',
+      'artífice',
+      'artifice',
     ];
     const d6Classes = ['hechicero', 'mago', 'sorcerer', 'wizard'];
 
@@ -90,40 +108,47 @@ class DndRules {
   /// no estado editable.
   static const Map<String, ConditionDetail> conditions = {
     'Apresado': ConditionDetail(
-      description: 'La velocidad del personaje se reduce a 0 y no puede '
+      description:
+          'La velocidad del personaje se reduce a 0 y no puede '
           'beneficiarse de ningún bonificador a su velocidad.',
       causesDisadvantage: false,
     ),
     'Envenenado': ConditionDetail(
-      description: 'El personaje sufre desventaja en tiradas de ataque y '
+      description:
+          'El personaje sufre desventaja en tiradas de ataque y '
           'pruebas de característica.',
       causesDisadvantage: true,
     ),
     'Derribado': ConditionDetail(
-      description: 'El personaje solo puede moverse a rastras, tiene '
+      description:
+          'El personaje solo puede moverse a rastras, tiene '
           'desventaja en tiradas de ataque y los ataques cuerpo a cuerpo '
           'contra él tienen ventaja.',
       causesDisadvantage: true,
     ),
     'Asustado': ConditionDetail(
-      description: 'El personaje tiene desventaja en tiradas de ataque y '
+      description:
+          'El personaje tiene desventaja en tiradas de ataque y '
           'pruebas de característica mientras la fuente de su miedo esté '
           'a la vista, y no puede acercarse voluntariamente a ella.',
       causesDisadvantage: true,
     ),
     'Cegado': ConditionDetail(
-      description: 'El personaje no puede ver y falla automáticamente '
+      description:
+          'El personaje no puede ver y falla automáticamente '
           'cualquier prueba que requiera vista. Tiene desventaja en '
           'tiradas de ataque y los ataques contra él tienen ventaja.',
       causesDisadvantage: true,
     ),
     'Ensordecido': ConditionDetail(
-      description: 'El personaje no puede oír y falla automáticamente '
+      description:
+          'El personaje no puede oír y falla automáticamente '
           'cualquier prueba que requiera oído.',
       causesDisadvantage: false,
     ),
     'Paralizado': ConditionDetail(
-      description: 'El personaje está incapacitado, no puede moverse ni '
+      description:
+          'El personaje está incapacitado, no puede moverse ni '
           'hablar, y falla automáticamente las salvaciones de Fuerza y '
           'Destreza. Los ataques contra él tienen ventaja y cualquier '
           'impacto cuerpo a cuerpo a menos de 5 pies es crítico '
@@ -131,25 +156,29 @@ class DndRules {
       causesDisadvantage: false,
     ),
     'Inconsciente': ConditionDetail(
-      description: 'El personaje está incapacitado, no puede moverse ni '
+      description:
+          'El personaje está incapacitado, no puede moverse ni '
           'hablar y no es consciente de su entorno. Suelta lo que '
           'sostenga y cae derribado.',
       causesDisadvantage: false,
     ),
     'Aturdido': ConditionDetail(
-      description: 'El personaje está incapacitado, no puede moverse y '
+      description:
+          'El personaje está incapacitado, no puede moverse y '
           'solo puede hablar de forma entrecortada. Falla '
           'automáticamente las salvaciones de Fuerza y Destreza, y los '
           'ataques contra él tienen ventaja.',
       causesDisadvantage: false,
     ),
     'Agarrado': ConditionDetail(
-      description: 'La velocidad del personaje se convierte en 0 y no '
+      description:
+          'La velocidad del personaje se convierte en 0 y no '
           'puede beneficiarse de ningún bonificador a su velocidad.',
       causesDisadvantage: false,
     ),
     'Invisible': ConditionDetail(
-      description: 'El personaje es imposible de ver sin ayuda mágica o '
+      description:
+          'El personaje es imposible de ver sin ayuda mágica o '
           'sentidos especiales. Tiene ventaja en tiradas de ataque y '
           'los ataques contra él tienen desventaja.',
       causesDisadvantage: false,

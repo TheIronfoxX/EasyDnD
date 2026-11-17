@@ -16,14 +16,32 @@ import 'package:easydnd/features/hud/hud_sheet_tab.dart';
 import 'fakes/test_fichas.dart';
 
 void main() {
-  Future<void> pumpSheet(WidgetTester tester, CharacterModel character) async {
+  /// Pumpea la pestaña Personaje y, si se pide, abre una subpestaña.
+  Future<void> pumpSheet(
+    WidgetTester tester,
+    CharacterModel character, {
+    String? subTab,
+  }) async {
     await tester.binding.setSurfaceSize(const Size(1000, 2600));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.dark(),
-        home: Scaffold(body: HudSheetTab(character: character)),
+        // Cada sección es ahora una pantalla propia de la pestaña Ficha;
+        // [subTab] elige cuál se monta.
+        home: Scaffold(
+          body: ListView(
+            children: switch (subTab) {
+              'Habilidades' => [HudSkillsSection(skills: character.skills)],
+              'Trasfondo' => [
+                HudLoreSection(character: character),
+                HudCodexSection(character: character),
+              ],
+              _ => [HudAttributesSection(stats: character.stats)],
+            },
+          ),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -33,7 +51,7 @@ void main() {
     testWidgets('muestra los seis valores con su modificador', (tester) async {
       await pumpSheet(tester, buildCharacter(id: 'char_sheet', name: 'Rook'));
 
-      expect(find.text('Atributos'), findsOneWidget);
+      expect(find.text('Atributos'), findsWidgets);
       for (final label in [
         'Fuerza',
         'Destreza',
@@ -67,14 +85,13 @@ void main() {
         Skill(name: 'Sigilo', relatedStat: 'dex', modifier: 3),
       ]);
 
-      await pumpSheet(tester, character);
+      await pumpSheet(tester, character, subTab: 'Habilidades');
 
       expect(find.text('Competencias'), findsOneWidget);
       expect(find.text('Atletismo'), findsOneWidget);
       expect(find.text('+5'), findsOneWidget);
       expect(find.text('Sigilo'), findsOneWidget);
-      // +3 también es el modificador de Fuerza en Atributos: acotamos a la
-      // fila de Sigilo para no confundir ambas apariciones.
+      // Acotamos el +3 a la fila de Sigilo.
       expect(
         find.descendant(
           of: find.ancestor(
@@ -85,13 +102,18 @@ void main() {
         ),
         findsOneWidget,
       );
-      // El atributo aparece en la tarjeta y como subtítulo de la skill.
-      expect(find.text('Fuerza'), findsNWidgets(2));
-      expect(find.text('Destreza'), findsNWidgets(2));
+      // El atributo aparece como subtítulo de la skill (la tarjeta de
+      // Atributos vive en otra subpestaña).
+      expect(find.text('Fuerza'), findsOneWidget);
+      expect(find.text('Destreza'), findsOneWidget);
     });
 
     testWidgets('sin competencias muestra un estado vacío', (tester) async {
-      await pumpSheet(tester, buildCharacter(id: 'char_noskills'));
+      await pumpSheet(
+        tester,
+        buildCharacter(id: 'char_noskills'),
+        subTab: 'Habilidades',
+      );
 
       expect(find.text('La ficha no trae competencias.'), findsOneWidget);
     });
@@ -110,7 +132,7 @@ void main() {
       character.userTactics = 'Guardar la reacción para el jefe.';
       character.adventureNotes = 'Día 3: la cripta de sal.';
 
-      await pumpSheet(tester, character);
+      await pumpSheet(tester, character, subTab: 'Trasfondo');
 
       expect(find.text('Historia y personalidad'), findsOneWidget);
       expect(find.text('Criado entre mercenarios.'), findsOneWidget);
@@ -120,11 +142,11 @@ void main() {
       expect(find.text('No confía en la magia.'), findsOneWidget);
 
       expect(find.text('Códice'), findsOneWidget);
-      expect(find.text('NOTAS DE LA IA'), findsOneWidget);
+      expect(find.text('Notas de la IA'), findsOneWidget);
       expect(find.text('Usá Furia en el primer turno.'), findsOneWidget);
-      expect(find.text('TÁCTICAS DEL JUGADOR'), findsOneWidget);
+      expect(find.text('Tácticas del jugador'), findsOneWidget);
       expect(find.text('Guardar la reacción para el jefe.'), findsOneWidget);
-      expect(find.text('DIARIO DE AVENTURA'), findsOneWidget);
+      expect(find.text('Diario de aventura'), findsOneWidget);
       expect(find.text('Día 3: la cripta de sal.'), findsOneWidget);
 
       // De solo lectura: ni un solo campo de texto en toda la pestaña.
@@ -142,7 +164,7 @@ void main() {
         flaws: '',
       );
 
-      await pumpSheet(tester, character);
+      await pumpSheet(tester, character, subTab: 'Trasfondo');
 
       expect(
         find.text('La ficha no trae historia ni personalidad.'),

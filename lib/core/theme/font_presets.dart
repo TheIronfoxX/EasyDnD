@@ -7,7 +7,8 @@
 //
 // "Diario" mezcla títulos Cinzel con cuerpo Inter (el look de la app
 // vieja, ahora de verdad); "Mesa" es Inter de punta a punta, neutra;
-// "Consola" es JetBrains Mono, cómoda para números y mesas tácticas.
+// "Consola" es JetBrains Mono, cómoda para números y mesas tácticas;
+// "Códice" mezcla uncial y serif de libro; "Cuento" es Almendra.
 
 import 'package:flutter/foundation.dart';
 
@@ -57,7 +58,23 @@ abstract final class FontPresets {
     displayFamily: AppFonts.jetBrainsMono,
   );
 
-  static const List<FontPreset> all = [journal, table, console];
+  static const FontPreset codex = FontPreset(
+    id: 'codice',
+    label: 'Códice',
+    description: 'Títulos en uncial de manuscrito y cuerpo serif tipo libro.',
+    bodyFamily: AppFonts.crimsonText,
+    displayFamily: AppFonts.uncialAntiqua,
+  );
+
+  static const FontPreset tale = FontPreset(
+    id: 'cuento',
+    label: 'Cuento',
+    description: 'Almendra de punta a punta: caligrafía de cuento de fantasía.',
+    bodyFamily: AppFonts.almendra,
+    displayFamily: AppFonts.almendra,
+  );
+
+  static const List<FontPreset> all = [journal, table, console, codex, tale];
 
   /// Por defecto "Diario": es la identidad de la app y se nota desde el
   /// primer arranque. Quien ya eligió otro preset lo conserva (persistido).

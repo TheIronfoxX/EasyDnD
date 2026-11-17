@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:easydnd/core/dice.dart';
 import 'package:easydnd/core/resolution.dart';
+import 'package:easydnd/domain/ai_prompt.dart';
 import 'package:easydnd/domain/character_validator.dart';
 import 'package:easydnd/domain/models/ability.dart';
 import 'package:easydnd/domain/models/character.dart';
@@ -21,17 +22,22 @@ void main() {
   late List<SrdSpell> srd;
 
   setUpAll(() {
-    raw = jsonDecode(File('test/fixtures/nivel20/kael_nar_ardinys.trimmed.json')
-        .readAsStringSync()) as Map<String, dynamic>;
-    srd = (jsonDecode(File('assets/srd/spells_5e.json').readAsStringSync())
-            as List)
-        .map((e) => SrdSpell.fromJson(e as Map<String, dynamic>))
-        .toList();
+    raw =
+        jsonDecode(
+              File(
+                'test/fixtures/nivel20/kael_nar_ardinys.trimmed.json',
+              ).readAsStringSync(),
+            )
+            as Map<String, dynamic>;
+    srd =
+        (jsonDecode(File('assets/srd/spells_5e.json').readAsStringSync())
+                as List)
+            .map((e) => SrdSpell.fromJson(e as Map<String, dynamic>))
+            .toList();
   });
 
   Map<String, dynamic> find(Map<String, dynamic> json, String name) =>
-      (json['abilities_by_action'] as Map)
-          .values
+      (json['abilities_by_action'] as Map).values
           .expand((l) => l as List)
           .cast<Map<String, dynamic>>()
           .firstWhere((a) => a['name'] == name);
@@ -54,14 +60,21 @@ void main() {
       });
     });
 
-    test('lee también el shape antiguo (condition/damage_dice/damage_type)', () {
-      final c = ConditionalDamage.fromJson({
-        'condition': 'A dos manos',
-        'damage_dice': '1d10+4',
-        'damage_type': 'cortante',
-      });
-      expect(c.toJson(), {'trigger': 'A dos manos', 'dice': '1d10+4', 'type': 'cortante'});
-    });
+    test(
+      'lee también el shape antiguo (condition/damage_dice/damage_type)',
+      () {
+        final c = ConditionalDamage.fromJson({
+          'condition': 'A dos manos',
+          'damage_dice': '1d10+4',
+          'damage_type': 'cortante',
+        });
+        expect(c.toJson(), {
+          'trigger': 'A dos manos',
+          'dice': '1d10+4',
+          'type': 'cortante',
+        });
+      },
+    );
   });
 
   group('Ability.toJson — esquema estricto', () {
@@ -96,8 +109,14 @@ void main() {
         reaction: [],
         passive: [ability],
       ).toJson();
-      expect((group['action'] as List).single.containsKey('tactical_role'), isFalse);
-      expect((group['passive'] as List).single.containsKey('attack_type'), isFalse);
+      expect(
+        (group['action'] as List).single.containsKey('tactical_role'),
+        isFalse,
+      );
+      expect(
+        (group['passive'] as List).single.containsKey('attack_type'),
+        isFalse,
+      );
     });
   });
 
@@ -124,7 +143,9 @@ void main() {
 
     test('rollDetailed tira todos los grupos y desglosa', () {
       // nextInt % max: con [0] todos los dados valen 1.
-      final r = DiceExpression.tryParse('2d8+4d6+3')!.rollDetailed(random: FakeRandom([0]));
+      final r = DiceExpression.tryParse(
+        '2d8+4d6+3',
+      )!.rollDetailed(random: FakeRandom([0]));
       expect(r.groups[0].dice, [1, 1]);
       expect(r.groups[1].dice, [1, 1, 1, 1]);
       expect(r.total, 2 + 4 + 3);
@@ -140,19 +161,27 @@ void main() {
         random: FakeRandom([0]),
       )!;
       expect(r.total, 2 + 4 + 1);
-      expect(r.groups.map((g) => g.label), ['2d8', '4d6', '1 × 1d8 (escalado)']);
+      expect(r.groups.map((g) => g.label), [
+        '2d8',
+        '4d6',
+        '1 × 1d8 (escalado)',
+      ]);
       expect(r.groups.map((g) => g.subtotal), [2, 4, 1]);
     });
 
     test('el validador acepta dados compuestos y avisa de los rotos', () {
       final json = Nivel20Mapper.toJson(raw, srd: srd);
       expect(
-        CharacterValidator.validateMap(json).issues.where((i) => i.field.contains('damage_dice')),
+        CharacterValidator.validateMap(
+          json,
+        ).issues.where((i) => i.field.contains('damage_dice')),
         isEmpty,
       );
       find(json, 'Tormenta de hielo')['damage_dice'] = '2d8 4d6';
       expect(
-        CharacterValidator.validateMap(json).issues.any((i) => i.field.contains('damage_dice')),
+        CharacterValidator.validateMap(
+          json,
+        ).issues.any((i) => i.field.contains('damage_dice')),
         isTrue,
       );
     });
@@ -160,7 +189,10 @@ void main() {
 
   group('cruce de conjuros con el SRD', () {
     test('Tormenta de hielo hereda dado compuesto, escalado y descripción', () {
-      final ice = find(Nivel20Mapper.toJson(raw, srd: srd), 'Tormenta de hielo');
+      final ice = find(
+        Nivel20Mapper.toJson(raw, srd: srd),
+        'Tormenta de hielo',
+      );
       expect(ice['damage_dice'], '2d8+4d6');
       expect(ice['scaling_formula'], '1d8');
       expect(ice['is_scalable'], isTrue);
@@ -178,10 +210,18 @@ void main() {
       expect(normalizeSpellName('  TORMENTA  de Hielo '), 'tormenta de hielo');
       expect(normalizeSpellName('Palabra de Curación'), 'palabra de curacion');
       final mutated = jsonDecode(jsonEncode(raw)) as Map<String, dynamic>;
-      final text = jsonEncode(mutated).replaceAll('Manos ardientes', 'MANOS ÁRDIENTES');
-      final json = Nivel20Mapper.toJson(jsonDecode(text) as Map<String, dynamic>, srd: srd);
+      final text = jsonEncode(
+        mutated,
+      ).replaceAll('Manos ardientes', 'MANOS ÁRDIENTES');
+      final json = Nivel20Mapper.toJson(
+        jsonDecode(text) as Map<String, dynamic>,
+        srd: srd,
+      );
       final manos = find(json, 'MANOS ÁRDIENTES');
-      expect(manos['lore_description'], srd.firstWhere((s) => s.name == 'Manos ardientes').description);
+      expect(
+        manos['lore_description'],
+        srd.firstWhere((s) => s.name == 'Manos ardientes').description,
+      );
     });
 
     test('homebrew fuera del SRD conserva los datos de Nivel20', () {
@@ -231,7 +271,10 @@ Aquí tienes:
 
     setUpAll(() {
       base = Nivel20Mapper.map(raw, srd: srd);
-      merged = Nivel20Patch.apply(base, Nivel20Patch.tryDecode(patchText)!);
+      merged = Nivel20Patch.apply(
+        base,
+        Nivel20Patch.tryDecode(patchText)!,
+      ).character;
     });
 
     test('tryDecode distingue parche de ficha completa y de basura', () {
@@ -241,32 +284,226 @@ Aquí tienes:
       expect(Nivel20Patch.tryDecode('{"foo": 1}'), isNull);
     });
 
-    test('atributos, PG, CA, velocidad, ranuras, armas y conjuros quedan intactos', () {
-      final a = base.toJson();
-      final b = merged.toJson();
-      for (final k in ['basic_info', 'stats', 'skills', 'spell_slots', 'purse']) {
-        expect(b[k], a[k], reason: k);
-      }
-      expect(b['inventory']['weapons'], a['inventory']['weapons']);
+    test(
+      'atributos, PG, CA, velocidad, ranuras, armas y conjuros quedan intactos',
+      () {
+        final a = base.toJson();
+        final b = merged.toJson();
+        for (final k in [
+          'basic_info',
+          'stats',
+          'skills',
+          'spell_slots',
+          'purse',
+        ]) {
+          expect(b[k], a[k], reason: k);
+        }
+        expect(b['inventory']['weapons'], a['inventory']['weapons']);
 
-      List<dynamic> spells(Map<String, dynamic> j) => (j['abilities_by_action'] as Map)
-          .values
-          .expand((l) => l as List)
-          .where((x) => x['type'] == 'spell')
-          .toList();
-      expect(spells(b), spells(a)); // incluso Tormenta de hielo (el parche la intentó mover)
-      expect(merged.basicInfo.hpMax, base.basicInfo.hpMax);
-      expect(base.toJson()['abilities_by_action'], isNotNull); // base no se muta
+        List<dynamic> spells(Map<String, dynamic> j) =>
+            (j['abilities_by_action'] as Map).values
+                .expand((l) => l as List)
+                .where((x) => x['type'] == 'spell')
+                .toList();
+        expect(
+          spells(b),
+          spells(a),
+        ); // incluso Tormenta de hielo (el parche la intentó mover)
+        expect(merged.basicInfo.hpMax, base.basicInfo.hpMax);
+        expect(
+          base.toJson()['abilities_by_action'],
+          isNotNull,
+        ); // base no se muta
+      },
+    );
+
+    test('purse del parche suma las cinco denominaciones y no resta', () {
+      final out = Nivel20Patch.mergePurseAndCompanions(
+        {
+          'purse': {
+            'platinum': 1,
+            'gold': 10,
+            'electrum': 0,
+            'silver': 2,
+            'copper': 3,
+          },
+        },
+        {
+          'purse': {
+            'platinum': 2,
+            'gold': 5,
+            'electrum': 4,
+            'silver': -9,
+            'copper': 1,
+          },
+        },
+      );
+      expect(out['purse'], {
+        'platinum': 3,
+        'gold': 15,
+        'electrum': 4,
+        'silver': 2,
+        'copper': 4,
+      });
+    });
+
+    test('forNivel20Enrichment inyecta el purse detectado por el mapper', () {
+      final prompt = AiPrompt.forNivel20Enrichment(
+        equipment: '5 po',
+        purse: const {'gold': 5, 'platinum': 2},
+      );
+      expect(
+        prompt,
+        contains('platino: 2, oro: 5, electro: 0, plata: 0, cobre: 0'),
+      );
+      expect(
+        prompt,
+        contains('"platinum", "gold", "electrum", "silver", "copper"'),
+      );
+    });
+
+    test('power_role y plain_summary: rasgos y notas de conjuros', () {
+      final spellName = base.abilitiesByAction.all
+          .firstWhere((a) => a.isSpell)
+          .name;
+      final spellBefore = base.abilitiesByAction.all.firstWhere(
+        (a) => a.name == spellName,
+      );
+      final r = Nivel20Patch.apply(base, {
+        'classified_features': [
+          {
+            'name': 'Forma cambiante',
+            'category': 'action',
+            'attack_type': 'none',
+            'power_role': 'Defensa',
+            'plain_summary': 'Te conviertes en zorro.',
+          },
+        ],
+        'spell_notes': [
+          {
+            'name': spellName,
+            'power_role': 'Daño',
+            'plain_summary': 'Quemas a un enemigo.',
+            'when_to_use': 'Cuando el enemigo está lejos.',
+            'damage_dice': '99d99',
+          },
+          {'name': 'No existe', 'power_role': 'Daño'},
+          {'name': spellName, 'power_role': 'Rarísimo'},
+        ],
+      });
+      final c = r.character;
+      final forma = c.abilitiesByAction.all.firstWhere(
+        (a) => a.name == 'Forma cambiante',
+      );
+      expect(forma.powerRole, 'Defensa');
+      expect(forma.plainSummary, 'Te conviertes en zorro.');
+
+      final spell = c.abilitiesByAction.all.firstWhere(
+        (a) => a.name == spellName,
+      );
+      expect(spell.powerRole, 'Daño');
+      expect(spell.plainSummary, 'Quemas a un enemigo.');
+      expect(spell.whenToUse, 'Cuando el enemigo está lejos.');
+      // La mecánica del conjuro no se toca.
+      expect(spell.damageDice, spellBefore.damageDice);
+
+      expect(
+        r.ignored.map((i) => i.field),
+        containsAll([
+          'spell_notes[No existe]',
+          'spell_notes[$spellName].power_role',
+        ]),
+      );
+    });
+
+    test('apply devuelve poderes creados (patch-<slug>) e ignorados', () {
+      final r = Nivel20Patch.apply(base, {
+        'classified_features': [
+          {
+            'name': 'Furia del bárbaro',
+            'category': 'action',
+            'attack_type': 'none',
+            'heal_dice': 'xx',
+            'resource_name': 'Inexistente',
+          },
+          {'name': 'Mala', 'category': 'otra'},
+          {'name': '', 'category': 'action'},
+        ],
+        'resources': [
+          {'name': 'Cero', 'max': 0},
+        ],
+        'inventory': {
+          'mundane_items': [
+            {'description': 'sin nombre'},
+          ],
+        },
+      });
+      expect(r.created.map((a) => a.id), ['patch-furia-del-barbaro']);
+      final fields = r.ignored.map((i) => i.field).toList();
+      expect(
+        fields,
+        containsAll([
+          'classified_features[Mala].category',
+          'classified_features',
+          'classified_features[Furia del bárbaro].heal_dice',
+          'classified_features[Furia del bárbaro].resource_name',
+          'resources[Cero]',
+          'inventory.mundane_items',
+        ]),
+      );
+      // Un rasgo existente emparejado por nombre no cuenta como creado.
+      final ok = Nivel20Patch.apply(base, {
+        'classified_features': [
+          {
+            'name': 'Forma cambiante',
+            'category': 'action',
+            'attack_type': 'none',
+          },
+        ],
+      });
+      expect(ok.created, isEmpty);
+      expect(ok.ignored, isEmpty);
+    });
+
+    test('applyPatch muestra creados e ignorados como avisos no bloqueantes', () {
+      final result = Nivel20Import.applyPatch(
+        raw,
+        '{"classified_features":[{"name":"Rasgo renombrado","category":"action",'
+        '"attack_type":"none"},{"name":"Mala","category":"x"}]}',
+        srd: srd,
+      );
+      expect(result.isOk, isTrue);
+      final fields = result.warnings.map((w) => w.field).toList();
+      expect(fields, contains('parche.patch-rasgo-renombrado'));
+      expect(fields, contains('parche.classified_features[Mala].category'));
+    });
+
+    test('el prompt exige conservar los nombres exactos de los rasgos', () {
+      final prompt = AiPrompt.forNivel20Enrichment();
+      expect(prompt, contains('EXACTO como en el texto'));
+      expect(prompt, contains('sin renombrarlo'));
     });
 
     test('clasifica rasgos: mueve de categoría y respeta el esquema', () {
-      final forma = merged.abilitiesByAction.action.firstWhere((a) => a.name == 'Forma cambiante');
+      final forma = merged.abilitiesByAction.action.firstWhere(
+        (a) => a.name == 'Forma cambiante',
+      );
       expect(forma.attackType, 'none');
       expect(forma.tacticalSummary, contains('zorro'));
-      expect(base.abilitiesByAction.passive.any((a) => a.name == 'Forma cambiante'), isTrue);
-      expect(merged.abilitiesByAction.passive.any((a) => a.name == 'Forma cambiante'), isFalse);
+      expect(
+        base.abilitiesByAction.passive.any((a) => a.name == 'Forma cambiante'),
+        isTrue,
+      );
+      expect(
+        merged.abilitiesByAction.passive.any(
+          (a) => a.name == 'Forma cambiante',
+        ),
+        isFalse,
+      );
 
-      final nova = merged.abilitiesByAction.passive.firstWhere((a) => a.name == 'Supernova');
+      final nova = merged.abilitiesByAction.passive.firstWhere(
+        (a) => a.name == 'Supernova',
+      );
       expect(nova.tacticalRole, 'Ofensivo');
 
       final nuevo = merged.abilitiesByAction.reaction.single;
@@ -275,8 +512,10 @@ Aquí tienes:
       expect(ids.toSet().length, ids.length);
     });
 
-    test('type y concentration del parche llegan al modelo, solo en activas', () {
-      final patch = Nivel20Patch.tryDecode('''
+    test(
+      'type y concentration del parche llegan al modelo, solo en activas',
+      () {
+        final patch = Nivel20Patch.tryDecode('''
 {"classified_features": [
   {"name": "Forma cambiante", "category": "action", "type": "racial",
    "attack_type": "none", "concentration": true},
@@ -285,24 +524,27 @@ Aquí tienes:
   {"name": "Truco nuevo", "category": "reaction", "type": "inventado",
    "attack_type": "none"}
 ]}''')!;
-      final out = Nivel20Patch.apply(base, patch);
+        final out = Nivel20Patch.apply(base, patch).character;
 
-      final forma = out.abilitiesByAction.action
-          .firstWhere((a) => a.name == 'Forma cambiante');
-      expect(forma.type, 'racial');
-      expect(forma.concentration, isTrue);
+        final forma = out.abilitiesByAction.action.firstWhere(
+          (a) => a.name == 'Forma cambiante',
+        );
+        expect(forma.type, 'racial');
+        expect(forma.concentration, isTrue);
 
-      // Una pasiva toma el origen pero nunca concentración.
-      final nova = out.abilitiesByAction.passive
-          .firstWhere((a) => a.name == 'Supernova');
-      expect(nova.type, 'class');
-      expect(nova.concentration, isFalse);
+        // Una pasiva toma el origen pero nunca concentración.
+        final nova = out.abilitiesByAction.passive.firstWhere(
+          (a) => a.name == 'Supernova',
+        );
+        expect(nova.type, 'class');
+        expect(nova.concentration, isFalse);
 
-      // Un origen que no está en la lista se ignora.
-      final nuevo = out.abilitiesByAction.reaction.single;
-      expect(nuevo.type, 'trait');
-      expect(nuevo.concentration, isFalse);
-    });
+        // Un origen que no está en la lista se ignora.
+        final nuevo = out.abilitiesByAction.reaction.single;
+        expect(nuevo.type, 'trait');
+        expect(nuevo.concentration, isFalse);
+      },
+    );
 
     test('resources: añade válidos y descarta los inválidos', () {
       expect(merged.resources.map((r) => r.name), ['Forma cambiante']);
@@ -314,7 +556,12 @@ Aquí tienes:
       final names = merged.inventory.mundaneItems.map((m) => m.name).toList();
       expect(names, containsAll(['Aguja infalible', 'Cuerda']));
       expect(names, isNot(contains('Equipo')));
-      expect(merged.inventory.mundaneItems.firstWhere((m) => m.name == 'Cuerda').quantity, 2);
+      expect(
+        merged.inventory.mundaneItems
+            .firstWhere((m) => m.name == 'Cuerda')
+            .quantity,
+        2,
+      );
     });
 
     test('lore_info: resumen táctico a las notas de la IA', () {
@@ -325,7 +572,10 @@ Aquí tienes:
       final r = Nivel20Import.applyPatch(raw, patchText, srd: srd);
       expect(r.isOk, isTrue);
       expect(r.character!.resources.single.name, 'Forma cambiante');
-      expect(Nivel20Import.applyPatch(raw, 'no es json', srd: srd).isOk, isFalse);
+      expect(
+        Nivel20Import.applyPatch(raw, 'no es json', srd: srd).isOk,
+        isFalse,
+      );
     });
   });
 }

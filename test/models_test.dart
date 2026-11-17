@@ -256,7 +256,11 @@ void main() {
         isFalse,
       );
       // Tampoco con false explícito.
-      final explicit = Ability.fromJson({'id': 'a2', 'name': 'X', 'concentration': false});
+      final explicit = Ability.fromJson({
+        'id': 'a2',
+        'name': 'X',
+        'concentration': false,
+      });
       expect(explicit.toJson().containsKey('concentration'), isFalse);
     });
 
@@ -266,11 +270,18 @@ void main() {
         'name': 'Pasiva',
         'concentration': true,
       });
-      expect(passive.toJson(category: 'passive').containsKey('concentration'), isFalse);
+      expect(
+        passive.toJson(category: 'passive').containsKey('concentration'),
+        isFalse,
+      );
     });
 
     test('un valor que no es booleano true se ignora', () {
-      final a = Ability.fromJson({'id': 'a1', 'name': 'X', 'concentration': 'sí'});
+      final a = Ability.fromJson({
+        'id': 'a1',
+        'name': 'X',
+        'concentration': 'sí',
+      });
       expect(a.concentration, isFalse);
     });
   });
@@ -295,17 +306,20 @@ void main() {
       expect(revived.healDice, '1d10+3');
     });
 
-    test('ficha vieja: sin campos nuevos, fallback seguro y JSON sin ruido', () {
-      final old = Ability.fromJson({'id': 'a1', 'name': 'Viejo'});
-      expect(old.resourceName, isNull);
-      expect(old.resourceCost, 1);
-      expect(old.healDice, isNull);
+    test(
+      'ficha vieja: sin campos nuevos, fallback seguro y JSON sin ruido',
+      () {
+        final old = Ability.fromJson({'id': 'a1', 'name': 'Viejo'});
+        expect(old.resourceName, isNull);
+        expect(old.resourceCost, 1);
+        expect(old.healDice, isNull);
 
-      final json = old.toJson(category: 'action');
-      expect(json.containsKey('resource_name'), isFalse);
-      expect(json.containsKey('resource_cost'), isFalse);
-      expect(json.containsKey('heal_dice'), isFalse);
-    });
+        final json = old.toJson(category: 'action');
+        expect(json.containsKey('resource_name'), isFalse);
+        expect(json.containsKey('resource_cost'), isFalse);
+        expect(json.containsKey('heal_dice'), isFalse);
+      },
+    );
 
     test('las pasivas no escriben recurso ni curación', () {
       final a = Ability.fromJson({

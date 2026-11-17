@@ -81,14 +81,21 @@ class _SrdPickerState<T> extends State<_SrdPicker<T>> {
   Widget build(BuildContext context) {
     final q = normalizeSpellName(_query);
     final shown = _all
-        .where((e) => q.isEmpty || normalizeSpellName(widget.name(e)).contains(q))
+        .where(
+          (e) => q.isEmpty || normalizeSpellName(widget.name(e)).contains(q),
+        )
         .toList();
     return SizedBox(
       height: MediaQuery.of(context).size.height * 0.75,
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.sm),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              0,
+              AppSpacing.lg,
+              AppSpacing.sm,
+            ),
             child: TextField(
               decoration: InputDecoration(
                 labelText: 'Buscar en ${widget.title}',

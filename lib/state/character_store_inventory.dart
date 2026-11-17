@@ -90,6 +90,41 @@ extension CharacterStoreInventory on CharacterStore {
     _notifyAndPersist();
   }
 
+  /// Añade una nota de sesión al diario del personaje activo. [now] es
+  /// inyectable para tests. Devuelve la nota creada (o null sin ficha).
+  SessionNote? addSessionNote({
+    required String title,
+    required String body,
+    DateTime? now,
+  }) {
+    final character = activeCharacter;
+    if (character == null) return null;
+    final note = SessionNote(title: title.trim(), body: body, createdAt: now);
+    character.sessionNotes.add(note);
+    _notifyAndPersist();
+    return note;
+  }
+
+  /// Edita título y cuerpo de una nota por id. Id inexistente = no-op.
+  void updateSessionNote(String id, {String? title, String? body}) {
+    final character = activeCharacter;
+    if (character == null) return;
+    final i = character.sessionNotes.indexWhere((n) => n.id == id);
+    if (i < 0) return;
+    final note = character.sessionNotes[i];
+    if (title != null) note.title = title.trim();
+    if (body != null) note.body = body;
+    _notifyAndPersist();
+  }
+
+  void deleteSessionNote(String id) {
+    final character = activeCharacter;
+    if (character == null) return;
+    final before = character.sessionNotes.length;
+    character.sessionNotes.removeWhere((n) => n.id == id);
+    if (character.sessionNotes.length != before) _notifyAndPersist();
+  }
+
   /// Notas de IA: de solo lectura en el HUD actual, pero se expone
   /// igual para la integración que las regenere.
   void setAiTips(String text) {
@@ -180,11 +215,13 @@ extension CharacterStoreInventory on CharacterStore {
   }) {
     final items = activeCharacter?.inventory.mundaneItems;
     if (items == null) return;
-    items.add(MundaneItem(
-      name: name,
-      description: description,
-      quantity: quantity < 1 ? 1 : quantity,
-    ));
+    items.add(
+      MundaneItem(
+        name: name,
+        description: description,
+        quantity: quantity < 1 ? 1 : quantity,
+      ),
+    );
     _notifyAndPersist();
   }
 
@@ -261,17 +298,20 @@ extension CharacterStoreInventory on CharacterStore {
       attackType: attackType,
       isScalable: isScalable,
       baseLevel: baseLevel,
-      scalingFormula: (trimmedScalingFormula == null || trimmedScalingFormula.isEmpty)
+      scalingFormula:
+          (trimmedScalingFormula == null || trimmedScalingFormula.isEmpty)
           ? null
           : trimmedScalingFormula,
       damageDice: (trimmedDamageDice == null || trimmedDamageDice.isEmpty)
           ? null
           : trimmedDamageDice,
       loreDescription: description.trim().isEmpty ? null : description.trim(),
-      tacticalSummary: (trimmedTacticalSummary == null || trimmedTacticalSummary.isEmpty)
+      tacticalSummary:
+          (trimmedTacticalSummary == null || trimmedTacticalSummary.isEmpty)
           ? null
           : trimmedTacticalSummary,
-      tacticalRole: isPassive &&
+      tacticalRole:
+          isPassive &&
               trimmedTacticalRole != null &&
               trimmedTacticalRole.isNotEmpty
           ? trimmedTacticalRole
@@ -347,17 +387,20 @@ extension CharacterStoreInventory on CharacterStore {
       attackType: attackType,
       isScalable: isScalable,
       baseLevel: baseLevel,
-      scalingFormula: (trimmedScalingFormula == null || trimmedScalingFormula.isEmpty)
+      scalingFormula:
+          (trimmedScalingFormula == null || trimmedScalingFormula.isEmpty)
           ? null
           : trimmedScalingFormula,
       damageDice: (trimmedDamageDice == null || trimmedDamageDice.isEmpty)
           ? null
           : trimmedDamageDice,
       loreDescription: description.trim().isEmpty ? null : description.trim(),
-      tacticalSummary: (trimmedTacticalSummary == null || trimmedTacticalSummary.isEmpty)
+      tacticalSummary:
+          (trimmedTacticalSummary == null || trimmedTacticalSummary.isEmpty)
           ? null
           : trimmedTacticalSummary,
-      tacticalRole: isPassive &&
+      tacticalRole:
+          isPassive &&
               trimmedTacticalRole != null &&
               trimmedTacticalRole.isNotEmpty
           ? trimmedTacticalRole

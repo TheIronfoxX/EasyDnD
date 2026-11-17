@@ -72,8 +72,7 @@ class CharacterValidationResult {
 
   bool get isOk => character != null;
 
-  List<ValidationIssue> get errors =>
-      issues.where((i) => i.isError).toList();
+  List<ValidationIssue> get errors => issues.where((i) => i.isError).toList();
 
   List<ValidationIssue> get warnings =>
       issues.where((i) => i.isWarning).toList();
@@ -91,7 +90,10 @@ class CharacterValidator {
     try {
       decoded = jsonDecode(sanitized);
     } on FormatException catch (e) {
-      return _blocked('json', 'El texto no contiene un JSON válido: ${e.message}');
+      return _blocked(
+        'json',
+        'El texto no contiene un JSON válido: ${e.message}',
+      );
     }
     if (decoded is! Map) {
       return _blocked(
@@ -111,7 +113,10 @@ class CharacterValidator {
     // ------------------- ERRORES BLOQUEANTES -------------------
     final basicRaw = json['basic_info'];
     if (basicRaw is! Map) {
-      return _blocked('basic_info', 'La ficha no tiene el objeto "basic_info".');
+      return _blocked(
+        'basic_info',
+        'La ficha no tiene el objeto "basic_info".',
+      );
     }
     final basic = basicRaw;
 
@@ -127,11 +132,13 @@ class CharacterValidator {
 
     // ----------------------- WARNINGS --------------------------
     final issues = <ValidationIssue>[];
-    void warn(String field, String message) => issues.add(ValidationIssue(
-          severity: ValidationSeverity.warning,
-          field: field,
-          message: message,
-        ));
+    void warn(String field, String message) => issues.add(
+      ValidationIssue(
+        severity: ValidationSeverity.warning,
+        field: field,
+        message: message,
+      ),
+    );
 
     _warnBasicInfo(basic, warn);
     _warnStats(json, warn);
@@ -169,10 +176,7 @@ class CharacterValidator {
   // que ya escondió los datos ausentes detrás de sus fallbacks).
   // ---------------------------------------------------------------------
 
-  static void _warnBasicInfo(
-    Map basic,
-    void Function(String, String) warn,
-  ) {
+  static void _warnBasicInfo(Map basic, void Function(String, String) warn) {
     final characterClass = basic['characterClass'];
     final level = basic['level'];
 
@@ -182,31 +186,41 @@ class CharacterValidator {
       final hasDigitsInClass =
           characterClass is String && RegExp(r'\d').hasMatch(characterClass);
       if (!hasDigitsInClass) {
-        warn('basic_info.level',
-            'No se puede determinar el nivel; se asume 1 (competencia y dados de golpe quedarán cortos).');
+        warn(
+          'basic_info.level',
+          'No se puede determinar el nivel; se asume 1 (competencia y dados de golpe quedarán cortos).',
+        );
       }
     }
 
     final hpMax = basic['hp_max'] as num;
     final hpCurrent = basic['hp_current'];
     if (hpCurrent is num && (hpCurrent < 0 || hpCurrent > hpMax)) {
-      warn('basic_info.hp_current',
-          '"hp_current" ($hpCurrent) queda fuera del rango 0-$hpMax; se ajustará en el primer cambio de vida.');
+      warn(
+        'basic_info.hp_current',
+        '"hp_current" ($hpCurrent) queda fuera del rango 0-$hpMax; se ajustará en el primer cambio de vida.',
+      );
     }
 
     final speed = basic['speed'];
     if (speed is! num) {
-      warn('basic_info.speed',
-          'Sin "speed"; se asume 30 pies (velocidad humana estándar).');
+      warn(
+        'basic_info.speed',
+        'Sin "speed"; se asume 30 pies (velocidad humana estándar).',
+      );
     } else if (speed < 5 || speed > 120) {
-      warn('basic_info.speed',
-          '"speed" ($speed) fuera del rango 5-120 pies; ¿está en metros '
-          'o es un error de la IA?');
+      warn(
+        'basic_info.speed',
+        '"speed" ($speed) fuera del rango 5-120 pies; ¿está en metros '
+            'o es un error de la IA?',
+      );
     }
 
     if (basic['hit_die_sides'] is! num) {
-      warn('basic_info.hit_die_sides',
-          'Sin "hit_die_sides"; se infiere de la clase (d6/d8/d10/d12).');
+      warn(
+        'basic_info.hit_die_sides',
+        'Sin "hit_die_sides"; se infiere de la clase (d6/d8/d10/d12).',
+      );
     }
   }
 
@@ -218,17 +232,27 @@ class CharacterValidator {
   ) {
     final stats = json['stats'];
     if (stats is! Map ||
-        ['str', 'dex', 'con', 'int', 'wis', 'cha']
-            .any((k) => stats[k] is! Map)) {
-      warn('stats',
-          'Atributos incompletos; los que falten valen 10 (modificador +0).');
+        [
+          'str',
+          'dex',
+          'con',
+          'int',
+          'wis',
+          'cha',
+        ].any((k) => stats[k] is! Map)) {
+      warn(
+        'stats',
+        'Atributos incompletos; los que falten valen 10 (modificador +0).',
+      );
     }
 
     final slots = json['spell_slots'];
     final basic = json['basic_info'] as Map;
     if (slots is List && slots.isNotEmpty && basic['spell_save_dc'] is! num) {
-      warn('basic_info.spell_save_dc',
-          'Tiene ranuras de conjuro pero no "spell_save_dc"; el HUD no podrá mostrar la CD de salvación.');
+      warn(
+        'basic_info.spell_save_dc',
+        'Tiene ranuras de conjuro pero no "spell_save_dc"; el HUD no podrá mostrar la CD de salvación.',
+      );
     }
   }
 
@@ -250,16 +274,20 @@ class CharacterValidator {
       final label = 'inventory.weapons[$name]';
 
       if (raw['id'] == null) {
-        warn('$label.id',
-            '"$name" no trae "id"; se genera uno al vuelo (no recomendado para objetos con cantidad).');
+        warn(
+          '$label.id',
+          '"$name" no trae "id"; se genera uno al vuelo (no recomendado para objetos con cantidad).',
+        );
       }
 
       final damage = raw['damage'];
       final baseDice = damage is Map ? damage['base_dice'] : null;
       if (baseDice is String && baseDice.isNotEmpty) {
         if (DiceExpression.tryParse(baseDice) == null) {
-          warn('$label.damage.base_dice',
-              '"$name": el dado de daño "$baseDice" no es una notación válida; el HUD no podrá tirarlo.');
+          warn(
+            '$label.damage.base_dice',
+            '"$name": el dado de daño "$baseDice" no es una notación válida; el HUD no podrá tirarlo.',
+          );
         }
       }
 
@@ -269,15 +297,19 @@ class CharacterValidator {
           charges['current'] is num &&
           charges['max'] is num &&
           (charges['current'] as num) > (charges['max'] as num)) {
-        warn('$label.magic_charges',
-            '"$name": más cargas actuales que el máximo; se dejará como está hasta el primer uso.');
+        warn(
+          '$label.magic_charges',
+          '"$name": más cargas actuales que el máximo; se dejará como está hasta el primer uso.',
+        );
       }
 
       if (raw['is_unique'] == true &&
           raw['quantity'] is num &&
           (raw['quantity'] as num) > 1) {
-        warn('$label.quantity',
-            '"$name" es única pero trae quantity ${(raw['quantity'])}; se fuerza a 1.');
+        warn(
+          '$label.quantity',
+          '"$name" es única pero trae quantity ${(raw['quantity'])}; se fuerza a 1.',
+        );
       }
     }
   }
@@ -306,8 +338,10 @@ class CharacterValidator {
         final damageDice = raw['damage_dice'];
         if (damageDice is String && damageDice.isNotEmpty) {
           if (DiceExpression.tryParse(damageDice) == null) {
-            warn('$label.damage_dice',
-                '"$name": el dado "$damageDice" no es una notación válida; el HUD no podrá tirarlo.');
+            warn(
+              '$label.damage_dice',
+              '"$name": el dado "$damageDice" no es una notación válida; el HUD no podrá tirarlo.',
+            );
           }
         }
 
@@ -318,8 +352,10 @@ class CharacterValidator {
           final resolvable =
               formula is String && DiceExpression.tryParse(formula) != null;
           if (!resolvable) {
-            warn('$label.scaling_formula',
-                '"$name" es escalable pero su fórmula ("$formula") no es resoluble; no escalará en combate.');
+            warn(
+              '$label.scaling_formula',
+              '"$name" es escalable pero su fórmula ("$formula") no es resoluble; no escalará en combate.',
+            );
           }
         }
 
@@ -327,15 +363,19 @@ class CharacterValidator {
         if (attackType is String &&
             attackType.isNotEmpty &&
             !['save', 'attack', 'none'].contains(attackType)) {
-          warn('$label.attack_type',
-              '"$name": "attack_type" desconocido ("$attackType"); se asume "attack".');
+          warn(
+            '$label.attack_type',
+            '"$name": "attack_type" desconocido ("$attackType"); se asume "attack".',
+          );
         }
       }
     }
 
     if (total == 0) {
-      warn('abilities_by_action',
-          'La ficha no trae habilidades (acción/adicional/reacción/pasiva).');
+      warn(
+        'abilities_by_action',
+        'La ficha no trae habilidades (acción/adicional/reacción/pasiva).',
+      );
     }
   }
 
@@ -348,8 +388,10 @@ class CharacterValidator {
 
     for (final condition in conditions) {
       if (condition is String && !DndRules.conditions.containsKey(condition)) {
-        warn('active_conditions',
-            '"$condition" no está en el catálogo de condiciones; no tendrá descripción ni aviso de desventaja.');
+        warn(
+          'active_conditions',
+          '"$condition" no está en el catálogo de condiciones; no tendrá descripción ni aviso de desventaja.',
+        );
       }
     }
   }

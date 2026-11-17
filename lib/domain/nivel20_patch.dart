@@ -13,12 +13,15 @@
 //     { "name", "category": "action|bonus_action|reaction|passive",
 //       "tactical_role" (solo passive), "attack_type" (solo activas),
 //       "resource_name", "resource_cost", "heal_dice" (solo activas),
-//       "tactical_summary", "lore_description" }
+//       "tactical_summary", "lore_description",
+//       "power_role" ("Daño|Defensa|Apoyo|Utilidad"), "plain_summary",
+//       "when_to_use" }
 //   ],
+//   "spell_notes": [ { "name", "power_role", "plain_summary", "when_to_use" } ]  // solo textos: la mecánica del conjuro no se toca
 //   "resources": [ { "name", "current", "max" } ],
 //   "inventory": { "mundane_items": [ { "name", "description", "quantity" } ] },
 //   "lore_info": { "tactical_summary", "lore_description" },
-//   "purse": { "gold", "silver", "copper" }   // monedas ADICIONALES: se suman
+//   "purse": { "platinum", "gold", "electrum", "silver", "copper" }   // monedas ADICIONALES: se suman
 //   "companions": [ { "name", "type", "has_hp", "current_hp", "max_hp", "ac" } ]
 // }
 //
@@ -31,6 +34,34 @@ import '../core/json_sanitizer.dart';
 import 'models/ability.dart';
 import 'models/character.dart';
 import 'models/srd_spell.dart' show normalizeSpellName;
+import 'power_category.dart';
+
+/// Entrada del parche que no se aplicó (mal formada o fuera de rango).
+class PatchIgnored {
+  /// Ruta estilo JSON: "classified_features[Furia].category"...
+  final String field;
+  final String reason;
+  const PatchIgnored(this.field, this.reason);
+}
+
+/// Resultado de [Nivel20Patch.apply]: la ficha fusionada más un resumen
+/// de lo que el parche creó e ignoró (ver ADR-0002).
+class PatchResult {
+  final CharacterModel character;
+
+  /// Poderes que el parche CREÓ (id `patch-<slug>`) por no coincidir con
+  /// ninguno de la ficha base. Un renombre de la IA aparece aquí.
+  final List<Ability> created;
+
+  /// Entradas descartadas por mal formadas o fuera de rango.
+  final List<PatchIgnored> ignored;
+
+  const PatchResult({
+    required this.character,
+    required this.created,
+    required this.ignored,
+  });
+}
 
 class Nivel20Patch {
   Nivel20Patch._();
@@ -43,6 +74,7 @@ class Nivel20Patch {
     'lore_info',
     'purse',
     'companions',
+    'spell_notes',
   ];
 
   static const _categories = ['action', 'bonus_action', 'reaction', 'passive'];
@@ -71,11 +103,15 @@ class Nivel20Patch {
     }
   }
 
-  /// Fusiona [patch] sobre una COPIA de [base] y la devuelve. [base] no se
-  /// modifica. Garantía: atributos, habilidades (skills), PG, CA, velocidad,
+  /// Fusiona [patch] sobre una COPIA de [base]. [base] no se modifica.
+  /// Garantía: atributos, habilidades (skills), PG, CA, velocidad,
   /// ranuras, armas y conjuros quedan intactos; cualquier valor del
-  /// parche fuera de rango o mal formado se ignora en silencio.
-  static CharacterModel apply(CharacterModel base, Map<String, dynamic> patch) {
+  /// parche fuera de rango o mal formado se ignora, pero queda anotado en
+  /// [PatchResult.ignored] (igual que los poderes creados en
+  /// [PatchResult.created]) para que la vista previa lo avise.
+  static PatchResult apply(CharacterModel base, Map<String, dynamic> patch) {
+    final created = <Ability>[];
+    final ignored = <PatchIgnored>[];
     final c = CharacterModel.fromJson(
       mergePurseAndCompanions(
         jsonDecode(jsonEncode(base.toJson())) as Map<String, dynamic>,
@@ -84,12 +120,13 @@ class Nivel20Patch {
     );
     // Recursos antes que rasgos: las activas se vinculan por nombre a
     // los recursos de la ficha o del parche.
-    _resources(c, patch['resources']);
-    _features(c, patch['classified_features']);
+    _resources(c, patch['resources'], ignored);
+    _features(c, patch['classified_features'], created, ignored);
     _linkResources(c);
-    _inventory(c, patch['inventory']);
+    _inventory(c, patch['inventory'], ignored);
     _lore(c, patch['lore_info']);
-    return c;
+    _spellNotes(c, patch['spell_notes'], ignored);
+    return PatchResult(character: c, created: created, ignored: ignored);
   }
 
   /// Fusiona sobre el JSON de la ficha base las claves "purse" y
@@ -108,9 +145,10 @@ class Nivel20Patch {
       final purse = Map<String, dynamic>.from(
         (merged['purse'] as Map?)?.cast<String, dynamic>() ?? {},
       );
-      for (final key in ['gold', 'silver', 'copper']) {
+      for (final key in ['platinum', 'gold', 'electrum', 'silver', 'copper']) {
         final extra = _i(patchPurse[key]) ?? 0;
-        purse[key] = ((purse[key] as num?)?.toInt() ?? 0) + (extra > 0 ? extra : 0);
+        purse[key] =
+            ((purse[key] as num?)?.toInt() ?? 0) + (extra > 0 ? extra : 0);
       }
       merged['purse'] = purse;
     }
@@ -120,9 +158,7 @@ class Nivel20Patch {
       final companions = List<dynamic>.from(
         (merged['companions'] as List?) ?? const [],
       );
-      final names = companions
-          .map((c) => _key(_s((c as Map)['name'])))
-          .toSet();
+      final names = companions.map((c) => _key(_s((c as Map)['name']))).toSet();
       for (final c in _maps(patchCompanions)) {
         final name = _s(c['name']);
         if (name.isEmpty || !names.add(_key(name))) continue;
@@ -153,7 +189,12 @@ class Nivel20Patch {
 
   static String _key(String name) => normalizeSpellName(name);
 
-  static void _features(CharacterModel c, Object? raw) {
+  static void _features(
+    CharacterModel c,
+    Object? raw,
+    List<Ability> created,
+    List<PatchIgnored> ignored,
+  ) {
     final abilities = c.abilitiesByAction;
     final lists = {
       'action': abilities.action,
@@ -166,11 +207,36 @@ class Nivel20Patch {
     for (final f in _maps(raw)) {
       final name = _s(f['name']);
       final category = _s(f['category']);
-      if (name.isEmpty || !_categories.contains(category)) continue;
+      if (name.isEmpty) {
+        ignored.add(
+          const PatchIgnored(
+            'classified_features',
+            'Rasgo sin nombre: se ignoró.',
+          ),
+        );
+        continue;
+      }
+      if (!_categories.contains(category)) {
+        ignored.add(
+          PatchIgnored(
+            'classified_features[$name].category',
+            'Categoría "$category" no válida: se ignoró el rasgo.',
+          ),
+        );
+        continue;
+      }
 
       final key = _key(name);
       // Los conjuros (SRD o no) no se tocan nunca: solo rasgos y acciones.
-      if (abilities.all.any((a) => a.isSpell && _key(a.name) == key)) continue;
+      if (abilities.all.any((a) => a.isSpell && _key(a.name) == key)) {
+        ignored.add(
+          PatchIgnored(
+            'classified_features[$name]',
+            'Es un conjuro: los conjuros no se modifican.',
+          ),
+        );
+        continue;
+      }
 
       Ability? existing;
       String? from;
@@ -186,12 +252,14 @@ class Nivel20Patch {
       final role = _roles.contains(_s(f['tactical_role']))
           ? _s(f['tactical_role'])
           : null;
-      final attack =
-          _attackTypes.contains(_s(f['attack_type'])) ? _s(f['attack_type']) : null;
+      final attack = _attackTypes.contains(_s(f['attack_type']))
+          ? _s(f['attack_type'])
+          : null;
       final summary = _s(f['tactical_summary']);
       final lore = _s(f['lore_description']);
 
-      final ability = existing ??
+      final ability =
+          existing ??
           Ability(
             id: _uniqueId('patch-${key.replaceAll(' ', '-')}', usedIds),
             name: name,
@@ -205,7 +273,8 @@ class Nivel20Patch {
       if (category == 'passive') {
         ability.tacticalRole = role ?? ability.tacticalRole ?? 'Utilidad';
       } else {
-        ability.attackType = attack ?? (existing == null ? 'none' : ability.attackType);
+        ability.attackType =
+            attack ?? (existing == null ? 'none' : ability.attackType);
         ability.tacticalRole = null;
       }
       final origin = _s(f['type']);
@@ -214,21 +283,93 @@ class Nivel20Patch {
       }
       if (category != 'passive') {
         if (f['concentration'] == true) ability.concentration = true;
-        final resource = _resourceNamed(c, _s(f['resource_name']));
+        final resourceName = _s(f['resource_name']);
+        final resource = _resourceNamed(c, resourceName);
         if (resource != null) {
           ability.resourceName = resource.name;
           ability.resourceCost = (_i(f['resource_cost']) ?? 1).clamp(1, 10);
+        } else if (resourceName.isNotEmpty) {
+          ignored.add(
+            PatchIgnored(
+              'classified_features[$name].resource_name',
+              'El recurso "$resourceName" no existe: no se vinculó.',
+            ),
+          );
         }
         final heal = _s(f['heal_dice']);
         if (heal.isNotEmpty && DiceExpression.tryParse(heal) != null) {
           ability.healDice = heal;
+        } else if (heal.isNotEmpty) {
+          ignored.add(
+            PatchIgnored(
+              'classified_features[$name].heal_dice',
+              'Dado de curación "$heal" no válido: se ignoró.',
+            ),
+          );
         }
       }
       if (summary.isNotEmpty) ability.tacticalSummary = summary;
       if (lore.isNotEmpty) ability.loreDescription = lore;
+      _applyPlainFields(ability, f, 'classified_features[$name]', ignored);
 
       if (from != null && from != category) lists[from]!.remove(ability);
       if (from != category) lists[category]!.add(ability);
+      if (existing == null) created.add(ability);
+    }
+  }
+
+  /// Categoría y frase en llano (rework para novatos). Una categoría que
+  /// no es de las cuatro se ignora y se anota.
+  static void _applyPlainFields(
+    Ability ability,
+    Map<String, dynamic> f,
+    String field,
+    List<PatchIgnored> ignored,
+  ) {
+    final roleRaw = _s(f['power_role']);
+    final role = PowerCategory.tryParse(roleRaw);
+    if (role != null) {
+      ability.powerRole = role.label;
+    } else if (roleRaw.isNotEmpty) {
+      ignored.add(
+        PatchIgnored(
+          '$field.power_role',
+          'Categoría "$roleRaw" desconocida: se deduce sola.',
+        ),
+      );
+    }
+    final plain = _s(f['plain_summary']);
+    if (plain.isNotEmpty) ability.plainSummary = plain;
+    final when = _s(f['when_to_use']);
+    if (when.isNotEmpty) ability.whenToUse = when;
+  }
+
+  /// Notas de conjuros: SOLO categoría y frase en llano. La mecánica
+  /// (dados, nivel, escalado) viene del SRD y no se toca. Un nombre que
+  /// no es un conjuro de la ficha se ignora y se anota.
+  static void _spellNotes(
+    CharacterModel c,
+    Object? raw,
+    List<PatchIgnored> ignored,
+  ) {
+    final spells = c.abilitiesByAction.all.where((a) => a.isSpell).toList();
+    for (final f in _maps(raw)) {
+      final name = _s(f['name']);
+      if (name.isEmpty) continue;
+      final key = _key(name);
+      final matches = spells.where((a) => _key(a.name) == key).toList();
+      if (matches.isEmpty) {
+        ignored.add(
+          PatchIgnored(
+            'spell_notes[$name]',
+            'No hay un conjuro con ese nombre en la ficha.',
+          ),
+        );
+        continue;
+      }
+      for (final spell in matches) {
+        _applyPlainFields(spell, f, 'spell_notes[$name]', ignored);
+      }
     }
   }
 
@@ -270,30 +411,56 @@ class Nivel20Patch {
     return id;
   }
 
-  static void _resources(CharacterModel c, Object? raw) {
+  static void _resources(
+    CharacterModel c,
+    Object? raw,
+    List<PatchIgnored> ignored,
+  ) {
     final known = c.resources.map((r) => _key(r.name)).toSet();
     for (final r in _maps(raw)) {
       final name = _s(r['name']);
       final max = _i(r['max']);
-      if (name.isEmpty || max == null || max <= 0) continue;
+      if (name.isEmpty || max == null || max <= 0) {
+        ignored.add(
+          PatchIgnored(
+            'resources[${name.isEmpty ? '?' : name}]',
+            'Falta el nombre o "max" no es un entero positivo: se ignoró.',
+          ),
+        );
+        continue;
+      }
       if (!known.add(_key(name))) continue;
       final current = (_i(r['current']) ?? max).clamp(0, max);
       c.resources.add(ResourcePoint(name: name, current: current, max: max));
     }
   }
 
-  static void _inventory(CharacterModel c, Object? raw) {
+  static void _inventory(
+    CharacterModel c,
+    Object? raw,
+    List<PatchIgnored> ignored,
+  ) {
     if (raw is! Map) return;
     final items = <MundaneItem>[];
     for (final i in _maps(raw['mundane_items'])) {
       final name = _s(i['name']);
-      if (name.isEmpty) continue;
+      if (name.isEmpty) {
+        ignored.add(
+          const PatchIgnored(
+            'inventory.mundane_items',
+            'Objeto sin nombre: se ignoró.',
+          ),
+        );
+        continue;
+      }
       final qty = _i(i['quantity']);
-      items.add(MundaneItem(
-        name: name,
-        description: _s(i['description']),
-        quantity: qty != null && qty > 0 ? qty : 1,
-      ));
+      items.add(
+        MundaneItem(
+          name: name,
+          description: _s(i['description']),
+          quantity: qty != null && qty > 0 ? qty : 1,
+        ),
+      );
     }
     if (items.isEmpty) return;
 

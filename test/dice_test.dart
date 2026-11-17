@@ -35,8 +35,22 @@ void main() {
     });
 
     test('rechaza todo lo demás', () {
-      for (final bad in ['', '  ', 'hola', '1d', 'd6', '1d6+', '2d6 extra', '1d6 2d4', '2d6++3']) {
-        expect(DiceFormula.tryParse(bad), isNull, reason: '"$bad" debería ser inválido');
+      for (final bad in [
+        '',
+        '  ',
+        'hola',
+        '1d',
+        'd6',
+        '1d6+',
+        '2d6 extra',
+        '1d6 2d4',
+        '2d6++3',
+      ]) {
+        expect(
+          DiceFormula.tryParse(bad),
+          isNull,
+          reason: '"$bad" debería ser inválido',
+        );
       }
     });
   });
@@ -75,14 +89,19 @@ void main() {
     });
 
     test('ventaja se queda con el más alto', () {
-      final result = rollD20(mode: AdvantageMode.advantage, random: FakeRandom([14, 7]));
+      final result = rollD20(
+        mode: AdvantageMode.advantage,
+        random: FakeRandom([14, 7]),
+      );
       expect(result.dice, [15, 8]);
       expect(result.kept, 15);
     });
 
     test('desventaja se queda con el más bajo', () {
-      final result =
-          rollD20(mode: AdvantageMode.disadvantage, random: FakeRandom([14, 7]));
+      final result = rollD20(
+        mode: AdvantageMode.disadvantage,
+        random: FakeRandom([14, 7]),
+      );
       expect(result.kept, 8);
     });
   });

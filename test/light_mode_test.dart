@@ -6,11 +6,11 @@
 // de cada tab ya vive en sus propios tests.
 
 import 'package:flutter/material.dart';
+import 'package:easydnd/core/theme/clean_theme.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:easydnd/app/easydnd_app.dart';
-import 'package:easydnd/core/theme/app_palette.dart';
 import 'package:easydnd/core/theme/app_theme_colors.dart';
 import 'package:easydnd/data/roster_repository.dart';
 import 'package:easydnd/state/character_store.dart';
@@ -56,17 +56,17 @@ void main() {
     final context = tester.element(find.text('Rook'));
     final theme = Theme.of(context);
     expect(theme.brightness, Brightness.light);
-    expect(theme.scaffoldBackgroundColor, AppPalette.light.background);
-    expect(theme.cardTheme.color, AppPalette.light.surface);
-    expect(context.appColors.background, AppPalette.light.background);
-    expect(context.appColors.textPrimary, AppPalette.light.textPrimary);
+    expect(theme.scaffoldBackgroundColor, CleanTheme.lightPalette.background);
+    expect(theme.cardTheme.color, CleanTheme.lightPalette.surface);
+    expect(context.appColors.background, CleanTheme.lightPalette.background);
+    expect(context.appColors.textPrimary, CleanTheme.lightPalette.textPrimary);
 
     // Los tres tabs del HUD usan el mismo tema y no rompen al pintarse.
     await tester.tap(find.text('Ficha'));
     await tester.pumpAndSettle();
-    expect(find.text('Atributos'), findsOneWidget);
+    expect(find.text('Atributos'), findsWidgets);
 
-    await tester.tap(find.text('Inventario'));
+    await tester.tap(find.text('Mochila'));
     await tester.pumpAndSettle();
     expect(find.text('Armas'), findsOneWidget);
   });
@@ -79,7 +79,7 @@ void main() {
     expect(Theme.of(context).brightness, Brightness.light);
     expect(
       Theme.of(context).scaffoldBackgroundColor,
-      AppPalette.light.background,
+      CleanTheme.lightPalette.background,
     );
 
     await tester.tap(find.text('Ficha en blanco'));
@@ -89,9 +89,9 @@ void main() {
     expect(Theme.of(context).brightness, Brightness.light);
     expect(
       Theme.of(context).scaffoldBackgroundColor,
-      AppPalette.light.background,
+      CleanTheme.lightPalette.background,
     );
-    expect(context.appColors.background, AppPalette.light.background);
+    expect(context.appColors.background, CleanTheme.lightPalette.background);
 
     await tester.pageBack();
     await tester.pumpAndSettle();

@@ -1,45 +1,46 @@
-// Shell del HUD de combate (Etapa 5).
+// Shell del HUD (rework para novatos).
 //
-// La estructura definitiva: una AppBar con la identidad de la ficha
-// activa, el selector de roster y el menú de mantenimiento (editar,
-// corregir con IA, importar, crear o eliminar una ficha), y una
-// NavigationBar con los tres tabs del juego — Combate, Ficha e
-// Inventario.
+// AppBar limpia: avatar, nombre (toca → cambiar de personaje), una
+// píldora pequeña con la vida (toca → hoja de Vida), la lupa del
+// buscador de reglas y un ⋮ con solo tres cosas: Recargar todo, Editar
+// ficha y Ajustes. Debajo, tres pestañas que son índices de tarjetas:
+// Combate, Ficha y Mochila. Cada tarjeta abre su propia pantalla.
 //
-// El estado de la UI (tab seleccionado) es local: el store guarda la
-// ficha y el índice activo, no qué pestaña estaba mirando el jugador.
-// Borrar la última ficha cae en la bienvenida sin reiniciar la app
+// El estado de la UI (pestaña elegida) es local; el store solo guarda la
+// ficha y el índice activo. Borrar la última ficha cae en la bienvenida
 // (el StartupGate escucha el mismo store).
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../domain/models/character.dart';
-import '../../state/character_store.dart';
-import '../editor/character_editor_screen.dart';
-import '../import/import_wizard_screen.dart';
-import '../skin/skin_screen.dart';
-import '../skin/theme_picker.dart';
-import 'hud_combat_tab.dart';
-import 'hud_dialogs.dart';
-import 'hud_inventory_tab.dart';
-import 'hud_sheet_tab.dart';
-import 'hud_widgets.dart';
-import 'welcome_screen.dart';
-import '../../core/ui/tactical_background.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../core/theme/tactical_theme_tokens.dart';
 import '../../core/theme/telemetry.dart';
+import '../../core/ui/app_icons.dart';
+import '../../core/ui/character_avatar.dart';
+import '../../core/ui/clean_kit.dart';
+import '../../domain/models/character.dart';
+import '../../state/character_store.dart';
+import '../editor/character_editor_screen.dart';
+import 'backpack/backpack_tab.dart';
+import 'combat/combat_tab.dart';
+import 'hud_status_tab.dart';
+import 'rules_search_screen.dart';
+import 'settings_screen.dart';
+import 'sheet/sheet_tab.dart';
+import 'welcome_screen.dart';
 
-/// Acciones del menú de mantenimiento de la AppBar.
-enum _HudMenuAction {
-  edit,
-  correctWithAi,
-  importNew,
-  createNew,
-  themes,
-  appearance,
-  delete,
+/// Ancho desde el que la barra inferior pasa a ser un riel lateral.
+const double kHudRailBreakpoint = 600;
+
+enum _HudMenuAction { refillAll, edit, settings }
+
+class _HudDestination {
+  const _HudDestination(this.label, this.icon, this.selectedIcon);
+
+  final String label;
+  final IconData icon;
+  final IconData selectedIcon;
 }
 
 class HudScreen extends StatefulWidget {
@@ -52,102 +53,131 @@ class HudScreen extends StatefulWidget {
 class _HudScreenState extends State<HudScreen> {
   int _tabIndex = 0;
 
-  Future<void> _openEditor(CharacterModel character) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => CharacterEditorScreen(character: character),
-      ),
-    );
-  }
-
-  Future<void> _openWizard({int? replaceIndex}) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => ImportWizardScreen(replaceIndex: replaceIndex),
-      ),
-    );
-  }
+  List<_HudDestination> _destinations(AppIcons icons) => [
+    _HudDestination('Combate', icons.weapon, icons.weapon),
+    const _HudDestination(
+      'Ficha',
+      Icons.person_outline_rounded,
+      Icons.person_rounded,
+    ),
+    _HudDestination('Mochila', icons.backpack, icons.backpack),
+  ];
 
   Future<void> _onMenuAction(
     _HudMenuAction action,
     CharacterModel character,
   ) async {
     switch (action) {
-      case _HudMenuAction.edit:
-        await _openEditor(character);
-      case _HudMenuAction.correctWithAi:
-        await _openWizard(
-          replaceIndex: context.read<CharacterStore>().activeIndex,
-        );
-      case _HudMenuAction.importNew:
-        await _openWizard();
-      case _HudMenuAction.createNew:
-        await Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) => const CharacterEditorScreen(),
+      case _HudMenuAction.refillAll:
+        final store = context.read<CharacterStore>();
+        // "Recargar todo" = lo que hacía el descanso largo, sin menús.
+        store.longRest();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Todo recargado: vida, ranuras, recursos y usos.'),
           ),
         );
-      case _HudMenuAction.themes:
-        await showThemePickerSheet(context);
-      case _HudMenuAction.appearance:
-        await Navigator.of(
+      case _HudMenuAction.edit:
+        await pushPage<void>(
           context,
-        ).push(MaterialPageRoute<void>(builder: (_) => const SkinScreen()));
-      case _HudMenuAction.delete:
-        await _deleteCharacter(character);
+          CharacterEditorScreen(character: character),
+        );
+      case _HudMenuAction.settings:
+        await pushPage<void>(context, const SettingsScreen());
     }
   }
 
-  /// Borrado con confirmación. El índice se captura ANTES del diálogo:
-  /// mientras está abierto nadie más puede cambiar el roster, pero si
-  /// algo lo hiciera el store igual ignora índices fuera de rango.
-  Future<void> _deleteCharacter(CharacterModel character) async {
-    final store = context.read<CharacterStore>();
-    final messenger = ScaffoldMessenger.of(context);
-    final index = store.activeIndex;
-    final name = character.basicInfo.name;
+  void _openLife() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (sheetContext) => Consumer<CharacterStore>(
+        builder: (context, store, _) {
+          final c = store.activeCharacter;
+          if (c == null) return const SizedBox(height: 120);
+          return SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              0,
+              AppSpacing.lg,
+              AppSpacing.xl,
+            ),
+            child: HudHealthSection(character: c),
+          );
+        },
+      ),
+    );
+  }
 
-    final confirmed = await showDeleteCharacterDialog(context, name: name);
-    if (!confirmed || !mounted) return;
-
-    store.deleteCharacter(index);
-
-    // Con el roster vacío la app vuelve a la bienvenida; ahí el aviso
-    // sobra. Con fichas restantes, confirma que el borrado se hizo.
-    if (store.roster.isNotEmpty) {
-      messenger.showSnackBar(
-        SnackBar(content: Text('Ficha de $name eliminada.')),
-      );
-    }
+  void _openRoster(CharacterStore store) {
+    showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (sheetContext) => ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          0,
+          AppSpacing.lg,
+          AppSpacing.xl,
+        ),
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            child: Text(
+              'Tus personajes',
+              style: Theme.of(sheetContext).textTheme.titleLarge,
+            ),
+          ),
+          for (var i = 0; i < store.roster.length; i++)
+            InkWell(
+              key: ValueKey('roster-$i'),
+              borderRadius: BorderRadius.circular(12),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                store.switchCharacter(i);
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                child: _RosterRow(
+                  character: store.roster[i],
+                  active: i == store.activeIndex,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final store = context.watch<CharacterStore>();
     final character = store.activeCharacter;
-
-    // La StartupGate ya decide entre bienvenida y HUD, pero el shell no
-    // asume que el árbol de arriba siempre estuvo mirando el store: si
-    // el roster se vació en el medio, cae a la bienvenida igual.
     if (character == null) return const WelcomeScreen();
 
     final info = character.basicInfo;
     final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final identity = [
-      if (info.race.trim().isNotEmpty) info.race.trim(),
-      if (info.characterClass.trim().isNotEmpty) info.characterClass.trim(),
-    ].join(' · ');
+    final icons = AppIcons.of(context);
+    final destinations = _destinations(icons);
+    final wide = MediaQuery.sizeOf(context).width >= kHudRailBreakpoint;
+    // "Mago 14 (Escuela de Evocación)" → "Mago 14": lo corto se lee mejor.
+    final shortClass = info.characterClass.split('(').first.trim();
+
+    final tabs = <Widget>[
+      CombatTab(character: character),
+      SheetTab(character: character),
+      BackpackTab(character: character),
+    ];
+    final body = IndexedStack(index: _tabIndex, children: tabs);
 
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: 64,
         leadingWidth: 60,
-        // El degradé sale del tema activo (TacticalThemeTokens), no de un
-        // color fijo: cada tema del catálogo trae su propia cabecera.
-        flexibleSpace: AnimatedContainer(
-          duration: AppDurations.normal,
-          decoration: BoxDecoration(gradient: context.tactical.headerGradient),
-        ),
         leading: Padding(
           padding: const EdgeInsets.only(left: AppSpacing.md),
           child: CharacterAvatar(
@@ -161,36 +191,65 @@ class _HudScreenState extends State<HudScreen> {
             ),
           ),
         ),
-        title: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              info.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            if (identity.isNotEmpty)
-              Text(
-                identity,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
+        titleSpacing: AppSpacing.sm,
+        title: InkWell(
+          key: const ValueKey('roster-switch'),
+          borderRadius: BorderRadius.circular(8),
+          onTap: () => _openRoster(store),
+          child: Tooltip(
+            message: 'Cambiar de personaje',
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        info.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      if (shortClass.isNotEmpty)
+                        Text(
+                          shortClass,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-          ],
+                const Icon(Icons.arrow_drop_down_rounded),
+              ],
+            ),
+          ),
         ),
         actions: [
-          _RosterSelector(store: store, onSelected: store.switchCharacter),
+          _HpPill(info: info, onTap: _openLife),
+          IconButton(
+            key: const ValueKey('rules-search'),
+            tooltip: 'Buscar reglas',
+            icon: const Icon(Icons.search_rounded),
+            onPressed: () => pushPage<void>(context, const RulesSearchScreen()),
+          ),
           PopupMenuButton<_HudMenuAction>(
             tooltip: 'Más opciones',
-            icon: const Icon(Icons.more_vert_rounded),
             onSelected: (action) => _onMenuAction(action, character),
             itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: _HudMenuAction.refillAll,
+                child: _MenuRow(
+                  icon: Icons.refresh_rounded,
+                  label: 'Recargar todo',
+                ),
+              ),
               PopupMenuItem(
                 value: _HudMenuAction.edit,
                 child: _MenuRow(
@@ -199,125 +258,114 @@ class _HudScreenState extends State<HudScreen> {
                 ),
               ),
               PopupMenuItem(
-                value: _HudMenuAction.correctWithAi,
-                child: _MenuRow(
-                  icon: Icons.published_with_changes_rounded,
-                  label: 'Corregir con IA',
-                ),
-              ),
-              PopupMenuDivider(),
-              PopupMenuItem(
-                value: _HudMenuAction.importNew,
-                child: _MenuRow(
-                  icon: Icons.auto_awesome_rounded,
-                  label: 'Importar desde Nivel20',
-                ),
-              ),
-              PopupMenuItem(
-                value: _HudMenuAction.createNew,
-                child: _MenuRow(
-                  icon: Icons.person_add_rounded,
-                  label: 'Ficha en blanco',
-                ),
-              ),
-              PopupMenuDivider(),
-              PopupMenuItem(
-                value: _HudMenuAction.themes,
-                child: _MenuRow(
-                  icon: Icons.auto_awesome_mosaic_rounded,
-                  label: 'Temas',
-                ),
-              ),
-              PopupMenuItem(
-                value: _HudMenuAction.appearance,
-                child: _MenuRow(
-                  icon: Icons.palette_outlined,
-                  label: 'Apariencia',
-                ),
-              ),
-              PopupMenuDivider(),
-              PopupMenuItem(
-                value: _HudMenuAction.delete,
-                child: _MenuRow(
-                  icon: Icons.delete_forever_rounded,
-                  label: 'Eliminar ficha',
-                  destructive: true,
-                ),
+                value: _HudMenuAction.settings,
+                child: _MenuRow(icon: Icons.settings_rounded, label: 'Ajustes'),
               ),
             ],
           ),
         ],
       ),
-      body: TacticalScaffoldBackground(
-        child: IndexedStack(
-          index: _tabIndex,
-          children: [
-            // Cada tab entra con un fundido corto al seleccionarse; los tres
-            // siguen montados (IndexedStack) para conservar el scroll.
-            for (final (index, tab) in [
-              HudCombatTab(character: character),
-              HudSheetTab(character: character),
-              HudInventoryTab(character: character),
-            ].indexed)
-              AnimatedOpacity(
-                duration: AppDurations.normal,
-                curve: Curves.easeOut,
-                opacity: index == _tabIndex ? 1 : 0,
-                child: tab,
-              ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _tabIndex,
-        onDestinationSelected: (index) => setState(() => _tabIndex = index),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.shield_outlined),
-            selectedIcon: Icon(Icons.shield_rounded),
-            label: 'Combate',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.badge_outlined),
-            selectedIcon: Icon(Icons.badge_rounded),
-            label: 'Ficha',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.backpack_outlined),
-            selectedIcon: Icon(Icons.backpack_rounded),
-            label: 'Inventario',
-          ),
-        ],
-      ),
+      body: wide
+          ? Row(
+              children: [
+                NavigationRail(
+                  selectedIndex: _tabIndex,
+                  labelType: NavigationRailLabelType.all,
+                  onDestinationSelected: (i) => setState(() => _tabIndex = i),
+                  destinations: [
+                    for (final d in destinations)
+                      NavigationRailDestination(
+                        icon: Icon(d.icon),
+                        selectedIcon: Icon(d.selectedIcon),
+                        label: Text(d.label),
+                      ),
+                  ],
+                ),
+                Expanded(child: body),
+              ],
+            )
+          : body,
+      bottomNavigationBar: wide
+          ? null
+          : NavigationBar(
+              selectedIndex: _tabIndex,
+              onDestinationSelected: (i) => setState(() => _tabIndex = i),
+              destinations: [
+                for (final d in destinations)
+                  NavigationDestination(
+                    icon: Icon(d.icon),
+                    selectedIcon: Icon(d.selectedIcon),
+                    label: d.label,
+                  ),
+              ],
+            ),
     );
   }
 }
 
-/// Selector de personaje activo. Lista el roster completo con una tilde
-/// en el actual; el store ignora índices inválidos, así que la UI no
-/// tiene que revalidar nada.
-class _RosterSelector extends StatelessWidget {
-  const _RosterSelector({required this.store, required this.onSelected});
+/// La vida, en chiquitito: número y una barrita. Toca → hoja de Vida.
+class _HpPill extends StatelessWidget {
+  const _HpPill({required this.info, required this.onTap});
 
-  final CharacterStore store;
-  final ValueChanged<int> onSelected;
+  final BasicInfo info;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<int>(
-      tooltip: 'Cambiar de personaje',
-      icon: const Icon(Icons.groups_rounded),
-      onSelected: onSelected,
-      itemBuilder: (_) => [
-        for (var i = 0; i < store.roster.length; i++)
-          PopupMenuItem<int>(
-            value: i,
-            child: _RosterRow(
-              character: store.roster[i],
-              active: i == store.activeIndex,
-            ),
+    final theme = Theme.of(context);
+    final tactical = context.tactical;
+    final ratio = info.hpMax <= 0
+        ? 0.0
+        : (info.currentHp / info.hpMax).clamp(0.0, 1.0);
+    final color = ratio <= 0.25 ? tactical.damage : tactical.heal;
+
+    return Tooltip(
+      message: 'Vida',
+      child: InkWell(
+        key: const ValueKey('hp-pill'),
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
           ),
-      ],
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(AppRadii.pill),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.favorite_rounded, size: 14, color: color),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${info.currentHp}/${info.hpMax}'
+                    '${info.tempHp > 0 ? ' +${info.tempHp}' : ''}',
+                    style: theme.textTheme.labelLarge
+                        ?.copyWith(fontWeight: FontWeight.w700)
+                        .tabular,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 3),
+              SizedBox(
+                width: 56,
+                child: LinearProgressIndicator(
+                  value: ratio,
+                  minHeight: 3,
+                  color: color,
+                  backgroundColor: color.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(AppRadii.pill),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -351,7 +399,9 @@ class _RosterRow extends StatelessWidget {
             height: 34,
             decoration: BoxDecoration(
               color: active ? scheme.primary : tactical.metalBorder,
-              borderRadius: BorderRadius.circular(AppRadii.pill),
+              borderRadius: BorderRadius.circular(
+                context.tactical.shapes.pillRadius,
+              ),
             ),
           ),
           const SizedBox(width: AppSpacing.md),
@@ -385,7 +435,9 @@ class _RosterRow extends StatelessWidget {
                   value: ratio,
                   minHeight: 3,
                   color: hpColor,
-                  borderRadius: BorderRadius.circular(AppRadii.pill),
+                  borderRadius: BorderRadius.circular(
+                    context.tactical.shapes.pillRadius,
+                  ),
                 ),
               ],
             ),
@@ -400,32 +452,19 @@ class _RosterRow extends StatelessWidget {
 }
 
 class _MenuRow extends StatelessWidget {
-  const _MenuRow({
-    required this.icon,
-    required this.label,
-    this.destructive = false,
-  });
+  const _MenuRow({required this.icon, required this.label});
 
   final IconData icon;
   final String label;
-  final bool destructive;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = destructive ? theme.colorScheme.error : null;
-
     return Row(
       children: [
-        Icon(icon, size: 20, color: color),
+        Icon(icon, size: 20),
         const SizedBox(width: AppSpacing.md),
         Expanded(
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: color == null ? null : TextStyle(color: color),
-          ),
+          child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
         ),
       ],
     );

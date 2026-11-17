@@ -25,6 +25,9 @@ export '../../core/ui/tactical_card.dart';
 /// Tarjeta de sección con encabezado icono + título + acción opcional.
 /// Es la unidad visual del tablero: una tarjeta por tema (vida, turno,
 /// condiciones...) en vez de un muro de texto.
+///
+/// Con el tema limpio, [TacticalCard] pinta una superficie lisa sin
+/// borde; el encabezado es una etiqueta discreta.
 class HudSectionCard extends StatelessWidget {
   const HudSectionCard({
     super.key,
@@ -48,26 +51,71 @@ class HudSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final compact = Theme.of(context).visualDensity == VisualDensity.compact;
     return TacticalCard(
-      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      margin: EdgeInsets.only(bottom: compact ? AppSpacing.md : AppSpacing.xl),
       tone: tone,
-      padding: const EdgeInsets.fromLTRB(
+      padding: EdgeInsets.fromLTRB(
         AppSpacing.lg,
+        compact ? AppSpacing.sm : AppSpacing.md,
         AppSpacing.md,
-        AppSpacing.md,
-        AppSpacing.lg,
+        compact ? AppSpacing.md : AppSpacing.lg,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SectionHeader(
+          HudLabelHeader(
             icon: icon,
             title: title,
             trailing: trailing,
             tone: tone,
           ),
-          const SizedBox(height: AppSpacing.md),
+          SizedBox(height: compact ? AppSpacing.xs : AppSpacing.sm),
           child,
+        ],
+      ),
+    );
+  }
+}
+
+/// Encabezado ligero: icono + título discreto + acción opcional.
+class HudLabelHeader extends StatelessWidget {
+  const HudLabelHeader({
+    super.key,
+    required this.icon,
+    required this.title,
+    this.trailing,
+    this.tone,
+  });
+
+  final IconData icon;
+  final String title;
+  final Widget? trailing;
+  final Color? tone;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = tone ?? theme.colorScheme.primary;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 36),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.6,
+              ),
+            ),
+          ),
+          if (trailing != null) trailing!,
         ],
       ),
     );

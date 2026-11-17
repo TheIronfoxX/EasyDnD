@@ -10,7 +10,10 @@ import 'fakes/test_fichas.dart';
 void main() {
   group('sanitizeJsonText', () {
     test('quita vallas y texto de cortesía', () {
-      expect(sanitizeJsonText('Hola\n```json\n{"a": 1}\n```\nChao'), '{"a": 1}');
+      expect(
+        sanitizeJsonText('Hola\n```json\n{"a": 1}\n```\nChao'),
+        '{"a": 1}',
+      );
     });
   });
 
@@ -46,16 +49,24 @@ void main() {
       json['resources'] = [
         {'name': 'Ki', 'current': '3', 'max': '5'},
       ];
-      final weapon = ((json['inventory'] as Map)['weapons'] as List).first as Map;
+      final weapon =
+          ((json['inventory'] as Map)['weapons'] as List).first as Map;
       weapon['attack_bonus'] = '7';
 
       final out = normalizeCharacterJson(json);
       expect(((out['stats'] as Map)['str'] as Map)['value'], 16);
       expect(((out['stats'] as Map)['str'] as Map)['mod'], 3);
-      expect((out['spell_slots'] as List).first,
-          {'level': 1, 'max': 4, 'current': 2});
+      expect((out['spell_slots'] as List).first, {
+        'level': 1,
+        'max': 4,
+        'current': 2,
+      });
       expect((out['resources'] as List).first['max'], 5);
-      expect((((out['inventory'] as Map)['weapons'] as List).first as Map)['attack_bonus'], 7);
+      expect(
+        (((out['inventory'] as Map)['weapons'] as List).first
+            as Map)['attack_bonus'],
+        7,
+      );
     });
 
     test('texto no numérico y decimales reales no se tocan', () {
@@ -91,12 +102,18 @@ void main() {
       }
     });
 
-    test('inventory y abilities_by_action null -> objetos con listas vacías', () {
-      final out = normalizeCharacterJson(
-          buildFichaJson()..['inventory'] = null..['abilities_by_action'] = null);
-      expect((out['inventory'] as Map)['weapons'], isEmpty);
-      expect((out['abilities_by_action'] as Map)['passive'], isEmpty);
-    });
+    test(
+      'inventory y abilities_by_action null -> objetos con listas vacías',
+      () {
+        final out = normalizeCharacterJson(
+          buildFichaJson()
+            ..['inventory'] = null
+            ..['abilities_by_action'] = null,
+        );
+        expect((out['inventory'] as Map)['weapons'], isEmpty);
+        expect((out['abilities_by_action'] as Map)['passive'], isEmpty);
+      },
+    );
 
     test('defaults seguros para secciones no críticas ausentes', () {
       final out = normalizeCharacterJson({
@@ -121,7 +138,9 @@ void main() {
     });
 
     test('es idempotente', () {
-      final once = normalizeCharacterJson(buildFichaJson()..['resources'] = null);
+      final once = normalizeCharacterJson(
+        buildFichaJson()..['resources'] = null,
+      );
       expect(normalizeCharacterJson(once), once);
     });
   });

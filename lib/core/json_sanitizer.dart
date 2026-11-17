@@ -16,9 +16,10 @@
 String sanitizeJsonText(String raw) {
   var text = raw.trim();
 
-  final fenceMatch =
-      RegExp(r'```(?:json)?\s*([\s\S]*?)\s*```', caseSensitive: false)
-          .firstMatch(text);
+  final fenceMatch = RegExp(
+    r'```(?:json)?\s*([\s\S]*?)\s*```',
+    caseSensitive: false,
+  ).firstMatch(text);
   if (fenceMatch != null) {
     text = fenceMatch.group(1)!.trim();
   }
@@ -82,7 +83,9 @@ Object? _deepCopy(Object? v) {
 /// `null` -> `[]` para la clave [key] de [map] (solo si está presente y
 /// es null; una clave ausente no se toca).
 void _nullToList(Object? map, String key) {
-  if (map is Map && map.containsKey(key) && map[key] == null) map[key] = <dynamic>[];
+  if (map is Map && map.containsKey(key) && map[key] == null) {
+    map[key] = <dynamic>[];
+  }
 }
 
 /// Corrige torpezas típicas de la IA en el JSON de una ficha, ANTES de
@@ -99,8 +102,16 @@ Map<String, dynamic> normalizeCharacterJson(Map<String, dynamic> json) {
 
   // ---- basic_info
   _numKeys(out['basic_info'], const [
-    'hp_max', 'hp_current', 'ac', 'speed', 'level', 'spell_save_dc',
-    'spell_attack_bonus', 'hit_die_sides', 'hit_dice_max', 'hit_dice_current',
+    'hp_max',
+    'hp_current',
+    'ac',
+    'speed',
+    'level',
+    'spell_save_dc',
+    'spell_attack_bonus',
+    'hit_die_sides',
+    'hit_dice_max',
+    'hit_dice_current',
   ]);
 
   // ---- stats (atributos)
@@ -113,13 +124,20 @@ Map<String, dynamic> normalizeCharacterJson(Map<String, dynamic> json) {
 
   // ---- arrays de primer nivel: null -> []
   for (final key in const [
-    'resources', 'spell_slots', 'skills', 'active_conditions', 'conditions',
+    'resources',
+    'spell_slots',
+    'skills',
+    'active_conditions',
+    'conditions',
     'companions',
   ]) {
     _nullToList(out, key);
   }
 
-  _listOfMaps(out['spell_slots'], (s) => _numKeys(s, const ['level', 'max', 'current']));
+  _listOfMaps(
+    out['spell_slots'],
+    (s) => _numKeys(s, const ['level', 'max', 'current']),
+  );
   _listOfMaps(out['resources'], (r) => _numKeys(r, const ['current', 'max']));
   _listOfMaps(out['skills'], (s) => _numKeys(s, const ['modifier']));
 
@@ -140,16 +158,25 @@ Map<String, dynamic> normalizeCharacterJson(Map<String, dynamic> json) {
       _nullToList(w, 'properties');
       if (w is Map) _numKeys(w['magic_charges'], const ['max', 'current']);
     });
-    _listOfMaps(inventory['mundane_items'], (i) => _numKeys(i, const ['quantity']));
+    _listOfMaps(
+      inventory['mundane_items'],
+      (i) => _numKeys(i, const ['quantity']),
+    );
   }
 
   // ---- abilities_by_action: null -> {} y cada categoría null -> []
-  if (out.containsKey('abilities_by_action') && out['abilities_by_action'] == null) {
+  if (out.containsKey('abilities_by_action') &&
+      out['abilities_by_action'] == null) {
     out['abilities_by_action'] = <String, dynamic>{};
   }
   final abilities = out['abilities_by_action'];
   if (abilities is Map) {
-    for (final bucket in const ['action', 'bonus_action', 'reaction', 'passive']) {
+    for (final bucket in const [
+      'action',
+      'bonus_action',
+      'reaction',
+      'passive',
+    ]) {
       if (!abilities.containsKey(bucket) || abilities[bucket] == null) {
         // Una categoría ausente dentro de un objeto que sí existe es
         // inequívocamente "vacía".
@@ -176,7 +203,11 @@ Map<String, dynamic> normalizeCharacterJson(Map<String, dynamic> json) {
   }
   if (out['lore_info'] == null) {
     out['lore_info'] = {
-      'backstory': '', 'personality_traits': '', 'ideals': '', 'bonds': '', 'flaws': '',
+      'backstory': '',
+      'personality_traits': '',
+      'ideals': '',
+      'bonds': '',
+      'flaws': '',
     };
   }
   if (!out.containsKey('resources')) out['resources'] = <dynamic>[];

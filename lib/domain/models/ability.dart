@@ -30,7 +30,11 @@ class SpellScaling {
   /// "1d6" (Bola de Fuego a nivel 4 tira 8d6, a nivel 5 tira 9d6).
   final String? formula;
 
-  const SpellScaling({this.isScalable = false, this.baseLevel = 0, this.formula});
+  const SpellScaling({
+    this.isScalable = false,
+    this.baseLevel = 0,
+    this.formula,
+  });
 
   static const SpellScaling none = SpellScaling();
 
@@ -39,7 +43,9 @@ class SpellScaling {
   /// JSON de la IA no falla al importar — falla en silencio a mitad de
   /// combate; esto permite detectarlo antes, al importar.
   bool get hasResolvableScaling =>
-      isScalable && formula != null && DiceExpression.tryParse(formula!) != null;
+      isScalable &&
+      formula != null &&
+      DiceExpression.tryParse(formula!) != null;
 
   SpellScaling copyWith({bool? isScalable, int? baseLevel, String? formula}) {
     return SpellScaling(
@@ -117,6 +123,21 @@ class Ability {
   /// las fichas viejas no cambian.
   bool concentration;
 
+  /// Categoría para la lista sencilla del HUD: "Daño" | "Defensa" |
+  /// "Apoyo" | "Utilidad". La pone la IA de preparación o el jugador; si
+  /// falta se deduce (ver `power_category.dart`). Vale para cualquier
+  /// habilidad, activa o pasiva.
+  String? powerRole;
+
+  /// Una frase en lenguaje llano para novatos ("Lanzas fuego a un
+  /// enemigo"). La escribe la IA de preparación; si falta, el HUD cae al
+  /// resumen táctico o a la descripción.
+  String? plainSummary;
+
+  /// Una frase en llano sobre CUÁNDO conviene usarlo ("Cuando varios
+  /// enemigos están juntos"). La escribe la IA de preparación.
+  String? whenToUse;
+
   SpellScaling scaling;
 
   // Fachada de compatibilidad sobre el bundle SpellScaling: el resto
@@ -129,7 +150,8 @@ class Ability {
   set baseLevel(int value) => scaling = scaling.copyWith(baseLevel: value);
 
   String? get scalingFormula => scaling.formula;
-  set scalingFormula(String? value) => scaling = scaling.copyWith(formula: value);
+  set scalingFormula(String? value) =>
+      scaling = scaling.copyWith(formula: value);
 
   /// true si el escalado configurado realmente se puede resolver en
   /// combate (ver SpellScaling.hasResolvableScaling).
@@ -155,14 +177,18 @@ class Ability {
     this.resourceCost = 1,
     this.healDice,
     this.concentration = false,
+    this.powerRole,
+    this.plainSummary,
+    this.whenToUse,
     SpellScaling? scaling,
-  })  : scaling = scaling ??
-            SpellScaling(
-              isScalable: isScalable,
-              baseLevel: baseLevel,
-              formula: scalingFormula,
-            ),
-        magicCharges = magicCharges ?? MagicCharges.fromJson(null);
+  }) : scaling =
+           scaling ??
+           SpellScaling(
+             isScalable: isScalable,
+             baseLevel: baseLevel,
+             formula: scalingFormula,
+           ),
+       magicCharges = magicCharges ?? MagicCharges.fromJson(null);
 
   factory Ability.fromJson(Map<String, dynamic> json) {
     final name = json['name'] ?? 'Habilidad sin nombre';
@@ -190,6 +216,9 @@ class Ability {
       resourceCost: ((json['resource_cost'] as num?) ?? 1).toInt().clamp(1, 99),
       healDice: _nonEmpty(json['heal_dice']),
       concentration: json['concentration'] == true,
+      powerRole: _nonEmpty(json['power_role']),
+      plainSummary: _nonEmpty(json['plain_summary']),
+      whenToUse: _nonEmpty(json['when_to_use']),
     );
   }
 
@@ -235,6 +264,11 @@ class Ability {
       },
       if (!isPassive && healDice != null) 'heal_dice': healDice,
       if (!isPassive && concentration) 'concentration': true,
+      // Campos del rework para novatos: solo si existen, así las fichas
+      // viejas se serializan idénticas.
+      if (powerRole != null) 'power_role': powerRole,
+      if (plainSummary != null) 'plain_summary': plainSummary,
+      if (whenToUse != null) 'when_to_use': whenToUse,
     };
   }
 }
@@ -274,8 +308,9 @@ class AbilitiesByAction {
   Map<String, dynamic> toJson() {
     return {
       'action': action.map((a) => a.toJson(category: 'action')).toList(),
-      'bonus_action':
-          bonusAction.map((a) => a.toJson(category: 'bonus_action')).toList(),
+      'bonus_action': bonusAction
+          .map((a) => a.toJson(category: 'bonus_action'))
+          .toList(),
       'reaction': reaction.map((a) => a.toJson(category: 'reaction')).toList(),
       'passive': passive.map((a) => a.toJson(category: 'passive')).toList(),
     };

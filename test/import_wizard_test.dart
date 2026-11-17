@@ -15,7 +15,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:easydnd/data/roster_repository.dart';
 import 'package:easydnd/features/editor/character_editor_screen.dart';
+import 'package:easydnd/domain/character_validator.dart';
+import 'package:easydnd/domain/models/character.dart';
 import 'package:easydnd/features/import/import_wizard_screen.dart';
+import 'package:easydnd/features/import/wizard_step_preview.dart';
 import 'package:easydnd/state/character_store.dart';
 
 import 'fakes/test_fichas.dart';
@@ -87,8 +90,10 @@ void main() {
       // El prompt por defecto (ficha vacía) lleva las reglas y el marcador
       // (el marcador también aparece citado en el hint del modo).
       expect(find.textContaining('REGLAS OBLIGATORIAS:'), findsOneWidget);
-      expect(find.textContaining('PEGA AQUÍ LOS DATOS DE TU PERSONAJE'),
-          findsWidgets);
+      expect(
+        find.textContaining('PEGA AQUÍ LOS DATOS DE TU PERSONAJE'),
+        findsWidgets,
+      );
       expect(find.text('Copiar prompt'), findsOneWidget);
     });
 
@@ -121,8 +126,7 @@ void main() {
       await tester.tap(find.text('Enlace Nivel20'));
       await tester.pumpAndSettle();
       // Sin esquema: falla ANTES de hacer cualquier request.
-      await tester.enterText(
-          find.byType(TextField), 'nivel20.com/s/abc123');
+      await tester.enterText(find.byType(TextField), 'nivel20.com/s/abc123');
       await tester.tap(find.text('Descargar ficha'));
       await tester.pumpAndSettle();
 
@@ -181,8 +185,10 @@ void main() {
       await tester.tap(find.text('Continuar'));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('El texto no contiene un JSON válido'),
-          findsOneWidget);
+      expect(
+        find.textContaining('El texto no contiene un JSON válido'),
+        findsOneWidget,
+      );
       // Sigue en el paso 2.
       expect(find.text('Pegá la respuesta de la IA'), findsOneWidget);
       expect(store.roster, isEmpty);
@@ -190,6 +196,46 @@ void main() {
   });
 
   group('paso 3 — revisión y confirmación', () {
+    testWidgets(
+      'avisos del parche (creados/ignorados) se muestran sin bloquear',
+      (tester) async {
+        final character = CharacterModel.fromJson(
+          buildFichaJson(id: 'char_p', name: 'Pía'),
+        );
+        final result = CharacterValidationResult(
+          character: character,
+          issues: const [
+            ValidationIssue(
+              severity: ValidationSeverity.warning,
+              field: 'parche.patch-furia-del-barbaro',
+              message: 'El parche creó el poder "Furia del bárbaro".',
+            ),
+            ValidationIssue(
+              severity: ValidationSeverity.warning,
+              field: 'parche.resources[Cero]',
+              message: 'Falta el nombre o "max" no es un entero positivo.',
+            ),
+          ],
+        );
+        var confirmed = false;
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: WizardStepPreview(
+                result: result,
+                isReplace: false,
+                onConfirm: () => confirmed = true,
+              ),
+            ),
+          ),
+        );
+        expect(find.textContaining('Avisos (2)'), findsOneWidget);
+        expect(find.text('parche.patch-furia-del-barbaro'), findsOneWidget);
+        expect(find.text('parche.resources[Cero]'), findsOneWidget);
+        expect(confirmed, isFalse);
+      },
+    );
+
     testWidgets('flujo completo de alta: preview con avisos → importar', (
       tester,
     ) async {
@@ -198,8 +244,9 @@ void main() {
       await openWizard(tester);
 
       // La fixture sin spell_save_dc con ranuras → exactamente 1 aviso.
-      final fichaJson =
-          jsonEncode(buildFichaJson(id: 'char_k', name: 'Kaelen'));
+      final fichaJson = jsonEncode(
+        buildFichaJson(id: 'char_k', name: 'Kaelen'),
+      );
       await pasteResponse(tester, fichaJson);
       await tester.tap(find.text('Continuar'));
       await tester.pumpAndSettle();
@@ -231,49 +278,55 @@ void main() {
     });
 
     testWidgets(
-        'tras importar, calibrar en el taller y guardar no duplica la ficha', (
-      tester,
-    ) async {
-      final store = await boot();
-      await pumpHome(tester, store);
-      await openWizard(tester);
+      'tras importar, calibrar en el taller y guardar no duplica la ficha',
+      (tester) async {
+        final store = await boot();
+        await pumpHome(tester, store);
+        await openWizard(tester);
 
-      await pasteResponse(
-          tester, jsonEncode(buildFichaJson(id: 'char_k', name: 'Kaelen')));
-      await tester.tap(find.text('Continuar'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Importar personaje'));
-      await tester.pumpAndSettle();
+        await pasteResponse(
+          tester,
+          jsonEncode(buildFichaJson(id: 'char_k', name: 'Kaelen')),
+        );
+        await tester.tap(find.text('Continuar'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Importar personaje'));
+        await tester.pumpAndSettle();
 
-      // Calibración: reclasificar el rasgo importado en un toque.
-      await tester.tap(find.widgetWithText(Tab, 'Arsenal'));
-      await tester.pumpAndSettle();
-      final chip = find.byKey(const Key('cat-a1-bonusAction'));
-      await tester.scrollUntilVisible(
-        chip,
-        200,
-        scrollable: find
-            .descendant(
-              of: find.byKey(const Key('list-arsenal')),
-              matching: find.byType(Scrollable),
-            )
-            .first,
-      );
-      await tester.tap(chip);
-      await tester.pumpAndSettle();
+        // Calibración: reclasificar el rasgo importado en un toque.
+        await tester.tap(find.widgetWithText(Tab, 'Arsenal'));
+        await tester.pumpAndSettle();
+        final chip = find.byKey(const Key('cat-a1-bonusAction'));
+        await tester.scrollUntilVisible(
+          chip,
+          200,
+          scrollable: find
+              .descendant(
+                of: find.byKey(const Key('list-arsenal')),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        );
+        await tester.tap(chip);
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Guardar cambios'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Guardar igual'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('Guardar cambios'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Guardar igual'));
+        await tester.pumpAndSettle();
 
-      expect(find.byType(CharacterEditorScreen), findsNothing);
-      expect(store.roster, hasLength(1), reason: 'el editor reemplaza, no duplica');
-      expect(store.activeCharacter!.id, 'char_k');
-      final abilities = store.activeCharacter!.abilitiesByAction;
-      expect(abilities.action, isEmpty);
-      expect(abilities.bonusAction.single.id, 'a1');
-    });
+        expect(find.byType(CharacterEditorScreen), findsNothing);
+        expect(
+          store.roster,
+          hasLength(1),
+          reason: 'el editor reemplaza, no duplica',
+        );
+        expect(store.activeCharacter!.id, 'char_k');
+        final abilities = store.activeCharacter!.abilitiesByAction;
+        expect(abilities.action, isEmpty);
+        expect(abilities.bonusAction.single.id, 'a1');
+      },
+    );
 
     testWidgets('al reemplazar con IA (corrección) NO se abre el taller', (
       tester,
@@ -286,7 +339,9 @@ void main() {
       await tester.tap(find.text('Ficha actual'));
       await tester.pumpAndSettle();
       await pasteResponse(
-          tester, jsonEncode(buildFichaJson(id: 'char_k', name: 'Kaelen II')));
+        tester,
+        jsonEncode(buildFichaJson(id: 'char_k', name: 'Kaelen II')),
+      );
       await tester.tap(find.text('Continuar'));
       await tester.pumpAndSettle();
       await tester.tap(find.textContaining('Reemplazar a'));
@@ -305,7 +360,9 @@ void main() {
       await openWizard(tester);
 
       await pasteResponse(
-          tester, jsonEncode(buildFichaJson(id: 'char_k', name: 'Kaelen')));
+        tester,
+        jsonEncode(buildFichaJson(id: 'char_k', name: 'Kaelen')),
+      );
       await tester.tap(find.text('Continuar'));
       await tester.pumpAndSettle();
       expect(find.text('Kaelen'), findsOneWidget);
@@ -316,8 +373,9 @@ void main() {
       expect(find.byType(TextField), findsOneWidget);
 
       // Edito el nombre y vuelvo a revisar: la preview debe refrescar.
-      final edited =
-          jsonEncode(buildFichaJson(id: 'char_k', name: 'Kaelen II'));
+      final edited = jsonEncode(
+        buildFichaJson(id: 'char_k', name: 'Kaelen II'),
+      );
       await tester.enterText(find.byType(TextField), edited);
       await tester.tap(find.text('Continuar'));
       await tester.pumpAndSettle();
@@ -325,14 +383,18 @@ void main() {
       expect(store.roster, isEmpty); // todavía sin commit
     });
 
-    testWidgets('modo reemplazo: corrige sin duplicar la ficha', (tester) async {
+    testWidgets('modo reemplazo: corrige sin duplicar la ficha', (
+      tester,
+    ) async {
       final store = await boot();
       store.addCharacter(buildCharacter(id: 'char_viejo', name: 'Viejo'));
       await pumpHome(tester, store, replaceIndex: 0);
       await openWizard(tester);
 
       await pasteResponse(
-          tester, jsonEncode(buildFichaJson(id: 'char_nuevo', name: 'Nuevo')));
+        tester,
+        jsonEncode(buildFichaJson(id: 'char_nuevo', name: 'Nuevo')),
+      );
       await tester.tap(find.text('Continuar'));
       await tester.pumpAndSettle();
 

@@ -45,15 +45,9 @@ void main() {
       expect(snapshot.roster, hasLength(2));
       expect(snapshot.activeIndex, 1);
       // w1 tenía 4 en las claves legacy → migradas adentro de la ficha.
-      expect(
-        snapshot.roster[0].inventory.weapons.single.quantity,
-        4,
-      );
+      expect(snapshot.roster[0].inventory.weapons.single.quantity, 4);
       // w2 no tenía clave legacy → mantiene la del JSON.
-      expect(
-        snapshot.roster[1].inventory.weapons.single.quantity,
-        2,
-      );
+      expect(snapshot.roster[1].inventory.weapons.single.quantity, 2);
     });
 
     test('idempotente: la segunda carga entra por la clave nueva', () async {
@@ -93,22 +87,25 @@ void main() {
       expect(prefs.getInt(RosterRepository.activeIndexKey), 0);
     });
 
-    test('fichas legacy sin id obtienen uno estable desde la migración', () async {
-      final ficha = buildFichaJson()..remove('id');
-      SharedPreferences.setMockInitialValues({
-        'character_roster_v2': [jsonEncode(ficha)],
-      });
-      final prefs = await SharedPreferences.getInstance();
-      final repo = RosterRepository(prefs);
+    test(
+      'fichas legacy sin id obtienen uno estable desde la migración',
+      () async {
+        final ficha = buildFichaJson()..remove('id');
+        SharedPreferences.setMockInitialValues({
+          'character_roster_v2': [jsonEncode(ficha)],
+        });
+        final prefs = await SharedPreferences.getInstance();
+        final repo = RosterRepository(prefs);
 
-      final first = await repo.load();
-      expect(first.roster.single.id, isNotEmpty);
+        final first = await repo.load();
+        expect(first.roster.single.id, isNotEmpty);
 
-      // El id se fijó al persistir tras la migración: no cambia en el
-      // próximo arranque (la clave nueva ya lo trae).
-      final second = await repo.load();
-      expect(second.roster.single.id, first.roster.single.id);
-    });
+        // El id se fijó al persistir tras la migración: no cambia en el
+        // próximo arranque (la clave nueva ya lo trae).
+        final second = await repo.load();
+        expect(second.roster.single.id, first.roster.single.id);
+      },
+    );
 
     test('tolera entradas corruptas sin tirar el resto', () async {
       SharedPreferences.setMockInitialValues({
@@ -151,7 +148,17 @@ void main() {
 
       final snapshot = await repo.load();
       expect(snapshot.roster.single.inventory.weapons.single.quantity, 7);
-      expect(snapshot.roster.single.abilitiesByAction.action.single.magicCharges.current, 1);
+      expect(
+        snapshot
+            .roster
+            .single
+            .abilitiesByAction
+            .action
+            .single
+            .magicCharges
+            .current,
+        1,
+      );
       expect(snapshot.roster.single.spellSlots.slots.single.current, 2);
       expect(snapshot.activeIndex, 0);
     });

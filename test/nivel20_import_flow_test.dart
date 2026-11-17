@@ -46,27 +46,44 @@ void main() {
       expect(c.basicInfo.hpMax, 125);
       expect(c.basicInfo.speed, 30);
       expect(c.spellSlots.slots, hasLength(8));
-      expect(c.abilitiesByAction.action.map((a) => a.name), contains('Rayo de fuego'));
+      expect(
+        c.abilitiesByAction.action.map((a) => a.name),
+        contains('Rayo de fuego'),
+      );
     });
 
-    test('importación directa de algo sin nombre devuelve error, no excepción', () {
-      final result = Nivel20Import.direct({'info': {}});
-      expect(result.isOk, isFalse);
-      expect(result.errors, isNotEmpty);
-    });
+    test(
+      'importación directa de algo sin nombre devuelve error, no excepción',
+      () {
+        final result = Nivel20Import.direct({'info': {}});
+        expect(result.isOk, isFalse);
+        expect(result.errors, isNotEmpty);
+      },
+    );
   });
 
   group('AiPrompt.forNivel20Enrichment', () {
     late String prompt;
     setUpAll(() => prompt = Nivel20Import.enrichedPrompt(raw));
 
-    test('envía solo contexto mínimo: ni ficha base ni conjuros ni números', () {
-      expect(prompt, contains('Nombre: Kael`nar Ardinys'));
-      expect(prompt, contains('Nivel:'));
-      for (final prohibido in ['"hp_max"', '"spell_save_dc"', '"attack_bonus"', '"base_dice"', 'Tormenta de hielo', 'Bastón']) {
-        expect(prompt, isNot(contains(prohibido)));
-      }
-    });
+    test(
+      'envía solo contexto mínimo: ni ficha base ni números (conjuros solo por nombre)',
+      () {
+        expect(prompt, contains('Nombre: Kael`nar Ardinys'));
+        expect(prompt, contains('Nivel:'));
+        for (final prohibido in [
+          '"hp_max"',
+          '"spell_save_dc"',
+          '"attack_bonus"',
+          '"base_dice"',
+          'Bastón',
+        ]) {
+          expect(prompt, isNot(contains(prohibido)));
+        }
+        // Los conjuros van solo por nombre, para "spell_notes".
+        expect(prompt, contains('Tormenta de hielo'));
+      },
+    );
 
     test('incluye los textos crudos de rasgos, acciones caseras y equipo', () {
       expect(prompt, contains('Esculpir conjuros'));
@@ -84,10 +101,13 @@ void main() {
       expect(prompt, contains('NO añadas ninguna otra clave'));
     });
 
-    test('es compacto: no arrastra el ejemplo maestro ni las reglas largas', () {
-      expect(prompt, isNot(contains('Kaelen el Luminoso')));
-      expect(prompt, isNot(contains('REGLAS OBLIGATORIAS')));
-    });
+    test(
+      'es compacto: no arrastra el ejemplo maestro ni las reglas largas',
+      () {
+        expect(prompt, isNot(contains('Kaelen el Luminoso')));
+        expect(prompt, isNot(contains('REGLAS OBLIGATORIAS')));
+      },
+    );
 
     test('pide clasificar poderes activos y vincular recursos', () {
       expect(prompt, contains('NO son pasivos'));
@@ -103,7 +123,10 @@ void main() {
     test('pide las claves opcionales purse y companions', () {
       expect(prompt, contains('"purse"'));
       expect(prompt, contains('"companions"'));
-      expect(prompt, contains('"name", "type", "has_hp", "current_hp", "max_hp", "ac"'));
+      expect(
+        prompt,
+        contains('"name", "type", "has_hp", "current_hp", "max_hp", "ac"'),
+      );
     });
   });
 
@@ -126,7 +149,11 @@ void main() {
             'heal_dice': '1d4',
           },
           // Sin resource_name: coincide por nombre con el recurso.
-          {'name': 'Forma cambiante', 'category': 'action', 'attack_type': 'none'},
+          {
+            'name': 'Forma cambiante',
+            'category': 'action',
+            'attack_type': 'none',
+          },
           // Recurso inexistente: no se vincula.
           {
             'name': 'Golpe fantasma',
@@ -135,7 +162,7 @@ void main() {
             'resource_name': 'Nada',
           },
         ],
-      });
+      }).character;
 
       final all = merged.abilitiesByAction.all;
       final rafaga = all.firstWhere((a) => a.name == 'Ráfaga de golpes');
@@ -148,7 +175,10 @@ void main() {
       expect(forma.resourceName, 'Forma cambiante');
       expect(forma.resourceCost, 1);
 
-      expect(all.firstWhere((a) => a.name == 'Golpe fantasma').resourceName, isNull);
+      expect(
+        all.firstWhere((a) => a.name == 'Golpe fantasma').resourceName,
+        isNull,
+      );
     });
 
     test('las pasivas y los conjuros no se vinculan', () {
@@ -165,11 +195,14 @@ void main() {
             'resource_name': 'Esculpir conjuros',
           },
         ],
-      });
-      final feat = merged.abilitiesByAction.passive
-          .firstWhere((a) => a.name == 'Esculpir conjuros');
+      }).character;
+      final feat = merged.abilitiesByAction.passive.firstWhere(
+        (a) => a.name == 'Esculpir conjuros',
+      );
       expect(feat.resourceName, isNull);
-      for (final spell in merged.abilitiesByAction.all.where((a) => a.isSpell)) {
+      for (final spell in merged.abilitiesByAction.all.where(
+        (a) => a.isSpell,
+      )) {
         expect(spell.resourceName, isNull);
       }
     });
@@ -177,14 +210,26 @@ void main() {
 
   group('Nivel20Import.mergeAiPatch', () {
     test('suma el oro del parche sin pisar el ya detectado por regex', () {
-      final base = {'purse': {'gold': 50, 'silver': 0, 'copper': 0}};
-      final patch = {'purse': {'gold': 10, 'silver': 5, 'copper': 0}};
+      final base = {
+        'purse': {'gold': 50, 'silver': 0, 'copper': 0},
+      };
+      final patch = {
+        'purse': {'gold': 10, 'silver': 5, 'copper': 0},
+      };
       final merged = Nivel20Import.mergeAiPatch(base, patch);
-      expect(merged['purse'], {'gold': 60, 'silver': 5, 'copper': 0});
+      expect(merged['purse'], {
+        'gold': 60,
+        'silver': 5,
+        'copper': 0,
+        'platinum': 0,
+        'electrum': 0,
+      });
     });
 
     test('sin "purse" en el parche, deja el de la base intacto', () {
-      final base = {'purse': {'gold': 50, 'silver': 0, 'copper': 0}};
+      final base = {
+        'purse': {'gold': 50, 'silver': 0, 'copper': 0},
+      };
       final merged = Nivel20Import.mergeAiPatch(base, {});
       expect(merged['purse'], {'gold': 50, 'silver': 0, 'copper': 0});
     });
@@ -192,14 +237,35 @@ void main() {
     test('añade companions del parche sin duplicar los ya existentes', () {
       final base = {
         'companions': [
-          {'name': 'Nix', 'type': 'familiar', 'has_hp': false, 'current_hp': 0, 'max_hp': 0, 'ac': 10},
+          {
+            'name': 'Nix',
+            'type': 'familiar',
+            'has_hp': false,
+            'current_hp': 0,
+            'max_hp': 0,
+            'ac': 10,
+          },
         ],
       };
       final patch = {
         'companions': [
           // Mismo nombre que uno ya existente: no debe duplicarse.
-          {'name': 'Nix', 'type': 'otro', 'has_hp': true, 'current_hp': 5, 'max_hp': 5, 'ac': 12},
-          {'name': 'Calion', 'type': 'aliado', 'has_hp': true, 'current_hp': 20, 'max_hp': 20, 'ac': 14},
+          {
+            'name': 'Nix',
+            'type': 'otro',
+            'has_hp': true,
+            'current_hp': 5,
+            'max_hp': 5,
+            'ac': 12,
+          },
+          {
+            'name': 'Calion',
+            'type': 'aliado',
+            'has_hp': true,
+            'current_hp': 20,
+            'max_hp': 20,
+            'ac': 14,
+          },
         ],
       };
       final merged = Nivel20Import.mergeAiPatch(base, patch);
@@ -212,7 +278,9 @@ void main() {
 
     test('sin "companions" en el parche, deja la base intacta', () {
       final base = {'companions': <Map<String, dynamic>>[]};
-      final merged = Nivel20Import.mergeAiPatch(base, {'purse': {'gold': 1}});
+      final merged = Nivel20Import.mergeAiPatch(base, {
+        'purse': {'gold': 1},
+      });
       expect(merged['companions'], isEmpty);
     });
   });
@@ -241,7 +309,9 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('JSON de Nivel20 pegado: salta al paso 3 y importa', (tester) async {
+    testWidgets('JSON de Nivel20 pegado: salta al paso 3 y importa', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(900, 2400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
@@ -264,7 +334,9 @@ void main() {
       expect(store.roster.single.basicInfo.name, 'Kael`nar Ardinys');
     });
 
-    testWidgets('"Atrás" desde la revisión directa conserva el JSON pegado', (tester) async {
+    testWidgets('"Atrás" desde la revisión directa conserva el JSON pegado', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(900, 2400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
@@ -286,55 +358,84 @@ void main() {
       expect(store.roster, isEmpty);
 
       // Y puede elegir la otra vía sin volver a pegar nada.
-      await tester.ensureVisible(find.text('Preparar prompt de IA (enriquecido)'));
+      await tester.ensureVisible(
+        find.text('Preparar prompt de IA (enriquecido)'),
+      );
       await tester.tap(find.text('Preparar prompt de IA (enriquecido)'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('DEVUELVE un único objeto JSON', findRichText: true), findsOneWidget);
+      expect(
+        find.textContaining(
+          'DEVUELVE un único objeto JSON',
+          findRichText: true,
+        ),
+        findsOneWidget,
+      );
     });
 
-    testWidgets('Atrás desde la revisión tras pegar la respuesta de la IA también conserva el Paso 1', (tester) async {
+    testWidgets(
+      'Atrás desde la revisión tras pegar la respuesta de la IA también conserva el Paso 1',
+      (tester) async {
+        tester.view.physicalSize = const Size(900, 2400);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+        final store = await boot();
+        await pumpWizard(tester, store);
+
+        await tester.tap(find.text('Continuar')); // paso 2
+        await tester.pumpAndSettle();
+        final ia = jsonEncode(Nivel20Mapper.toJson(raw));
+        await tester.enterText(find.byType(TextField), ia);
+        await tester.pump();
+        await tester.tap(find.text('Continuar')); // valida -> paso 3
+        await tester.pumpAndSettle();
+        expect(find.text('Importar personaje'), findsOneWidget);
+
+        await tester.tap(find.text('Atrás')); // paso 2
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Atrás')); // paso 1
+        await tester.pumpAndSettle();
+
+        final field = tester.widget<TextField>(find.byType(TextField).first);
+        expect(field.controller!.text, fixtureText);
+        expect(find.text('Importar directo (sin IA)'), findsOneWidget);
+      },
+    );
+
+    testWidgets('prompt enriquecido: reemplaza el prompt de la vista previa', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(900, 2400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
       final store = await boot();
       await pumpWizard(tester, store);
 
-      await tester.tap(find.text('Continuar')); // paso 2
-      await tester.pumpAndSettle();
-      final ia = jsonEncode(Nivel20Mapper.toJson(raw));
-      await tester.enterText(find.byType(TextField), ia);
-      await tester.pump();
-      await tester.tap(find.text('Continuar')); // valida -> paso 3
-      await tester.pumpAndSettle();
-      expect(find.text('Importar personaje'), findsOneWidget);
-
-      await tester.tap(find.text('Atrás')); // paso 2
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Atrás')); // paso 1
-      await tester.pumpAndSettle();
-
-      final field = tester.widget<TextField>(find.byType(TextField).first);
-      expect(field.controller!.text, fixtureText);
-      expect(find.text('Importar directo (sin IA)'), findsOneWidget);
-    });
-
-    testWidgets('prompt enriquecido: reemplaza el prompt de la vista previa', (tester) async {
-      tester.view.physicalSize = const Size(900, 2400);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.reset);
-      final store = await boot();
-      await pumpWizard(tester, store);
-
-      expect(find.textContaining('DEVUELVE un único objeto JSON', findRichText: true), findsNothing);
-      await tester.ensureVisible(find.text('Preparar prompt de IA (enriquecido)'));
+      expect(
+        find.textContaining(
+          'DEVUELVE un único objeto JSON',
+          findRichText: true,
+        ),
+        findsNothing,
+      );
+      await tester.ensureVisible(
+        find.text('Preparar prompt de IA (enriquecido)'),
+      );
       await tester.tap(find.text('Preparar prompt de IA (enriquecido)'));
       await tester.pumpAndSettle();
 
       expect(find.text('Prompt enriquecido listo (abajo)'), findsOneWidget);
-      expect(find.textContaining('DEVUELVE un único objeto JSON', findRichText: true), findsOneWidget);
+      expect(
+        find.textContaining(
+          'DEVUELVE un único objeto JSON',
+          findRichText: true,
+        ),
+        findsOneWidget,
+      );
     });
 
-    testWidgets('texto que no es Nivel20: no ofrece importación directa', (tester) async {
+    testWidgets('texto que no es Nivel20: no ofrece importación directa', (
+      tester,
+    ) async {
       final store = await boot();
       await tester.pumpWidget(
         ChangeNotifierProvider<CharacterStore>.value(
@@ -345,7 +446,10 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Pegar ficha'));
       await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField).first, 'Mago nivel 3, 20 PG');
+      await tester.enterText(
+        find.byType(TextField).first,
+        'Mago nivel 3, 20 PG',
+      );
       await tester.pumpAndSettle();
       expect(find.text('Importar directo (sin IA)'), findsNothing);
     });

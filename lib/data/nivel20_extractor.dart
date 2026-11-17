@@ -56,19 +56,19 @@ class Nivel20Extractor {
       final body = response.body.trim();
       final looksLikeJson = body.startsWith('{') || body.startsWith('[');
       if (!looksLikeJson) {
-        final looksLikeHtml = body.toLowerCase().contains('<html') ||
+        final looksLikeHtml =
+            body.toLowerCase().contains('<html') ||
             body.toLowerCase().contains('<!doctype');
-        final preview =
-            body.length > 140 ? '${body.substring(0, 140)}…' : body;
+        final preview = body.length > 140 ? '${body.substring(0, 140)}…' : body;
         throw Exception(
           looksLikeHtml
               ? 'Nivel20 ha devuelto una página web en vez del JSON. Suele '
-                  'pasar cuando la ficha no está realmente marcada como '
-                  'pública. Abre ese mismo enlace con ".json" al final en el '
-                  'navegador: si no ves el JSON ahí tampoco, la ficha no es '
-                  'pública todavía.'
+                    'pasar cuando la ficha no está realmente marcada como '
+                    'pública. Abre ese mismo enlace con ".json" al final en el '
+                    'navegador: si no ves el JSON ahí tampoco, la ficha no es '
+                    'pública todavía.'
               : 'Nivel20 no ha devuelto un JSON reconocible. Contenido '
-                  'recibido: "$preview"',
+                    'recibido: "$preview"',
         );
       }
 
@@ -110,16 +110,20 @@ class Nivel20Extractor {
   // RESOLUCIÓN DE LINKS
   // ---------------------------------------------------------------------
 
-  static final RegExp _shortLinkRegex = RegExp(r'nivel20\.com/s/([A-Za-z0-9]+)');
-  static final RegExp _longLinkRegex =
-      RegExp(r'nivel20\.com/games/[^/]+/characters/\d+');
+  static final RegExp _shortLinkRegex = RegExp(
+    r'nivel20\.com/s/([A-Za-z0-9]+)',
+  );
+  static final RegExp _longLinkRegex = RegExp(
+    r'nivel20\.com/games/[^/]+/characters/\d+',
+  );
 
   /// Encuentra un enlace largo de ficha (`/games/.../characters/<id>...`)
   /// embebido dentro de una página HTML — típicamente en un
   /// `<link rel="canonical">` o una meta `og:url`, que las páginas de
   /// "Compartir" suelen incluir para las vistas previas de redes sociales.
-  static final RegExp _longLinkPathRegex =
-      RegExp(r'/games/[^"\s]+/characters/\d+[^"\s]*');
+  static final RegExp _longLinkPathRegex = RegExp(
+    r'/games/[^"\s]+/characters/\d+[^"\s]*',
+  );
 
   /// Muchos sitios (Nivel20 incluido, a través de su CDN) devuelven una
   /// página HTML en vez del recurso pedido cuando detectan que la petición
@@ -251,8 +255,9 @@ class Nivel20Extractor {
     '&hellip;': '…',
   };
 
-  static final RegExp _numericEntityRegex =
-      RegExp(r'&#(x[0-9a-fA-F]+|[0-9]+);');
+  static final RegExp _numericEntityRegex = RegExp(
+    r'&#(x[0-9a-fA-F]+|[0-9]+);',
+  );
 
   /// Purga etiquetas HTML (<p>, <br>, <strong>...) y entidades comunes
   /// (con nombre y numéricas, decimales y hex) de un String, dejando
@@ -264,7 +269,9 @@ class Nivel20Extractor {
     // de borrar el resto de etiquetas, para no dejar todo el texto pegado.
     text = text.replaceAll(RegExp(r'<br\s*/?>', caseSensitive: false), '\n');
     text = text.replaceAll(
-        RegExp(r'</p>\s*<p[^>]*>', caseSensitive: false), '\n\n');
+      RegExp(r'</p>\s*<p[^>]*>', caseSensitive: false),
+      '\n\n',
+    );
     text = text.replaceAll(RegExp(r'</li>\s*', caseSensitive: false), '\n');
     text = text.replaceAll(RegExp(r'<li[^>]*>', caseSensitive: false), '- ');
 

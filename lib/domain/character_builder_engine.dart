@@ -185,25 +185,72 @@ abstract final class CharacterBuilderEngine {
   // ----------------------------- magia ------------------------------
 
   static const List<List<int>> _fullSlots = [
-    [2], [3], [4, 2], [4, 3], [4, 3, 2], [4, 3, 3], [4, 3, 3, 1], [4, 3, 3, 2],
-    [4, 3, 3, 3, 1], [4, 3, 3, 3, 2], [4, 3, 3, 3, 2, 1], [4, 3, 3, 3, 2, 1],
-    [4, 3, 3, 3, 2, 1, 1], [4, 3, 3, 3, 2, 1, 1], [4, 3, 3, 3, 2, 1, 1, 1],
-    [4, 3, 3, 3, 2, 1, 1, 1], [4, 3, 3, 3, 2, 1, 1, 1, 1],
-    [4, 3, 3, 3, 3, 1, 1, 1, 1], [4, 3, 3, 3, 3, 2, 1, 1, 1],
+    [2],
+    [3],
+    [4, 2],
+    [4, 3],
+    [4, 3, 2],
+    [4, 3, 3],
+    [4, 3, 3, 1],
+    [4, 3, 3, 2],
+    [4, 3, 3, 3, 1],
+    [4, 3, 3, 3, 2],
+    [4, 3, 3, 3, 2, 1],
+    [4, 3, 3, 3, 2, 1],
+    [4, 3, 3, 3, 2, 1, 1],
+    [4, 3, 3, 3, 2, 1, 1],
+    [4, 3, 3, 3, 2, 1, 1, 1],
+    [4, 3, 3, 3, 2, 1, 1, 1],
+    [4, 3, 3, 3, 2, 1, 1, 1, 1],
+    [4, 3, 3, 3, 3, 1, 1, 1, 1],
+    [4, 3, 3, 3, 3, 2, 1, 1, 1],
     [4, 3, 3, 3, 3, 2, 2, 1, 1],
   ];
 
   static const List<List<int>> _halfSlots = [
-    [], [2], [3], [3], [4, 2], [4, 2], [4, 3], [4, 3], [4, 3, 2], [4, 3, 2],
-    [4, 3, 3], [4, 3, 3], [4, 3, 3, 1], [4, 3, 3, 1], [4, 3, 3, 2],
-    [4, 3, 3, 2], [4, 3, 3, 3, 1], [4, 3, 3, 3, 1], [4, 3, 3, 3, 2],
+    [],
+    [2],
+    [3],
+    [3],
+    [4, 2],
+    [4, 2],
+    [4, 3],
+    [4, 3],
+    [4, 3, 2],
+    [4, 3, 2],
+    [4, 3, 3],
+    [4, 3, 3],
+    [4, 3, 3, 1],
+    [4, 3, 3, 1],
+    [4, 3, 3, 2],
+    [4, 3, 3, 2],
+    [4, 3, 3, 3, 1],
+    [4, 3, 3, 3, 1],
+    [4, 3, 3, 3, 2],
     [4, 3, 3, 3, 2],
   ];
 
   static const List<List<int>> _thirdSlots = [
-    [], [], [2], [3], [3], [3], [4, 2], [4, 2], [4, 2], [4, 3], [4, 3], [4, 3],
-    [4, 3, 2], [4, 3, 2], [4, 3, 2], [4, 3, 3], [4, 3, 3], [4, 3, 3],
-    [4, 3, 3, 1], [4, 3, 3, 1],
+    [],
+    [],
+    [2],
+    [3],
+    [3],
+    [3],
+    [4, 2],
+    [4, 2],
+    [4, 2],
+    [4, 3],
+    [4, 3],
+    [4, 3],
+    [4, 3, 2],
+    [4, 3, 2],
+    [4, 3, 2],
+    [4, 3, 3],
+    [4, 3, 3],
+    [4, 3, 3],
+    [4, 3, 3, 1],
+    [4, 3, 3, 1],
   ];
 
   /// Ranuras de conjuro por nivel de ranura ({1: 4, 2: 3}). Vacío si no hay.
@@ -220,7 +267,9 @@ abstract final class CharacterBuilderEngine {
       case 'pact':
         // Magia de pacto: pocas ranuras, todas del nivel máximo.
         final count = l == 1 ? 1 : (l < 11 ? 2 : (l < 17 ? 3 : 4));
-        final slotLevel = l < 3 ? 1 : (l < 5 ? 2 : (l < 7 ? 3 : (l < 9 ? 4 : 5)));
+        final slotLevel = l < 3
+            ? 1
+            : (l < 5 ? 2 : (l < 7 ? 3 : (l < 9 ? 4 : 5)));
         return {slotLevel: count};
       default:
         return const {};
@@ -244,8 +293,11 @@ abstract final class CharacterBuilderEngine {
   /// Factores: enteros, `level`, `proficiency`, `<attr>_mod`,
   /// `rage_uses` y `max(a,b,...)` (cada argumento es otra fórmula).
   /// Ej.: "5*level", "max(1,1+cha_mod)". Nunca devuelve menos de 1.
-  static int resolveFormula(String formula,
-      {required int level, required Map<String, int> mods}) {
+  static int resolveFormula(
+    String formula, {
+    required int level,
+    required Map<String, int> mods,
+  }) {
     late final int Function(String) eval;
 
     int factor(String raw) {
@@ -253,20 +305,28 @@ abstract final class CharacterBuilderEngine {
       final n = int.tryParse(t);
       if (n != null) return n;
       if (t.startsWith('max(') && t.endsWith(')')) {
-        return _splitTopLevel(t.substring(4, t.length - 1), ',').map(eval).reduce(max);
+        return _splitTopLevel(
+          t.substring(4, t.length - 1),
+          ',',
+        ).map(eval).reduce(max);
       }
       if (t == 'level') return level;
       if (t == 'proficiency') return proficiencyBonus(level);
       if (t == 'rage_uses') return rageUses(level);
-      if (t.endsWith('_mod') && mods.containsKey(t.substring(0, t.length - 4))) {
+      if (t.endsWith('_mod') &&
+          mods.containsKey(t.substring(0, t.length - 4))) {
         return mods[t.substring(0, t.length - 4)]!;
       }
-      throw FormatException('Factor desconocido en la fórmula "$formula": "$raw"');
+      throw FormatException(
+        'Factor desconocido en la fórmula "$formula": "$raw"',
+      );
     }
 
-    eval = (String expr) => _splitTopLevel(expr, '+').map((term) {
+    eval = (String expr) => _splitTopLevel(expr, '+')
+        .map((term) {
           return _splitTopLevel(term, '*').map(factor).fold(1, (a, b) => a * b);
-        }).fold(0, (a, b) => a + b);
+        })
+        .fold(0, (a, b) => a + b);
 
     return max(1, eval(formula));
   }
@@ -316,7 +376,8 @@ abstract final class CharacterBuilderEngine {
 
     final saveProfs = cls.savingThrows.toSet();
     final saves = {
-      for (final k in kAbilityKeys) k: mods[k]! + (saveProfs.contains(k) ? prof : 0),
+      for (final k in kAbilityKeys)
+        k: mods[k]! + (saveProfs.contains(k) ? prof : 0),
     };
 
     final skills = <String, int>{};
@@ -367,8 +428,11 @@ abstract final class CharacterBuilderEngine {
 
   static bool isWeaponProficient(SrdClass cls, SrdWeapon w) {
     final profs = cls.weaponProficiencies.map(normalizeSpellName).toSet();
-    final category = w.category == 'marcial' ? 'armas marciales' : 'armas sencillas';
-    return profs.contains(category) || profs.contains(normalizeSpellName(w.name));
+    final category = w.category == 'marcial'
+        ? 'armas marciales'
+        : 'armas sencillas';
+    return profs.contains(category) ||
+        profs.contains(normalizeSpellName(w.name));
   }
 
   /// ¿La clase domina esta armadura (o el escudo)?
@@ -415,11 +479,13 @@ abstract final class CharacterBuilderEngine {
 
     final conditional = <ConditionalDamage>[];
     if (w.versatileDice != null && dice != null) {
-      conditional.add(ConditionalDamage(
-        trigger: 'A dos manos (versátil)',
-        dice: '${w.versatileDice}${_signed(mod)}',
-        type: dmgType,
-      ));
+      conditional.add(
+        ConditionalDamage(
+          trigger: 'A dos manos (versátil)',
+          dice: '${w.versatileDice}${_signed(mod)}',
+          type: dmgType,
+        ),
+      );
     }
 
     return Weapon(
@@ -467,14 +533,23 @@ abstract final class CharacterBuilderEngine {
   static String _categoryKey(String actionType) =>
       actionType == 'bonus_action' ? 'bonusAction' : actionType;
 
-  static Ability _spellToAbility(SrdSpell s, SrdClass cls, ComputedStats stats) {
-    final (ability, category) = s.toAbility(relatedStat: cls.spellcastingAbility ?? 'int');
+  static Ability _spellToAbility(
+    SrdSpell s,
+    SrdClass cls,
+    ComputedStats stats,
+  ) {
+    final (ability, category) = s.toAbility(
+      relatedStat: cls.spellcastingAbility ?? 'int',
+    );
     // toAbility usa el reloj en el id; aquí se necesita determinista.
     ability.id = 'spell_${normalizeSpellName(s.name).replaceAll(' ', '_')}';
     if (ability.attackType == 'save' && stats.spellSaveDc != null) {
-      ability.tacticalSummary = '${ability.tacticalSummary} · CD ${stats.spellSaveDc}';
-    } else if (ability.attackType == 'attack' && stats.spellAttackBonus != null) {
-      ability.tacticalSummary = '${ability.tacticalSummary} · Ataque ${_signed(stats.spellAttackBonus!)}';
+      ability.tacticalSummary =
+          '${ability.tacticalSummary} · CD ${stats.spellSaveDc}';
+    } else if (ability.attackType == 'attack' &&
+        stats.spellAttackBonus != null) {
+      ability.tacticalSummary =
+          '${ability.tacticalSummary} · Ataque ${_signed(stats.spellAttackBonus!)}';
     }
     return ability;
   }
@@ -498,19 +573,32 @@ abstract final class CharacterBuilderEngine {
       );
     }
 
-    final abilities = AbilitiesByAction(action: [], bonusAction: [], reaction: [], passive: []);
+    final abilities = AbilitiesByAction(
+      action: [],
+      bonusAction: [],
+      reaction: [],
+      passive: [],
+    );
     final resources = <ResourcePoint>[];
     for (final f in cls.coreFeatures.where((f) => f.level <= level)) {
-      abilities.listFor(_categoryKey(f.actionType)).add(_featureToAbility(cls, f));
+      abilities
+          .listFor(_categoryKey(f.actionType))
+          .add(_featureToAbility(cls, f));
       final r = f.resource;
       if (r != null) {
-        final uses = resolveFormula(r.maxFormula, level: level, mods: stats.mods);
-        resources.add(ResourcePoint(
-          name: r.name,
-          current: uses,
-          max: uses,
-          recovery: r.recovery,
-        ));
+        final uses = resolveFormula(
+          r.maxFormula,
+          level: level,
+          mods: stats.mods,
+        );
+        resources.add(
+          ResourcePoint(
+            name: r.name,
+            current: uses,
+            max: uses,
+            recovery: r.recovery,
+          ),
+        );
       }
     }
     for (final s in input.spells) {
@@ -522,7 +610,8 @@ abstract final class CharacterBuilderEngine {
       for (final a in input.armors)
         MundaneItem(
           name: a.name,
-          description: 'CA ${a.category == 'escudo' ? '+${a.baseAc}' : a.baseAc} · ${a.category}'
+          description:
+              'CA ${a.category == 'escudo' ? '+${a.baseAc}' : a.baseAc} · ${a.category}'
               '${a.stealthDisadvantage ? ' · desventaja en Sigilo' : ''}',
           quantity: 1,
         ),
@@ -558,17 +647,29 @@ abstract final class CharacterBuilderEngine {
         wis: score('wis'),
         cha: score('cha'),
       ),
-      spellSlots: SpellSlots(slots: [
-        for (final e in stats.spellSlots.entries)
-          SpellSlot(level: e.key, max: e.value, current: e.value),
-      ]),
+      spellSlots: SpellSlots(
+        slots: [
+          for (final e in stats.spellSlots.entries)
+            SpellSlot(level: e.key, max: e.value, current: e.value),
+        ],
+      ),
       skills: [
         for (final e in kSkillAbilities.entries)
-          Skill(name: e.key, relatedStat: e.value, modifier: stats.skills[e.key]!),
+          Skill(
+            name: e.key,
+            relatedStat: e.value,
+            modifier: stats.skills[e.key]!,
+          ),
       ],
       loreInfo: LoreInfo(
-          backstory: input.background.trim().isEmpty ? '' : 'Trasfondo: ${input.background.trim()}',
-          personalityTraits: '', ideals: '', bonds: '', flaws: ''),
+        backstory: input.background.trim().isEmpty
+            ? ''
+            : 'Trasfondo: ${input.background.trim()}',
+        personalityTraits: '',
+        ideals: '',
+        bonds: '',
+        flaws: '',
+      ),
       purse: Purse(gold: input.startingGold),
       resources: resources,
     );

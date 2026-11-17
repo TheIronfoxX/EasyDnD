@@ -13,14 +13,18 @@ void main() {
   late Map<String, dynamic> json;
 
   setUpAll(() {
-    raw = jsonDecode(File('test/fixtures/nivel20/kael_nar_ardinys.trimmed.json')
-        .readAsStringSync()) as Map<String, dynamic>;
+    raw =
+        jsonDecode(
+              File(
+                'test/fixtures/nivel20/kael_nar_ardinys.trimmed.json',
+              ).readAsStringSync(),
+            )
+            as Map<String, dynamic>;
     json = Nivel20Mapper.toJson(raw);
   });
 
   Map<String, dynamic> spell(String name) {
-    final all = (json['abilities_by_action'] as Map)
-        .values
+    final all = (json['abilities_by_action'] as Map).values
         .expand((l) => l as List)
         .cast<Map<String, dynamic>>();
     return all.firstWhere((a) => a['name'] == name);
@@ -91,9 +95,11 @@ void main() {
     });
 
     test('sin current_level_slots usa resources.spell_slots', () {
-      final inner = jsonDecode(jsonEncode(raw['printable_hash']))
-          as Map<String, dynamic>;
-      ((inner['spell_books'] as List).first as Map).remove('current_level_slots');
+      final inner =
+          jsonDecode(jsonEncode(raw['printable_hash'])) as Map<String, dynamic>;
+      ((inner['spell_books'] as List).first as Map).remove(
+        'current_level_slots',
+      );
       final slots = Nivel20Mapper.toJson(inner)['spell_slots'] as List;
       expect(slots, hasLength(8));
     });
@@ -115,17 +121,21 @@ void main() {
     });
 
     test('items.armas y attacks[] duplicados cuentan una sola vez', () {
-      final fullRaw = jsonDecode(
-        File('test/fixtures/nivel20/kael_nar_ardinys.full.json').readAsStringSync(),
-      ) as Map<String, dynamic>;
+      final fullRaw =
+          jsonDecode(
+                File(
+                  'test/fixtures/nivel20/kael_nar_ardinys.full.json',
+                ).readAsStringSync(),
+              )
+              as Map<String, dynamic>;
       final weapons =
           Nivel20Mapper.toJson(fullRaw)['inventory']['weapons'] as List;
       expect(weapons.where((w) => w['name'] == 'Bastón'), hasLength(1));
     });
 
     test('alcance, munición y bonos extra se preservan en properties', () {
-      final inner = jsonDecode(jsonEncode(raw['printable_hash']))
-          as Map<String, dynamic>;
+      final inner =
+          jsonDecode(jsonEncode(raw['printable_hash'])) as Map<String, dynamic>;
       final arma =
           (inner['items']['armas'] as List).first as Map<String, dynamic>;
       (arma['attack'] as Map)['range'] = '120 pies';
@@ -133,23 +143,30 @@ void main() {
       ((arma['attack'] as Map)['damage'] as Map)['bonus'] = '+1 fuego';
       (arma['fields'] as Map)['municion'] = 'Flechas';
 
-      final w = (Nivel20Mapper.toJson(inner)['inventory']['weapons'] as List)
-          .single;
-      expect(w['properties'], containsAll([
-        'Alcance: 120 pies',
-        'Munición: Flechas',
-        'Bono de ataque adicional: +1 mágico',
-        'Bono de daño adicional: +1 fuego',
-      ]));
+      final w =
+          (Nivel20Mapper.toJson(inner)['inventory']['weapons'] as List).single;
+      expect(
+        w['properties'],
+        containsAll([
+          'Alcance: 120 pies',
+          'Munición: Flechas',
+          'Bono de ataque adicional: +1 mágico',
+          'Bono de daño adicional: +1 fuego',
+        ]),
+      );
     });
   });
 
   group('inventario: objetos y oro', () {
     test('protections[] se importa como objeto mundano', () {
-      final inner = jsonDecode(jsonEncode(raw['printable_hash']))
-          as Map<String, dynamic>;
+      final inner =
+          jsonDecode(jsonEncode(raw['printable_hash'])) as Map<String, dynamic>;
       inner['protections'] = [
-        {'name': 'Escudo de madera', 'description': 'Un escudo sencillo.', 'quantity': 1},
+        {
+          'name': 'Escudo de madera',
+          'description': 'Un escudo sencillo.',
+          'quantity': 1,
+        },
       ];
       final items =
           Nivel20Mapper.toJson(inner)['inventory']['mundane_items'] as List;
@@ -157,18 +174,21 @@ void main() {
     });
 
     test('equipo libre con varios objetos se divide por comas', () {
-      final inner = jsonDecode(jsonEncode(raw['printable_hash']))
-          as Map<String, dynamic>;
+      final inner =
+          jsonDecode(jsonEncode(raw['printable_hash'])) as Map<String, dynamic>;
       inner['equipment'] = 'Una cuerda, un saco de dormir, 10 antorchas';
       final items =
           Nivel20Mapper.toJson(inner)['inventory']['mundane_items'] as List;
-      expect(items.map((i) => i['name']),
-          ['Una cuerda', 'un saco de dormir', '10 antorchas']);
+      expect(items.map((i) => i['name']), [
+        'Una cuerda',
+        'un saco de dormir',
+        '10 antorchas',
+      ]);
     });
 
     test('equipo libre de una sola frase sigue como ítem único "Equipo"', () {
-      final inner = jsonDecode(jsonEncode(raw['printable_hash']))
-          as Map<String, dynamic>;
+      final inner =
+          jsonDecode(jsonEncode(raw['printable_hash'])) as Map<String, dynamic>;
       inner['equipment'] = 'Un amuleto sin nada especial.';
       final items =
           Nivel20Mapper.toJson(inner)['inventory']['mundane_items'] as List;
@@ -176,36 +196,83 @@ void main() {
       expect(items.single['description'], 'Un amuleto sin nada especial.');
     });
 
-    test('oro en el equipo (50 po) va a purse y se excluye de mundane_items', () {
-      final inner = jsonDecode(jsonEncode(raw['printable_hash']))
-          as Map<String, dynamic>;
-      inner['equipment'] = '50 po y una capa de viaje';
-      final jsonOut = Nivel20Mapper.toJson(inner);
-      expect(jsonOut['purse'], {'gold': 50, 'silver': 0, 'copper': 0});
-      final items = jsonOut['inventory']['mundane_items'] as List;
-      expect(items.single['description'], isNot(contains('50')));
-      expect(items.single['description'], contains('capa'));
-    });
+    test(
+      'oro en el equipo (50 po) va a purse y se excluye de mundane_items',
+      () {
+        final inner =
+            jsonDecode(jsonEncode(raw['printable_hash']))
+                as Map<String, dynamic>;
+        inner['equipment'] = '50 po y una capa de viaje';
+        final jsonOut = Nivel20Mapper.toJson(inner);
+        expect(jsonOut['purse'], {
+          'platinum': 0,
+          'gold': 50,
+          'electrum': 0,
+          'silver': 0,
+          'copper': 0,
+        });
+        final items = jsonOut['inventory']['mundane_items'] as List;
+        expect(items.single['description'], isNot(contains('50')));
+        expect(items.single['description'], contains('capa'));
+      },
+    );
 
     test('plata en fields.notas también se suma a purse', () {
-      final inner = jsonDecode(jsonEncode(raw['printable_hash']))
-          as Map<String, dynamic>;
-      (inner['fields'] as Map)['notas'] = 'Guarda 20 piezas de plata escondidas.';
+      final inner =
+          jsonDecode(jsonEncode(raw['printable_hash'])) as Map<String, dynamic>;
+      (inner['fields'] as Map)['notas'] =
+          'Guarda 20 piezas de plata escondidas.';
       final jsonOut = Nivel20Mapper.toJson(inner);
-      expect(jsonOut['purse'], {'gold': 0, 'silver': 20, 'copper': 0});
+      expect(jsonOut['purse'], {
+        'platinum': 0,
+        'gold': 0,
+        'electrum': 0,
+        'silver': 20,
+        'copper': 0,
+      });
     });
 
     test('equipo y notas se suman en el mismo purse', () {
-      final inner = jsonDecode(jsonEncode(raw['printable_hash']))
-          as Map<String, dynamic>;
+      final inner =
+          jsonDecode(jsonEncode(raw['printable_hash'])) as Map<String, dynamic>;
       inner['equipment'] = '10 po';
       (inner['fields'] as Map)['notas'] = '5 pc sueltas en el bolsillo';
       final jsonOut = Nivel20Mapper.toJson(inner);
-      expect(jsonOut['purse'], {'gold': 10, 'silver': 0, 'copper': 5});
+      expect(jsonOut['purse'], {
+        'platinum': 0,
+        'gold': 10,
+        'electrum': 0,
+        'silver': 0,
+        'copper': 5,
+      });
     });
 
     test('sin menciones de monedas, purse queda en cero', () {
-      expect(json['purse'], {'gold': 0, 'silver': 0, 'copper': 0});
+      expect(json['purse'], {
+        'platinum': 0,
+        'gold': 0,
+        'electrum': 0,
+        'silver': 0,
+        'copper': 0,
+      });
+    });
+
+    test('platino y electro en el equipo van a purse y no a mundane_items', () {
+      final inner =
+          jsonDecode(jsonEncode(raw['printable_hash'])) as Map<String, dynamic>;
+      inner['equipment'] = '3 ppt, 7 piezas de electro y una linterna';
+      final jsonOut = Nivel20Mapper.toJson(inner);
+      expect(jsonOut['purse'], {
+        'platinum': 3,
+        'gold': 0,
+        'electrum': 7,
+        'silver': 0,
+        'copper': 0,
+      });
+      final items = jsonOut['inventory']['mundane_items'] as List;
+      expect(items.single['description'], contains('linterna'));
+      expect(items.single['description'], isNot(contains('electro')));
+      expect(Nivel20Mapper.detectedPurse(inner), jsonOut['purse']);
     });
   });
 
@@ -226,10 +293,14 @@ void main() {
       expect(manos['tactical_summary'], contains('(18)'));
 
       final abilities = json['abilities_by_action'] as Map;
-      expect((abilities['bonus_action'] as List).map((a) => a['name']),
-          contains('Retirada expeditiva'));
-      expect((abilities['action'] as List).map((a) => a['name']),
-          containsAll(['Rayo de fuego', 'Manos ardientes', 'Conjurar elemental']));
+      expect(
+        (abilities['bonus_action'] as List).map((a) => a['name']),
+        contains('Retirada expeditiva'),
+      );
+      expect(
+        (abilities['action'] as List).map((a) => a['name']),
+        containsAll(['Rayo de fuego', 'Manos ardientes', 'Conjurar elemental']),
+      );
     });
 
     test('sin ataque ni salvación -> none y sin dado', () {
@@ -256,55 +327,63 @@ void main() {
       final names = ((json['abilities_by_action'] as Map)['passive'] as List)
           .map((a) => a['name'])
           .toList();
-      expect(names, containsAll(['Esculpir conjuros', 'Forma cambiante', 'Supernova']));
+      expect(
+        names,
+        containsAll(['Esculpir conjuros', 'Forma cambiante', 'Supernova']),
+      );
       expect(names, isNot(contains('Arcanos')));
       expect(names, isNot(contains('Inteligencia')));
       expect(names, isNot(contains('Bastón')));
     });
 
-    test('rasgos con economía activa explícita se promueven a su categoría', () {
-      final inner = jsonDecode(jsonEncode(raw)) as Map<String, dynamic>;
-      final hash = (inner['printable_hash'] as Map).cast<String, dynamic>();
-      (hash['race_feats'] as List).add({
-        'id': 900,
-        'name': 'Aliento de dragón',
-        'description': 'Exhalas fuego.',
-        'casting_time_unit': 'action',
-      });
-      (hash['other_feats'] as List).add({
-        'id': 901,
-        'name': 'Centinela',
-        'description': 'Reaccionas al ataque.',
-        'action_type': 'reaction',
-      });
-      ((hash['professions'] as List).first['feats'] as List).add({
-        'id': 902,
-        'name': 'Paso brumoso',
-        'description': 'Te teletransportas.',
-        'casting_time_unit': 'bonus_action',
-        'visible': true,
-        'required_level': 1,
-      });
+    test(
+      'rasgos con economía activa explícita se promueven a su categoría',
+      () {
+        final inner = jsonDecode(jsonEncode(raw)) as Map<String, dynamic>;
+        final hash = (inner['printable_hash'] as Map).cast<String, dynamic>();
+        (hash['race_feats'] as List).add({
+          'id': 900,
+          'name': 'Aliento de dragón',
+          'description': 'Exhalas fuego.',
+          'casting_time_unit': 'action',
+        });
+        (hash['other_feats'] as List).add({
+          'id': 901,
+          'name': 'Centinela',
+          'description': 'Reaccionas al ataque.',
+          'action_type': 'reaction',
+        });
+        ((hash['professions'] as List).first['feats'] as List).add({
+          'id': 902,
+          'name': 'Paso brumoso',
+          'description': 'Te teletransportas.',
+          'casting_time_unit': 'bonus_action',
+          'visible': true,
+          'required_level': 1,
+        });
 
-      final out = Nivel20Mapper.toJson(inner)['abilities_by_action'] as Map;
-      List names(String k) => (out[k] as List).map((a) => a['name']).toList();
+        final out = Nivel20Mapper.toJson(inner)['abilities_by_action'] as Map;
+        List names(String k) => (out[k] as List).map((a) => a['name']).toList();
 
-      expect(names('action'), contains('Aliento de dragón'));
-      expect(names('reaction'), contains('Centinela'));
-      expect(names('bonus_action'), contains('Paso brumoso'));
-      expect(names('passive'), isNot(contains('Aliento de dragón')));
-      // Las activas llevan attack_type y nunca tactical_role.
-      final aliento = (out['action'] as List)
-          .firstWhere((a) => a['name'] == 'Aliento de dragón') as Map;
-      expect(aliento['attack_type'], 'none');
-      expect(aliento.containsKey('tactical_role'), isFalse);
-      // Los que no declaran economía siguen siendo pasivos.
-      expect(names('passive'), contains('Forma cambiante'));
-    });
+        expect(names('action'), contains('Aliento de dragón'));
+        expect(names('reaction'), contains('Centinela'));
+        expect(names('bonus_action'), contains('Paso brumoso'));
+        expect(names('passive'), isNot(contains('Aliento de dragón')));
+        // Las activas llevan attack_type y nunca tactical_role.
+        final aliento =
+            (out['action'] as List).firstWhere(
+                  (a) => a['name'] == 'Aliento de dragón',
+                )
+                as Map;
+        expect(aliento['attack_type'], 'none');
+        expect(aliento.containsKey('tactical_role'), isFalse);
+        // Los que no declaran economía siguen siendo pasivos.
+        expect(names('passive'), contains('Forma cambiante'));
+      },
+    );
 
     test('ids únicos', () {
-      final ids = (json['abilities_by_action'] as Map)
-          .values
+      final ids = (json['abilities_by_action'] as Map).values
           .expand((l) => l as List)
           .map((a) => a['id'])
           .toList();

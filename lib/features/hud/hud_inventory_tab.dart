@@ -1,16 +1,15 @@
-// Pestaña Inventario (Etapa 5d).
+// Pestaña Mochila: subpestañas Equipo (armas y objetos), Dinero y Notas.
 //
-// La vista de equipo del personaje activo: armas (con cantidad y cargas),
-// objetos mundanos, bolsa y compañeros. Es la contracara de solo lectura
-// del editor: acá el jugador consulta y ajusta lo que cambia en mesa
-// (copias de un arma, unidades de un objeto, PG de una mascota), pero no
-// edita la ficha.
+// Es la contracara de solo lectura del editor: acá el jugador consulta y
+// ajusta lo que cambia en mesa (copias de un arma, unidades de un
+// objeto, monedas), pero no edita la ficha.
 //
 // Mismo contrato que el resto del HUD: los métodos del store se llaman
 // sin validar antes y se autoprotegen; el shell escucha el ChangeNotifier
 // y vuelve a pintar la pestaña con los valores ya actualizados.
 
 import 'package:flutter/material.dart';
+import '../../core/ui/app_icons.dart';
 import 'package:provider/provider.dart';
 
 import '../../domain/models/character.dart';
@@ -24,36 +23,12 @@ import '../../core/theme/design_tokens.dart';
 import '../../core/theme/tactical_theme_tokens.dart';
 import '../../core/theme/telemetry.dart';
 
-class HudInventoryTab extends StatelessWidget {
-  const HudInventoryTab({super.key, required this.character});
-
-  final CharacterModel character;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.lg,
-        AppSpacing.lg,
-        AppSpacing.xl,
-      ),
-      children: [
-        _WeaponsSection(character: character),
-        _ItemsSection(character: character),
-        _PurseSection(character: character),
-        _CompanionsSection(character: character),
-      ],
-    );
-  }
-}
-
 // ---------------------------------------------------------------------
 // Armas: daño, cantidad de copias y cargas mágicas.
 // ---------------------------------------------------------------------
 
-class _WeaponsSection extends StatelessWidget {
-  const _WeaponsSection({required this.character});
+class HudWeaponsSection extends StatelessWidget {
+  const HudWeaponsSection({super.key, required this.character});
 
   final CharacterModel character;
 
@@ -63,7 +38,7 @@ class _WeaponsSection extends StatelessWidget {
     final weapons = character.inventory.weapons;
 
     return HudSectionCard(
-      icon: Icons.gavel_rounded,
+      icon: AppIcons.of(context).weapon,
       title: 'Armas',
       tone: context.tactical.weapon,
       trailing: IconButton(
@@ -99,17 +74,11 @@ class _WeaponRow extends StatelessWidget {
           )
         : null;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+    return _TapRow(
+      key: ValueKey('weapon-row-${weapon.id}'),
+      onTap: () => _showWeaponSheet(context, weapon.id),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: theme.colorScheme.secondaryContainer,
-            foregroundColor: theme.colorScheme.onSecondaryContainer,
-            child: const Icon(Icons.gavel_rounded, size: 18),
-          ),
-          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,24 +103,9 @@ class _WeaponRow extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: AppSpacing.sm),
-          if (weapon.isUnique)
-            const _UnitBadge(label: 'Única')
-          else
-            _QuantityStepper(
-              value: weapon.quantity,
-              decrementTooltip: 'Restar una copia de ${weapon.name}',
-              incrementTooltip: 'Sumar una copia de ${weapon.name}',
-              onDecrement: weapon.quantity > 0
-                  ? () => store.decrementQuantity(weapon.id)
-                  : null,
-              onIncrement: () => store.incrementQuantity(weapon.id),
-            ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline_rounded, size: 20),
-            tooltip: 'Eliminar arma',
-            onPressed: () => _removeWeaponWithUndo(context, weapon, store),
-          ),
+          if (!weapon.isUnique && weapon.quantity != 1)
+            _QuantityLabel(weapon.quantity),
+          const _RowChevron(),
         ],
       ),
     );
@@ -186,7 +140,7 @@ class _ChargePill extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: tone.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(AppRadii.pill),
+        borderRadius: BorderRadius.circular(context.tactical.shapes.pillRadius),
         border: Border.all(color: tone.withValues(alpha: 0.45)),
       ),
       child: Row(
@@ -239,8 +193,8 @@ void _removeWeaponWithUndo(
 // Objetos mundanos (cantidad ajustable, sin borrar desde el HUD).
 // ---------------------------------------------------------------------
 
-class _ItemsSection extends StatelessWidget {
-  const _ItemsSection({required this.character});
+class HudItemsSection extends StatelessWidget {
+  const HudItemsSection({super.key, required this.character});
 
   final CharacterModel character;
 
@@ -250,7 +204,7 @@ class _ItemsSection extends StatelessWidget {
     final items = character.inventory.mundaneItems;
 
     return HudSectionCard(
-      icon: Icons.backpack_rounded,
+      icon: AppIcons.of(context).backpack,
       title: 'Objetos',
       trailing: TextButton.icon(
         key: const Key('hud-add-item'),
@@ -301,16 +255,11 @@ class _ItemRow extends StatelessWidget {
     final theme = Theme.of(context);
     final description = item.description.trim();
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+    return _TapRow(
+      key: ValueKey('item-row-$index'),
+      onTap: () => _showItemSheet(context, index),
       child: Row(
         children: [
-          Icon(
-            Icons.inventory_2_outlined,
-            size: 20,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -333,18 +282,8 @@ class _ItemRow extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: AppSpacing.sm),
-          _QuantityStepper(
-            value: item.quantity,
-            decrementTooltip: 'Restar una unidad de ${item.name}',
-            incrementTooltip: 'Sumar una unidad de ${item.name}',
-            onDecrement: item.quantity > 0
-                ? () =>
-                      store.updateMundaneItemQuantity(index, item.quantity - 1)
-                : null,
-            onIncrement: () =>
-                store.updateMundaneItemQuantity(index, item.quantity + 1),
-          ),
+          if (item.quantity != 1) _QuantityLabel(item.quantity),
+          const _RowChevron(),
         ],
       ),
     );
@@ -355,8 +294,8 @@ class _ItemRow extends StatelessWidget {
 // Bolsa: tres stacks independientes + equivalencia en oro.
 // ---------------------------------------------------------------------
 
-class _PurseSection extends StatelessWidget {
-  const _PurseSection({required this.character});
+class HudPurseSection extends StatelessWidget {
+  const HudPurseSection({super.key, required this.character});
 
   final CharacterModel character;
 
@@ -500,140 +439,6 @@ class _PurseSection extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------
-// Compañeros: PG gestionables en mesa (o apoyo invulnerable).
-// ---------------------------------------------------------------------
-
-class _CompanionsSection extends StatelessWidget {
-  const _CompanionsSection({required this.character});
-
-  final CharacterModel character;
-
-  @override
-  Widget build(BuildContext context) {
-    final store = context.read<CharacterStore>();
-    final companions = character.companions;
-
-    return HudSectionCard(
-      icon: Icons.pets_rounded,
-      title: 'Compañeros',
-      child: companions.isEmpty
-          ? const HudEmptyHint('La ficha no trae compañeros.')
-          : Column(
-              children: [
-                for (var i = 0; i < companions.length; i++)
-                  _CompanionRow(
-                    companion: companions[i],
-                    index: i,
-                    store: store,
-                  ),
-              ],
-            ),
-    );
-  }
-}
-
-class _CompanionRow extends StatelessWidget {
-  const _CompanionRow({
-    required this.companion,
-    required this.index,
-    required this.store,
-  });
-
-  final Companion companion;
-  final int index;
-  final CharacterStore store;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final type = companion.type.trim();
-    final subtitle = [
-      if (type.isNotEmpty) type,
-      if (!companion.hasHp) 'Apoyo invulnerable',
-      'CA ${companion.ac}',
-    ].join(' · ');
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: theme.colorScheme.tertiaryContainer,
-                foregroundColor: theme.colorScheme.onTertiaryContainer,
-                child: const Icon(Icons.pets_rounded, size: 18),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      companion.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    Text(
-                      subtitle,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (companion.hasHp)
-                Text(
-                  '${companion.currentHp}/${companion.maxHp} PG',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-            ],
-          ),
-          if (companion.hasHp) ...[
-            const SizedBox(height: AppSpacing.sm),
-            LinearProgressIndicator(
-              value: companion.maxHp <= 0
-                  ? 0
-                  : (companion.currentHp / companion.maxHp).clamp(0.0, 1.0),
-              minHeight: 8,
-              borderRadius: BorderRadius.circular(4),
-              backgroundColor: theme.colorScheme.surfaceContainerHighest,
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                IconButton(
-                  tooltip: 'Quitar 1 PG a ${companion.name}',
-                  icon: const Icon(Icons.remove_circle_outline_rounded),
-                  onPressed: companion.currentHp <= 0
-                      ? null
-                      : () => store.updateCompanionHp(index, -1),
-                ),
-                IconButton(
-                  tooltip: 'Curar 1 PG a ${companion.name}',
-                  icon: const Icon(Icons.add_circle_outline_rounded),
-                  onPressed: companion.currentHp >= companion.maxHp
-                      ? null
-                      : () => store.updateCompanionHp(index, 1),
-                ),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------
 // Piezas compartidas por las filas del inventario.
 // ---------------------------------------------------------------------
 
@@ -677,32 +482,194 @@ class _QuantityStepper extends StatelessWidget {
   }
 }
 
-class _UnitBadge extends StatelessWidget {
-  const _UnitBadge({required this.label});
+/// Fila tocable del inventario: el detalle (cantidad, quitar) vive en
+/// una hoja aparte para que la lista sea solo nombres.
+class _TapRow extends StatelessWidget {
+  const _TapRow({super.key, required this.onTap, required this.child});
 
-  final String label;
+  final VoidCallback onTap;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadii.md),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          vertical: AppSpacing.sm,
+          horizontal: AppSpacing.xs,
+        ),
+        child: child,
+      ),
+    );
+  }
+}
+
+class _QuantityLabel extends StatelessWidget {
+  const _QuantityLabel(this.value);
+
+  final int value;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: AppSpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(AppRadii.pill),
-        border: Border.all(
-          color: context.tactical.metalBorder.withValues(alpha: 0.7),
-        ),
-      ),
+    return Padding(
+      padding: const EdgeInsets.only(left: AppSpacing.sm),
       child: Text(
-        label,
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-          fontWeight: FontWeight.w600,
+        '×$value',
+        style: theme.textTheme.titleSmall
+            ?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: value <= 0 ? theme.colorScheme.error : null,
+            )
+            .tabular,
+      ),
+    );
+  }
+}
+
+class _RowChevron extends StatelessWidget {
+  const _RowChevron();
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(left: AppSpacing.xs),
+    child: Icon(
+      Icons.chevron_right_rounded,
+      color: Theme.of(context).colorScheme.onSurfaceVariant,
+    ),
+  );
+}
+
+// ---------------------------------------------------------------------
+// Hojas de detalle: cantidad y quitar. Escuchan el store para reflejar
+// cada toque del stepper sin cerrarse.
+// ---------------------------------------------------------------------
+
+Future<void> _showWeaponSheet(BuildContext context, String weaponId) {
+  return showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    useSafeArea: true,
+    builder: (sheetContext) {
+      final store = sheetContext.watch<CharacterStore>();
+      final weapon = store.activeCharacter?.inventory.weapons
+          .where((w) => w.id == weaponId)
+          .firstOrNull;
+      if (weapon == null) return const SizedBox(height: 120);
+      return _DetailSheet(
+        title: weapon.name,
+        description: _WeaponRow._weaponSubtitle(weapon),
+        quantity: weapon.isUnique
+            ? null
+            : _QuantityStepper(
+                value: weapon.quantity,
+                decrementTooltip: 'Restar una copia de ${weapon.name}',
+                incrementTooltip: 'Sumar una copia de ${weapon.name}',
+                onDecrement: weapon.quantity > 0
+                    ? () => store.decrementQuantity(weapon.id)
+                    : null,
+                onIncrement: () => store.incrementQuantity(weapon.id),
+              ),
+        removeLabel: 'Eliminar arma',
+        onRemove: () {
+          Navigator.of(sheetContext).pop();
+          _removeWeaponWithUndo(context, weapon, store);
+        },
+      );
+    },
+  );
+}
+
+Future<void> _showItemSheet(BuildContext context, int index) {
+  return showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    useSafeArea: true,
+    builder: (sheetContext) {
+      final store = sheetContext.watch<CharacterStore>();
+      final items = store.activeCharacter?.inventory.mundaneItems ?? const [];
+      if (index >= items.length) return const SizedBox(height: 120);
+      final item = items[index];
+      return _DetailSheet(
+        title: item.name,
+        description: item.description.trim(),
+        quantity: _QuantityStepper(
+          value: item.quantity,
+          decrementTooltip: 'Restar una unidad de ${item.name}',
+          incrementTooltip: 'Sumar una unidad de ${item.name}',
+          onDecrement: item.quantity > 0
+              ? () => store.updateMundaneItemQuantity(index, item.quantity - 1)
+              : null,
+          onIncrement: () =>
+              store.updateMundaneItemQuantity(index, item.quantity + 1),
         ),
+      );
+    },
+  );
+}
+
+class _DetailSheet extends StatelessWidget {
+  const _DetailSheet({
+    required this.title,
+    required this.description,
+    this.quantity,
+    this.removeLabel,
+    this.onRemove,
+  });
+
+  final String title;
+  final String description;
+  final Widget? quantity;
+  final String? removeLabel;
+  final VoidCallback? onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xl,
+        0,
+        AppSpacing.xl,
+        AppSpacing.xl,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(title, style: theme.textTheme.titleLarge),
+          if (description.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              description,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+          if (quantity != null) ...[
+            const SizedBox(height: AppSpacing.xl),
+            Row(
+              children: [
+                const Expanded(child: Text('Cantidad')),
+                quantity!,
+              ],
+            ),
+          ],
+          if (onRemove != null) ...[
+            const SizedBox(height: AppSpacing.xl),
+            OutlinedButton.icon(
+              onPressed: onRemove,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: theme.colorScheme.error,
+              ),
+              icon: const Icon(Icons.delete_outline_rounded),
+              label: Text(removeLabel ?? 'Eliminar'),
+            ),
+          ],
+        ],
       ),
     );
   }

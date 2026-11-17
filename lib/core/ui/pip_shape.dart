@@ -1,7 +1,7 @@
 // Forma de los indicadores de carga (pips) y glifos de ornamento.
 //
 // Cada skin elige su forma ([PipShape]): círculo, rombo, cuadrado, hoja o
-// estrella de cuatro puntas. [pipPath] devuelve el contorno en un
+// estrella de cuatro puntas o llama. [pipPath] devuelve el contorno en un
 // cuadrado de lado [size]; [PipGlyph] lo pinta animando el relleno, y lo
 // reutilizan los ornamentos de los encabezados.
 
@@ -41,6 +41,95 @@ Path pipPath(PipShape shape, double size) {
         ..quadraticBezierTo(c - k, c + k, 0, c)
         ..quadraticBezierTo(c - k, c - k, c, 0)
         ..close();
+    case PipShape.bolt:
+      // Rayo en zigzag.
+      return Path()
+        ..moveTo(size * 0.62, 0)
+        ..lineTo(size * 0.12, size * 0.56)
+        ..lineTo(size * 0.45, size * 0.56)
+        ..lineTo(size * 0.34, size)
+        ..lineTo(size * 0.88, size * 0.40)
+        ..lineTo(size * 0.55, size * 0.40)
+        ..close();
+    case PipShape.paw:
+      // Huella: almohadilla grande y cuatro dedos.
+      return Path()
+        ..addOval(
+          Rect.fromLTWH(size * 0.24, size * 0.48, size * 0.52, size * 0.46),
+        )
+        ..addOval(
+          Rect.fromLTWH(size * 0.04, size * 0.36, size * 0.2, size * 0.26),
+        )
+        ..addOval(
+          Rect.fromLTWH(size * 0.24, size * 0.08, size * 0.2, size * 0.28),
+        )
+        ..addOval(
+          Rect.fromLTWH(size * 0.56, size * 0.08, size * 0.2, size * 0.28),
+        )
+        ..addOval(
+          Rect.fromLTWH(size * 0.76, size * 0.36, size * 0.2, size * 0.26),
+        );
+    case PipShape.flame:
+      // Llama: gota con la punta curvada y un segundo lengüetazo a la izquierda.
+      return Path()
+        ..moveTo(size * 0.58, 0)
+        ..cubicTo(
+          size * 0.56,
+          size * 0.26,
+          size * 0.96,
+          size * 0.40,
+          size * 0.88,
+          size * 0.68,
+        )
+        ..cubicTo(size * 0.84, size * 0.90, size * 0.66, size, c, size)
+        ..cubicTo(
+          size * 0.30,
+          size,
+          size * 0.12,
+          size * 0.88,
+          size * 0.12,
+          size * 0.66,
+        )
+        ..cubicTo(
+          size * 0.12,
+          size * 0.48,
+          size * 0.28,
+          size * 0.38,
+          size * 0.32,
+          size * 0.22,
+        )
+        ..cubicTo(
+          size * 0.38,
+          size * 0.12,
+          size * 0.50,
+          size * 0.08,
+          size * 0.58,
+          0,
+        )
+        ..close();
+    case PipShape.heart:
+      // Corazón: dos lóbulos arriba y punta abajo.
+      return Path()
+        ..moveTo(c, size * 0.94)
+        ..cubicTo(
+          size * 0.02,
+          size * 0.62,
+          0,
+          size * 0.22,
+          size * 0.26,
+          size * 0.12,
+        )
+        ..cubicTo(size * 0.40, size * 0.08, c, size * 0.2, c, size * 0.3)
+        ..cubicTo(
+          c,
+          size * 0.2,
+          size * 0.60,
+          size * 0.08,
+          size * 0.74,
+          size * 0.12,
+        )
+        ..cubicTo(size, size * 0.22, size * 0.98, size * 0.62, c, size * 0.94)
+        ..close();
   }
 }
 
@@ -70,7 +159,7 @@ class PipGlyph extends StatelessWidget {
   Widget build(BuildContext context) {
     final empty = outline ?? Theme.of(context).colorScheme.outline;
     return TweenAnimationBuilder<double>(
-      duration: duration,
+      duration: context.tactical.motion.scale(duration),
       curve: Curves.easeOut,
       tween: Tween(end: filled ? 1 : 0),
       builder: (context, t, _) => CustomPaint(

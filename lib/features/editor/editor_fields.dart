@@ -569,11 +569,11 @@ class EditorBlockTitle extends StatelessWidget {
           ),
           const SizedBox(width: AppSpacing.sm),
           Text(
-            text.toUpperCase(),
-            style: theme.textTheme.labelMedium?.copyWith(
+            text,
+            style: theme.textTheme.titleSmall?.copyWith(
               color: primary,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.2,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0,
             ),
           ),
           const SizedBox(width: AppSpacing.sm),

@@ -380,7 +380,8 @@ class _CorrectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return TacticalCard(padding: EdgeInsets.zero, 
+    return TacticalCard(
+      padding: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(

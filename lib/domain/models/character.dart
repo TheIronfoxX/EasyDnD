@@ -17,6 +17,7 @@ import 'dart:math';
 
 import '../../core/dnd_rules.dart';
 import 'ability.dart';
+import 'session_note.dart';
 import 'stats.dart';
 import 'weapon.dart';
 
@@ -68,6 +69,15 @@ class BasicInfo {
   /// Alineamiento en texto libre ("Legal bueno"). Vacío si no se cargó.
   String alignment;
 
+  /// PG temporales: un colchón que absorbe el daño antes que currentHp.
+  /// No se curan ni superan nada; por regla no se acumulan (ver
+  /// CharacterStoreCombat.setTempHp). Fallback 0 en fichas anteriores.
+  int tempHp;
+
+  /// Salvaciones de muerte (0-3 cada una). Solo cuentan con currentHp en 0.
+  int deathSaveSuccesses;
+  int deathSaveFailures;
+
   BasicInfo({
     required this.name,
     required this.race,
@@ -83,9 +93,13 @@ class BasicInfo {
     int? hitDiceMax,
     int? hitDiceCurrent,
     this.alignment = '',
-  })  : hitDieSides = hitDieSides ?? DndRules.hitDieSidesFromClass(characterClass),
-        hitDiceMax = hitDiceMax ?? level,
-        hitDiceCurrent = hitDiceCurrent ?? (hitDiceMax ?? level);
+    this.tempHp = 0,
+    this.deathSaveSuccesses = 0,
+    this.deathSaveFailures = 0,
+  }) : hitDieSides =
+           hitDieSides ?? DndRules.hitDieSidesFromClass(characterClass),
+       hitDiceMax = hitDiceMax ?? level,
+       hitDiceCurrent = hitDiceCurrent ?? (hitDiceMax ?? level);
 
   /// Bonificador de competencia según nivel (ver DndRules).
   int get proficiencyBonus => DndRules.proficiencyBonusFor(level);
@@ -120,7 +134,8 @@ class BasicInfo {
       // El JSON de origen no trae hp_current: se arranca a full vida.
       currentHp: ((json['hp_current'] as num?) ?? hpMax).toInt(),
       ac: ((json['ac'] as num?) ?? 10).toInt(),
-      level: (json['level'] as num?)?.toInt() ??
+      level:
+          (json['level'] as num?)?.toInt() ??
           DndRules.levelFromCharacterClass(characterClass),
       speed: (json['speed'] as num?)?.toInt() ?? 30,
       nivel20Link: json['nivel20_link'] as String?,
@@ -129,6 +144,13 @@ class BasicInfo {
       hitDiceMax: (json['hit_dice_max'] as num?)?.toInt(),
       hitDiceCurrent: (json['hit_dice_current'] as num?)?.toInt(),
       alignment: json['alignment'] as String? ?? '',
+      tempHp: ((json['temp_hp'] as num?) ?? 0).toInt().clamp(0, 9999),
+      deathSaveSuccesses: ((json['death_save_successes'] as num?) ?? 0)
+          .toInt()
+          .clamp(0, 3),
+      deathSaveFailures: ((json['death_save_failures'] as num?) ?? 0)
+          .toInt()
+          .clamp(0, 3),
     );
   }
 
@@ -148,6 +170,9 @@ class BasicInfo {
       'hit_dice_max': hitDiceMax,
       'hit_dice_current': hitDiceCurrent,
       'alignment': alignment,
+      'temp_hp': tempHp,
+      'death_save_successes': deathSaveSuccesses,
+      'death_save_failures': deathSaveFailures,
     };
   }
 }
@@ -176,14 +201,18 @@ class TurnStatus {
 
   /// [maxSpeed] es BasicInfo.speed del personaje dueño — valor de
   /// arranque si la ficha todavía no trae "movementRemaining" guardado.
-  factory TurnStatus.fromJson(Map<String, dynamic>? json, {required int maxSpeed}) {
+  factory TurnStatus.fromJson(
+    Map<String, dynamic>? json, {
+    required int maxSpeed,
+  }) {
     if (json == null) return TurnStatus(movementRemaining: maxSpeed);
     return TurnStatus(
       actionUsed: json['actionUsed'] ?? false,
       bonusActionUsed: json['bonusActionUsed'] ?? false,
       // Fichas viejas sin la clave: la reacción arranca disponible.
       reactionUsed: json['reactionUsed'] ?? false,
-      movementRemaining: (json['movementRemaining'] as num?)?.toInt() ?? maxSpeed,
+      movementRemaining:
+          (json['movementRemaining'] as num?)?.toInt() ?? maxSpeed,
     );
   }
 
@@ -258,11 +287,7 @@ class MundaneItem {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'description': description,
-      'quantity': quantity,
-    };
+    return {'name': name, 'description': description, 'quantity': quantity};
   }
 }
 
@@ -271,7 +296,7 @@ class Inventory {
   List<MundaneItem> mundaneItems;
 
   Inventory({required this.weapons, List<MundaneItem>? mundaneItems})
-      : mundaneItems = mundaneItems ?? [];
+    : mundaneItems = mundaneItems ?? [];
 
   factory Inventory.fromJson(Map<String, dynamic> json) {
     final rawWeapons = (json['weapons'] as List<dynamic>?) ?? [];
@@ -301,11 +326,7 @@ class SpellSlot {
   int max;
   int current;
 
-  SpellSlot({
-    required this.level,
-    required this.max,
-    required this.current,
-  });
+  SpellSlot({required this.level, required this.max, required this.current});
 
   factory SpellSlot.fromJson(Map<String, dynamic> json) {
     final max = ((json['max'] as num?) ?? 0).toInt();
@@ -441,12 +462,7 @@ class ResourcePoint {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'current': current,
-      'max': max,
-      'recovery': recovery,
-    };
+    return {'name': name, 'current': current, 'max': max, 'recovery': recovery};
   }
 }
 
@@ -455,7 +471,38 @@ class ResourcePoint {
 /// desde el HUD) de entidades de apoyo invulnerables (familiares
 /// narrativos): cuando es false, currentHp/maxHp se ignoran en la UI
 /// aunque sigan viajando en el modelo.
+/// Ataque o acción ligera de un compañero (solo se muestra; la tirada
+/// con dados de los poderes de la ficha vive en la hoja de resolución).
+class CompanionAction {
+  String name;
+
+  /// Bonificador de ataque; null = no es un ataque (p. ej. una habilidad).
+  int? attackBonus;
+
+  /// Daño en texto libre ("1d6+2 perforante").
+  String damage;
+
+  CompanionAction({required this.name, this.attackBonus, this.damage = ''});
+
+  factory CompanionAction.fromJson(Map<String, dynamic> json) {
+    return CompanionAction(
+      name: json['name'] as String? ?? 'Acción',
+      attackBonus: (json['attack_bonus'] as num?)?.toInt(),
+      damage: json['damage'] as String? ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'attack_bonus': attackBonus,
+    'damage': damage,
+  };
+}
+
 class Companion {
+  /// Id estable para direccionar al compañero aunque cambie el orden de
+  /// la lista. Las fichas anteriores no lo traen: se genera al cargar.
+  final String id;
   String name;
   String type;
   bool hasHp;
@@ -463,35 +510,78 @@ class Companion {
   int maxHp;
   int ac;
 
+  /// Velocidad base en pies (fallback 30).
+  int speed;
+
+  /// Economía de turno propia: el compañero actúa por separado.
+  TurnStatus turn;
+
+  /// Condiciones activas del compañero (mismos nombres que la ficha).
+  List<String> conditions;
+
+  List<CompanionAction> actions;
+
   Companion({
+    String? id,
     required this.name,
     required this.type,
     this.hasHp = true,
     this.currentHp = 0,
     this.maxHp = 0,
     this.ac = 10,
-  });
+    this.speed = 30,
+    TurnStatus? turn,
+    List<String>? conditions,
+    List<CompanionAction>? actions,
+  }) : id = id ?? _generateId(),
+       turn = turn ?? TurnStatus(movementRemaining: speed),
+       conditions = conditions ?? [],
+       actions = actions ?? [];
+
+  static String _generateId() {
+    final t = DateTime.now().microsecondsSinceEpoch;
+    return 'comp_${t}_${Random().nextInt(0x7FFFFFFF)}';
+  }
 
   factory Companion.fromJson(Map<String, dynamic> json) {
     final maxHp = (json['max_hp'] as num?)?.toInt() ?? 0;
+    final speed = (json['speed'] as num?)?.toInt() ?? 30;
     return Companion(
+      id: json['id'] as String?,
       name: json['name'] ?? 'Aliado sin nombre',
       type: json['type'] ?? '',
       hasHp: json['has_hp'] ?? true,
       currentHp: (json['current_hp'] as num?)?.toInt() ?? maxHp,
       maxHp: maxHp,
       ac: (json['ac'] as num?)?.toInt() ?? 10,
+      speed: speed,
+      turn: TurnStatus.fromJson(
+        json['turn_status'] as Map<String, dynamic>?,
+        maxSpeed: speed,
+      ),
+      conditions: ((json['conditions'] as List<dynamic>?) ?? const [])
+          .whereType<String>()
+          .toList(),
+      actions: ((json['actions'] as List<dynamic>?) ?? const [])
+          .whereType<Map>()
+          .map((e) => CompanionAction.fromJson(e.cast<String, dynamic>()))
+          .toList(),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'name': name,
       'type': type,
       'has_hp': hasHp,
       'current_hp': currentHp,
       'max_hp': maxHp,
       'ac': ac,
+      'speed': speed,
+      'turn_status': turn.toJson(),
+      'conditions': conditions,
+      'actions': actions.map((a) => a.toJson()).toList(),
     };
   }
 }
@@ -540,6 +630,10 @@ class CharacterModel {
   String userTactics;
   String adventureNotes;
 
+  /// Diario por sesiones: entradas fechadas, además del texto libre
+  /// de adventureNotes (que se conserva tal cual).
+  List<SessionNote> sessionNotes;
+
   /// Pools genéricos de puntos (Ki, Hechicería, Furia...).
   List<ResourcePoint> resources;
 
@@ -573,17 +667,19 @@ class CharacterModel {
     TurnStatus? turnStatus,
     List<String>? activeConditions,
     List<Companion>? companions,
-  })  : id = id ?? _generateId(),
-        purse = purse ?? Purse(),
-        resources = resources ?? [],
-        // Sin turnStatus explícito (ej. personaje recién creado), el
-        // movimiento arranca a tope según la velocidad real de ESE
-        // personaje — no un 9 fijo que solo casaba por casualidad con
-        // la velocidad humana estándar.
-        turnStatus =
-            turnStatus ?? TurnStatus(movementRemaining: basicInfo.speed),
-        activeConditions = activeConditions ?? [],
-        companions = companions ?? [];
+    List<SessionNote>? sessionNotes,
+  }) : id = id ?? _generateId(),
+       purse = purse ?? Purse(),
+       resources = resources ?? [],
+       // Sin turnStatus explícito (ej. personaje recién creado), el
+       // movimiento arranca a tope según la velocidad real de ESE
+       // personaje — no un 9 fijo que solo casaba por casualidad con
+       // la velocidad humana estándar.
+       turnStatus =
+           turnStatus ?? TurnStatus(movementRemaining: basicInfo.speed),
+       activeConditions = activeConditions ?? [],
+       companions = companions ?? [],
+       sessionNotes = sessionNotes ?? [];
 
   /// Id de fallback para fichas importadas sin uno (las guardadas por
   /// la app vieja antes de que existiera el campo). No es un UUID de
@@ -618,47 +714,47 @@ class CharacterModel {
   /// normalizada exactamente igual que la ficha que va a reemplazar
   /// (mismos fallbacks, mismo orden de claves).
   CharacterModel copy() => CharacterModel.fromJson(
-        (jsonDecode(jsonEncode(toJson())) as Map).cast<String, dynamic>(),
-      );
+    (jsonDecode(jsonEncode(toJson())) as Map).cast<String, dynamic>(),
+  );
 
   /// Ficha en blanco para el alta manual (Etapa 4): lo mínimo jugable
   /// — PG 10, CA 10, velocidad humana, atributos 10/+0, todo lo demás
   /// vacío — con nombre placeholder. Pasa la validación sin ningún
   /// aviso (ver test): es una ficha "válida pero por llenar".
   factory CharacterModel.blank() => CharacterModel(
-        basicInfo: BasicInfo(
-          name: 'Aventurero sin nombre',
-          race: '',
-          characterClass: '',
-          hpMax: 10,
-          currentHp: 10,
-          ac: 10,
-        ),
-        inventory: Inventory(weapons: [], mundaneItems: []),
-        abilitiesByAction: AbilitiesByAction(
-          action: [],
-          bonusAction: [],
-          reaction: [],
-          passive: [],
-        ),
-        stats: StatsBlock(
-          str: _blankScore('Fuerza'),
-          dex: _blankScore('Destreza'),
-          con: _blankScore('Constitución'),
-          intelligence: _blankScore('Inteligencia'),
-          wis: _blankScore('Sabiduría'),
-          cha: _blankScore('Carisma'),
-        ),
-        spellSlots: SpellSlots(slots: []),
-        skills: [],
-        loreInfo: LoreInfo(
-          backstory: '',
-          personalityTraits: '',
-          ideals: '',
-          bonds: '',
-          flaws: '',
-        ),
-      );
+    basicInfo: BasicInfo(
+      name: 'Aventurero sin nombre',
+      race: '',
+      characterClass: '',
+      hpMax: 10,
+      currentHp: 10,
+      ac: 10,
+    ),
+    inventory: Inventory(weapons: [], mundaneItems: []),
+    abilitiesByAction: AbilitiesByAction(
+      action: [],
+      bonusAction: [],
+      reaction: [],
+      passive: [],
+    ),
+    stats: StatsBlock(
+      str: _blankScore('Fuerza'),
+      dex: _blankScore('Destreza'),
+      con: _blankScore('Constitución'),
+      intelligence: _blankScore('Inteligencia'),
+      wis: _blankScore('Sabiduría'),
+      cha: _blankScore('Carisma'),
+    ),
+    spellSlots: SpellSlots(slots: []),
+    skills: [],
+    loreInfo: LoreInfo(
+      backstory: '',
+      personalityTraits: '',
+      ideals: '',
+      bonds: '',
+      flaws: '',
+    ),
+  );
 
   static AbilityScore _blankScore(String name) =>
       AbilityScore(name: name, value: 10, mod: 0, description: '');
@@ -694,6 +790,10 @@ class CharacterModel {
       aiTips: json['ai_tips'] ?? '',
       userTactics: json['user_tactics'] ?? '',
       adventureNotes: json['adventure_notes'] ?? '',
+      sessionNotes: ((json['session_notes'] as List<dynamic>?) ?? const [])
+          .whereType<Map>()
+          .map((e) => SessionNote.fromJson(e.cast<String, dynamic>()))
+          .toList(),
       resources: rawResources
           .map((e) => ResourcePoint.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -728,6 +828,7 @@ class CharacterModel {
       'ai_tips': aiTips,
       'user_tactics': userTactics,
       'adventure_notes': adventureNotes,
+      'session_notes': sessionNotes.map((n) => n.toJson()).toList(),
       'resources': resources.map((r) => r.toJson()).toList(),
       'turn_status': turnStatus.toJson(),
       'active_conditions': activeConditions,

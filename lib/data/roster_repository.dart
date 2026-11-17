@@ -71,7 +71,10 @@ class RosterRepository {
       final roster = _decodeTolerant(storedV3);
       return RosterSnapshot(
         roster: roster,
-        activeIndex: _clampedIndex(_prefs.getInt(activeIndexKey) ?? 0, roster.length),
+        activeIndex: _clampedIndex(
+          _prefs.getInt(activeIndexKey) ?? 0,
+          roster.length,
+        ),
         migratedFromLegacy: false,
       );
     }
@@ -93,8 +96,10 @@ class RosterRepository {
     // Camino 2: primera ejecución del rework sobre datos de la app vieja.
     final roster = _decodeTolerant(legacyStored);
     _injectLegacyQuantities(roster);
-    final activeIndex =
-        _clampedIndex(_prefs.getInt(_legacyActiveIndexKey) ?? 0, roster.length);
+    final activeIndex = _clampedIndex(
+      _prefs.getInt(_legacyActiveIndexKey) ?? 0,
+      roster.length,
+    );
 
     // Persistir YA bajo la clave nueva: fija los ids generados y hace
     // que el próximo arranque entre por el camino 1 (idempotencia).

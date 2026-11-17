@@ -255,7 +255,9 @@ class _WizardStepSourceState extends State<WizardStepSource> {
       setState(() => _directError = null);
       widget.onDirectImport?.call(result);
     } else {
-      setState(() => _directError = result.errors.map((e) => e.message).join('\n'));
+      setState(
+        () => _directError = result.errors.map((e) => e.message).join('\n'),
+      );
     }
   }
 
@@ -388,7 +390,10 @@ class _ReplaceBanner extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: ShapeDecoration(color: scheme.secondaryContainer, shape: context.tactical.insetBorder(scheme.secondary)),
+      decoration: ShapeDecoration(
+        color: scheme.secondaryContainer,
+        shape: context.tactical.insetBorder(scheme.secondary),
+      ),
       child: Row(
         children: [
           Icon(
@@ -420,7 +425,8 @@ class _EmptySheetHint extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return TacticalCard(padding: EdgeInsets.zero, 
+    return TacticalCard(
+      padding: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
@@ -640,7 +646,8 @@ class _CurrentSheetCard extends StatelessWidget {
       );
     }
 
-    return TacticalCard(padding: EdgeInsets.zero, 
+    return TacticalCard(
+      padding: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
@@ -693,7 +700,10 @@ class _StatusCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: ShapeDecoration(color: color.withValues(alpha: 0.08), shape: context.tactical.insetBorder(color.withValues(alpha: 0.4))),
+      decoration: ShapeDecoration(
+        color: color.withValues(alpha: 0.08),
+        shape: context.tactical.insetBorder(color.withValues(alpha: 0.4)),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -734,7 +744,10 @@ class _PromptPreview extends StatelessWidget {
           width: double.infinity,
           constraints: const BoxConstraints(maxHeight: 280),
           padding: const EdgeInsets.all(14),
-          decoration: ShapeDecoration(color: scheme.surfaceContainerLowest, shape: context.tactical.insetBorder(scheme.outlineVariant)),
+          decoration: ShapeDecoration(
+            color: scheme.surfaceContainerLowest,
+            shape: context.tactical.insetBorder(scheme.outlineVariant),
+          ),
           child: prompt == null
               ? Center(
                   child: Padding(

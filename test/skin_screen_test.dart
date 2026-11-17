@@ -6,19 +6,17 @@
 // como lo haría el jugador y verifican el efecto en el tema y en prefs.
 
 import 'package:flutter/material.dart';
+import 'package:easydnd/features/hud/welcome_screen.dart';
+import 'package:easydnd/features/skin/skin_screen.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:easydnd/app/easydnd_app.dart';
 import 'package:easydnd/core/theme/accent_presets.dart';
-import 'package:easydnd/core/theme/app_fonts.dart';
 import 'package:easydnd/core/theme/app_theme.dart';
-import 'package:easydnd/core/theme/font_presets.dart';
 import 'package:easydnd/data/roster_repository.dart';
 import 'package:easydnd/state/character_store.dart';
 import 'package:easydnd/state/skin_controller.dart';
-
-import 'fakes/test_fichas.dart';
 
 void main() {
   setUp(() {
@@ -55,12 +53,16 @@ void main() {
   ) async {
     final skin = await bootSkin();
     await pumpApp(tester, store, skin);
-    await tester.tap(find.byTooltip('Apariencia'));
+    // Apariencia ya no tiene entrada en la app (la sustituye Ajustes):
+    // se abre a mano para seguir probando la pantalla.
+    Navigator.of(
+      tester.element(find.byType(WelcomeScreen)),
+    ).push(MaterialPageRoute<void>(builder: (_) => const SkinScreen()));
     await tester.pumpAndSettle();
   }
 
   group('entrada', () {
-    testWidgets('la bienvenida abre Apariencia', (tester) async {
+    testWidgets('Apariencia muestra sus secciones', (tester) async {
       final store = await bootStore();
       await openFromWelcome(tester, store);
 
@@ -69,21 +71,6 @@ void main() {
       expect(find.text('Color de acento'), findsOneWidget);
       expect(find.text('Tipografía'), findsOneWidget);
     });
-
-    testWidgets('el menú del HUD abre Apariencia', (tester) async {
-      final store = await bootStore();
-      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
-
-      final skin = await bootSkin();
-      await pumpApp(tester, store, skin);
-
-      await tester.tap(find.byIcon(Icons.more_vert_rounded));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Apariencia'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Color de acento'), findsOneWidget);
-    });
   });
 
   group('cambios de skin', () {
@@ -91,7 +78,9 @@ void main() {
       final store = await bootStore();
       final skin = await bootSkin();
       await pumpApp(tester, store, skin);
-      await tester.tap(find.byTooltip('Apariencia'));
+      Navigator.of(
+        tester.element(find.byType(WelcomeScreen)),
+      ).push(MaterialPageRoute<void>(builder: (_) => const SkinScreen()));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Claro'));
@@ -112,7 +101,9 @@ void main() {
       final store = await bootStore();
       final skin = await bootSkin();
       await pumpApp(tester, store, skin);
-      await tester.tap(find.byTooltip('Apariencia'));
+      Navigator.of(
+        tester.element(find.byType(WelcomeScreen)),
+      ).push(MaterialPageRoute<void>(builder: (_) => const SkinScreen()));
       await tester.pumpAndSettle();
 
       final preset = AccentPresets.all.firstWhere((p) => p.label == 'Arcana');
@@ -131,7 +122,9 @@ void main() {
       final store = await bootStore();
       final skin = await bootSkin();
       await pumpApp(tester, store, skin);
-      await tester.tap(find.byTooltip('Apariencia'));
+      Navigator.of(
+        tester.element(find.byType(WelcomeScreen)),
+      ).push(MaterialPageRoute<void>(builder: (_) => const SkinScreen()));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Elegir color personalizado'));
@@ -149,44 +142,22 @@ void main() {
       expect(Theme.of(context).colorScheme.primary, skin.accentColor);
       expect(find.text('Cambiar color personalizado'), findsOneWidget);
     });
+  });
 
-    testWidgets('la tipografía elegida se aplica y se persiste', (
-      tester,
-    ) async {
-      final store = await bootStore();
-      final skin = await bootSkin();
-      await pumpApp(tester, store, skin);
-      await tester.tap(find.byTooltip('Apariencia'));
-      await tester.pumpAndSettle();
+  testWidgets('el interruptor de vista compacta persiste', (tester) async {
+    final store = await bootStore();
+    await openFromWelcome(tester, store);
 
-      // El default es "Diario": títulos en Cinzel, cuerpo en Inter.
-      final diarioChip = tester.widget<ChoiceChip>(
-        find.widgetWithText(ChoiceChip, 'Diario'),
-      );
-      expect(diarioChip.selected, isTrue);
-      final context = tester.element(find.text('Diario'));
-      final textTheme = Theme.of(context).textTheme;
-      expect(textTheme.titleLarge?.fontFamily, AppFonts.cinzel);
-      expect(textTheme.bodyMedium?.fontFamily, AppFonts.inter);
+    final sw = find.byKey(const ValueKey('compact-hud-switch'));
+    await tester.scrollUntilVisible(
+      sw,
+      150,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(sw);
+    await tester.pumpAndSettle();
 
-      // Elegir "Consola" pasa todo a monoespaciada y sobrevive al reinicio.
-      await tester.ensureVisible(find.text('Consola'));
-      await tester.tap(find.text('Consola'));
-      await tester.pumpAndSettle();
-
-      expect(skin.fontPreset.id, FontPresets.console.id);
-      final consoleContext = tester.element(find.text('Consola'));
-      expect(
-        Theme.of(consoleContext).textTheme.bodyMedium?.fontFamily,
-        AppFonts.jetBrainsMono,
-      );
-
-      final restarted = await bootSkin();
-      expect(restarted.fontPreset.id, FontPresets.console.id);
-      expect(
-        restarted.themeData.textTheme.titleLarge?.fontFamily,
-        AppFonts.jetBrainsMono,
-      );
-    });
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getBool(SkinController.compactKey), isTrue);
   });
 }

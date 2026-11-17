@@ -10,7 +10,9 @@ import 'fakes/test_fichas.dart';
 void main() {
   group('errores bloqueantes (solo los cuatro)', () {
     test('texto que no es JSON', () {
-      final result = CharacterValidator.parseAndValidate('hola, esto no es nada');
+      final result = CharacterValidator.parseAndValidate(
+        'hola, esto no es nada',
+      );
       expect(result.isOk, isFalse);
       expect(result.errors, hasLength(1));
       expect(result.character, isNull);
@@ -22,14 +24,17 @@ void main() {
     });
 
     test('sin basic_info', () {
-      final result = CharacterValidator.validateMap({'name': 'X', 'hp_max': 10});
+      final result = CharacterValidator.validateMap({
+        'name': 'X',
+        'hp_max': 10,
+      });
       expect(result.isOk, isFalse);
       expect(result.errors.single.field, 'basic_info');
     });
 
     test('sin nombre', () {
       final result = CharacterValidator.validateMap({
-        'basic_info': {'hp_max': 10}
+        'basic_info': {'hp_max': 10},
       });
       expect(result.isOk, isFalse);
       expect(result.errors.single.field, 'basic_info.name');
@@ -37,14 +42,14 @@ void main() {
 
     test('nombre vacío o en blanco', () {
       final result = CharacterValidator.validateMap({
-        'basic_info': {'name': '   ', 'hp_max': 10}
+        'basic_info': {'name': '   ', 'hp_max': 10},
       });
       expect(result.isOk, isFalse);
     });
 
     test('hp_max no numérico', () {
       final result = CharacterValidator.validateMap({
-        'basic_info': {'name': 'X', 'hp_max': 'muchos'}
+        'basic_info': {'name': 'X', 'hp_max': 'muchos'},
       });
       expect(result.isOk, isFalse);
       expect(result.errors.single.field, 'basic_info.hp_max');
@@ -54,7 +59,7 @@ void main() {
   group('acepta lo válido', () {
     test('mínimo viable: nombre + hp_max', () {
       final result = CharacterValidator.validateMap({
-        'basic_info': {'name': 'X', 'hp_max': 10}
+        'basic_info': {'name': 'X', 'hp_max': 10},
       });
       expect(result.isOk, isTrue);
       expect(result.errors, isEmpty);
@@ -62,7 +67,8 @@ void main() {
     });
 
     test('JSON envuelto en valla markdown y cortesía de IA', () {
-      final raw = '¡Aquí tienes tu personaje!\n'
+      final raw =
+          '¡Aquí tienes tu personaje!\n'
           '```json\n${jsonEncode(buildFichaJson())}\n```\n'
           '¡Espero que lo disfrutes!';
       final result = CharacterValidator.parseAndValidate(raw);
@@ -102,20 +108,30 @@ void main() {
 
     test('escalado prometido pero irresoluble', () {
       final json = buildFichaJson();
-      final ability = ((json['abilities_by_action'] as Map)['action'] as List).single as Map;
+      final ability =
+          ((json['abilities_by_action'] as Map)['action'] as List).single
+              as Map;
       ability['is_scalable'] = true;
       ability['scaling_formula'] = 'sube con el nivel';
       final result = CharacterValidator.validateMap(json);
       expect(result.isOk, isTrue);
-      expect(result.warnings.any((w) => w.field.contains('scaling_formula')), isTrue);
+      expect(
+        result.warnings.any((w) => w.field.contains('scaling_formula')),
+        isTrue,
+      );
     });
 
     test('attack_type desconocido', () {
       final json = buildFichaJson();
-      final ability = ((json['abilities_by_action'] as Map)['action'] as List).single as Map;
+      final ability =
+          ((json['abilities_by_action'] as Map)['action'] as List).single
+              as Map;
       ability['attack_type'] = 'quizas';
       final result = CharacterValidator.validateMap(json);
-      expect(result.warnings.any((w) => w.field.contains('attack_type')), isTrue);
+      expect(
+        result.warnings.any((w) => w.field.contains('attack_type')),
+        isTrue,
+      );
     });
 
     test('condición fuera del catálogo', () {
@@ -123,7 +139,10 @@ void main() {
       (json['active_conditions'] as List).add('Volando');
       final result = CharacterValidator.validateMap(json);
       expect(result.isOk, isTrue);
-      expect(result.warnings.any((w) => w.field == 'active_conditions'), isTrue);
+      expect(
+        result.warnings.any((w) => w.field == 'active_conditions'),
+        isTrue,
+      );
     });
 
     test('stats incompletos', () {
@@ -153,10 +172,14 @@ void main() {
     });
 
     test('hp_current fuera de rango', () {
-      final result = CharacterValidator
-          .validateMap(buildFichaJson(hpCurrent: 999, hpMax: 20));
+      final result = CharacterValidator.validateMap(
+        buildFichaJson(hpCurrent: 999, hpMax: 20),
+      );
       expect(result.isOk, isTrue);
-      expect(result.warnings.any((w) => w.field == 'basic_info.hp_current'), isTrue);
+      expect(
+        result.warnings.any((w) => w.field == 'basic_info.hp_current'),
+        isTrue,
+      );
     });
 
     test('nivel indeducible', () {
@@ -172,7 +195,10 @@ void main() {
       final result = CharacterValidator.validateMap({
         'basic_info': {'name': 'X', 'hp_max': 10},
       });
-      expect(result.warnings.any((w) => w.field == 'abilities_by_action'), isTrue);
+      expect(
+        result.warnings.any((w) => w.field == 'abilities_by_action'),
+        isTrue,
+      );
     });
   });
 }

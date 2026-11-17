@@ -84,6 +84,22 @@ flutter:
           weight: 400
         - asset: assets/fonts/JetBrainsMono-Bold.ttf
           weight: 700
+    - family: UncialAntiqua
+      fonts:
+        - asset: assets/fonts/UncialAntiqua-Regular.ttf
+          weight: 400
+    - family: CrimsonText
+      fonts:
+        - asset: assets/fonts/CrimsonText-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/CrimsonText-Bold.ttf
+          weight: 700
+    - family: Almendra
+      fonts:
+        - asset: assets/fonts/Almendra-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Almendra-Bold.ttf
+          weight: 700
 
 flutter_launcher_icons:
   android: true

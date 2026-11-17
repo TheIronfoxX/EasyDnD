@@ -38,6 +38,16 @@ class _CompanionDialogState extends State<CompanionDialog> {
   late int _currentHp = widget.initial?.currentHp ?? 1;
   late int _ac = widget.initial?.ac ?? 10;
 
+  /// Copias editables de las acciones: cancelar no toca el original.
+  late final List<CompanionAction> _actions = [
+    for (final a in widget.initial?.actions ?? const <CompanionAction>[])
+      CompanionAction(
+        name: a.name,
+        attackBonus: a.attackBonus,
+        damage: a.damage,
+      ),
+  ];
+
   /// El tope puede arrastrar/recortar el current: el campo visible va
   /// con controller porque initialValue no se refresca solo.
   late final TextEditingController _currentHpController;
@@ -72,12 +82,18 @@ class _CompanionDialogState extends State<CompanionDialog> {
     if (!_formKey.currentState!.validate()) return;
     Navigator.of(context).pop(
       Companion(
+        // Editar conserva identidad y estado de combate del compañero.
+        id: widget.initial?.id,
+        speed: widget.initial?.speed ?? 30,
+        turn: widget.initial?.turn,
+        conditions: widget.initial?.conditions,
         name: _name.trim(),
         type: _type.trim(),
         hasHp: _hasHp,
         currentHp: _currentHp,
         maxHp: _maxHp,
         ac: _ac,
+        actions: _actions.where((a) => a.name.trim().isNotEmpty).toList(),
       ),
     );
   }
@@ -162,6 +178,30 @@ class _CompanionDialogState extends State<CompanionDialog> {
                   if (value != null) _ac = value;
                 },
               ),
+              const SizedBox(height: AppSpacing.md),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Acciones',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+              ),
+              for (final action in _actions)
+                _ActionRow(
+                  key: ObjectKey(action),
+                  action: action,
+                  onDelete: () => setState(() => _actions.remove(action)),
+                ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  key: const ValueKey('add-companion-action'),
+                  onPressed: () =>
+                      setState(() => _actions.add(CompanionAction(name: ''))),
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text('Añadir acción'),
+                ),
+              ),
             ],
           ),
         ),
@@ -173,6 +213,70 @@ class _CompanionDialogState extends State<CompanionDialog> {
         ),
         FilledButton(onPressed: _submit, child: const Text('Guardar')),
       ],
+    );
+  }
+}
+
+/// Fila editable de una acción de compañero: nombre, bonus y daño.
+class _ActionRow extends StatelessWidget {
+  const _ActionRow({super.key, required this.action, required this.onDelete});
+
+  final CompanionAction action;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.sm),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 3,
+            child: TextFormField(
+              initialValue: action.name,
+              decoration: const InputDecoration(
+                labelText: 'Nombre',
+                isDense: true,
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (v) => action.name = v,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          SizedBox(
+            width: 56,
+            child: TextFormField(
+              initialValue: action.attackBonus?.toString() ?? '',
+              keyboardType: const TextInputType.numberWithOptions(signed: true),
+              decoration: const InputDecoration(
+                labelText: '+Atq',
+                isDense: true,
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (v) => action.attackBonus = int.tryParse(v),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          Expanded(
+            flex: 2,
+            child: TextFormField(
+              initialValue: action.damage,
+              decoration: const InputDecoration(
+                labelText: 'Daño',
+                isDense: true,
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (v) => action.damage = v,
+            ),
+          ),
+          IconButton(
+            tooltip: 'Quitar acción',
+            icon: const Icon(Icons.delete_outline_rounded),
+            onPressed: onDelete,
+          ),
+        ],
+      ),
     );
   }
 }

@@ -51,8 +51,9 @@ class DiceFormula {
     final trimmed = raw.trim();
     if (trimmed.isEmpty) return null;
 
-    final diceMatch =
-        RegExp(r'^(\d+)d(\d+)\s*([+-]\s*\d+)?$').firstMatch(trimmed);
+    final diceMatch = RegExp(
+      r'^(\d+)d(\d+)\s*([+-]\s*\d+)?$',
+    ).firstMatch(trimmed);
     if (diceMatch != null) {
       final bonusRaw = diceMatch.group(3)?.replaceAll(' ', '') ?? '0';
       return DiceFormula(
@@ -149,8 +150,9 @@ class DiceExpression {
   static DiceExpression? tryParse(String raw) {
     final text = raw.trim();
     if (text.isEmpty) return null;
-    if (!RegExp(r'^[+-]?\s*\d+(?:d\d+)?(?:\s*[+-]\s*\d+(?:d\d+)?)*$')
-        .hasMatch(text)) {
+    if (!RegExp(
+      r'^[+-]?\s*\d+(?:d\d+)?(?:\s*[+-]\s*\d+(?:d\d+)?)*$',
+    ).hasMatch(text)) {
       return null;
     }
     final groups = <DiceGroup>[];
@@ -189,18 +191,18 @@ class DiceExpression {
     return b.toString();
   }
 
-  double get average => groups.fold<double>(bonus.toDouble(), (a, g) => a + g.average);
+  double get average =>
+      groups.fold<double>(bonus.toDouble(), (a, g) => a + g.average);
 
   /// Tira todos los grupos a la vez y conserva el desglose por grupo.
   DiceExpressionRoll rollDetailed({Random? random}) {
     final rng = random ?? Random();
-    return DiceExpressionRoll(
-      [
-        for (final g in groups)
-          DiceGroupRoll(g, [for (var i = 0; i < g.count; i++) rng.nextInt(g.sides) + 1]),
-      ],
-      bonus,
-    );
+    return DiceExpressionRoll([
+      for (final g in groups)
+        DiceGroupRoll(g, [
+          for (var i = 0; i < g.count; i++) rng.nextInt(g.sides) + 1,
+        ]),
+    ], bonus);
   }
 
   int roll({Random? random}) => rollDetailed(random: random).total;
@@ -241,9 +243,6 @@ D20RollResult rollD20({
       return D20RollResult([rng.nextInt(20) + 1], mode);
     case AdvantageMode.advantage:
     case AdvantageMode.disadvantage:
-      return D20RollResult(
-        [rng.nextInt(20) + 1, rng.nextInt(20) + 1],
-        mode,
-      );
+      return D20RollResult([rng.nextInt(20) + 1, rng.nextInt(20) + 1], mode);
   }
 }

@@ -50,9 +50,33 @@ extension CharacterStoreRoster on CharacterStore {
   CharacterValidationResult importCharacterFromText(String rawText) {
     final result = CharacterValidator.parseAndValidate(rawText);
     if (result.isOk) {
-      addCharacter(result.character!);
+      addCharacter(_withUniqueId(result.character!));
     }
     return result;
+  }
+
+  /// Si el id de [character] ya existe en el roster (importar dos veces
+  /// la misma ficha), devuelve una copia con id nuevo; si no, la misma.
+  /// Dos fichas con el mismo id rompían todo lo direccionado por id.
+  CharacterModel _withUniqueId(CharacterModel character) {
+    if (!roster.any((c) => c.id == character.id)) return character;
+    final json = character.toJson()..remove('id'); // fromJson genera uno nuevo
+    return CharacterModel.fromJson(json);
+  }
+
+  /// Incorpora las fichas de un respaldo ya validado. Con [replace] el
+  /// roster actual se sustituye por completo; si no, se añaden al final
+  /// (regenerando ids repetidos). Un único notify/persist. La última
+  /// ficha importada queda activa. Devuelve cuántas entraron.
+  int importBackup(List<CharacterModel> characters, {bool replace = false}) {
+    if (characters.isEmpty) return 0;
+    if (replace) roster.clear();
+    for (final c in characters) {
+      roster.add(_withUniqueId(c));
+    }
+    _activeIndex = roster.length - 1;
+    _notifyAndPersist();
+    return characters.length;
   }
 
   /// Reemplaza la ficha en [index] por [character] — ya validada por la

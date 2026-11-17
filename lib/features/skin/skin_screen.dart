@@ -21,7 +21,7 @@ import '../../core/theme/design_tokens.dart';
 import '../../core/theme/font_presets.dart';
 import '../../state/skin_controller.dart';
 import 'hsv_color_picker_dialog.dart';
-import 'theme_picker.dart';
+import 'my_themes_screen.dart';
 
 class SkinScreen extends StatelessWidget {
   const SkinScreen({super.key});
@@ -112,7 +112,8 @@ class SkinScreen extends StatelessWidget {
               const SizedBox(height: AppSpacing.xs),
               Text(
                 'Elegí la familia del texto. "Diario" usa Cinzel en los títulos '
-                'e Inter en el cuerpo; "Consola" es JetBrains Mono.',
+                'e Inter en el cuerpo; "Consola" es JetBrains Mono; "Códice" y '
+                '"Cuento" son de aire medieval y de cuento.',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -134,9 +135,48 @@ class SkinScreen extends StatelessWidget {
               const SizedBox(height: AppSpacing.md),
               const _TypographySample(),
               const SizedBox(height: AppSpacing.xl),
+              const _SectionTitle('Vista del HUD'),
+              SwitchListTile(
+                key: const ValueKey('compact-hud-switch'),
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Vista compacta'),
+                subtitle: const Text(
+                  'Espaciados y controles más densos en todas las '
+                  'pestañas. Útil en pantallas pequeñas.',
+                ),
+                value: skin.compactHud,
+                onChanged: skin.setCompactHud,
+              ),
+              SwitchListTile(
+                key: const ValueKey('tablet-mode-switch'),
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Modo tablet'),
+                subtitle: const Text(
+                  'Riel lateral y paneles en pantallas anchas. Apágalo para '
+                  'ver siempre el layout de teléfono.',
+                ),
+                value: skin.tabletMode,
+                onChanged: skin.setTabletMode,
+              ),
+              const SizedBox(height: AppSpacing.xl),
               const _SectionTitle('Tema'),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Ahora: ${skin.activeThemeName}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
               const SizedBox(height: AppSpacing.sm),
-              const ThemeSwatchPicker(),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: FilledButton.tonalIcon(
+                  key: const ValueKey('open-my-themes'),
+                  onPressed: () => openMyThemes(context),
+                  icon: const Icon(Icons.brush_rounded),
+                  label: const Text('Mis temas y editor'),
+                ),
+              ),
               const SizedBox(height: AppSpacing.xl),
               _ThemePreview(accent: skin.accentColor),
             ],
@@ -283,7 +323,8 @@ class _ThemePreview extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return TacticalCard(padding: EdgeInsets.zero, 
+    return TacticalCard(
+      padding: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(

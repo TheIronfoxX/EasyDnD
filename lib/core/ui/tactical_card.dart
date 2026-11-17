@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/design_tokens.dart';
 import '../theme/tactical_theme_tokens.dart';
+import '../theme/theme_style_tokens.dart';
 import 'pip_shape.dart';
 
 /// Tarjeta base: degradado de superficie elevada, forma, borde y sombra de
@@ -19,14 +20,16 @@ class TacticalCard extends StatelessWidget {
   const TacticalCard({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(AppSpacing.lg),
+    this.padding,
     this.margin,
     this.tone,
     this.onTap,
   });
 
   final Widget child;
-  final EdgeInsetsGeometry padding;
+
+  /// `null` = relleno estándar escalado por la densidad del tema.
+  final EdgeInsetsGeometry? padding;
   final EdgeInsetsGeometry? margin;
 
   /// Color de rol. `null` = tarjeta neutra.
@@ -43,16 +46,30 @@ class TacticalCard extends StatelessWidget {
         : Color.alphaBlend(tone.withValues(alpha: 0.45), tactical.metalBorder);
 
     return AnimatedContainer(
-      duration: AppDurations.normal,
+      duration: tactical.motion.scale(AppDurations.normal),
       margin: margin,
       clipBehavior: Clip.antiAlias,
       decoration: ShapeDecoration(
-        shape: tactical.cardBorder(borderColor),
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [tactical.surfaceRaised, scheme.surface],
-        ),
+        // Tema limpio (sin sombras): superficie lisa, sin borde.
+        shape: tactical.shadowStyle == ShadowStyle.none
+            ? tactical.cardShape
+            : tactical.cardBorder(borderColor),
+        gradient: switch (tactical.cards.gradient) {
+          CardGradientStyle.flat => null,
+          CardGradientStyle.raisedToSurface => LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [tactical.surfaceRaised, scheme.surface],
+          ),
+          CardGradientStyle.surfaceToRaised => LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [scheme.surface, tactical.surfaceRaised],
+          ),
+        },
+        color: tactical.cards.gradient == CardGradientStyle.flat
+            ? scheme.surface
+            : null,
         shadows: tactical.cardShadows(scheme.shadow),
       ),
       child: Material(
@@ -62,7 +79,30 @@ class TacticalCard extends StatelessWidget {
           customBorder: tactical.cardShape,
           child: Stack(
             children: [
-              Padding(padding: padding, child: child),
+              Padding(
+                padding:
+                    padding ??
+                    EdgeInsets.all(AppSpacing.lg * tactical.density.scale),
+                child: child,
+              ),
+              if (tactical.cards.doubleBorder)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: Padding(
+                      padding: const EdgeInsets.all(3),
+                      child: DecoratedBox(
+                        decoration: ShapeDecoration(
+                          shape: tactical.cardShape.copyWith(
+                            side: BorderSide(
+                              color: borderColor.withValues(alpha: 0.45),
+                              width: 1,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               // Filo de luz: iluminación tonal del canto superior.
               Positioned(
                 top: 0,
@@ -76,7 +116,7 @@ class TacticalCard extends StatelessWidget {
                         colors: [
                           tactical.metalHighlight.withValues(alpha: 0),
                           (tone ?? tactical.metalHighlight).withValues(
-                            alpha: 0.55,
+                            alpha: tactical.cards.highlightAlpha,
                           ),
                           tactical.metalHighlight.withValues(alpha: 0),
                         ],
@@ -85,7 +125,7 @@ class TacticalCard extends StatelessWidget {
                   ),
                 ),
               ),
-              if (tone != null)
+              if (tone != null && tactical.cards.toneStripe)
                 Positioned(
                   top: 0,
                   bottom: 0,
@@ -133,57 +173,129 @@ class SectionHeader extends StatelessWidget {
         ? theme.textTheme.titleSmall
         : theme.textTheme.titleMedium;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ConstrainedBox(
-          // Con o sin acción a la derecha el encabezado mide lo mismo: las
-          // tarjetas vecinas quedan alineadas.
-          constraints: BoxConstraints(minHeight: dense ? 28 : 36),
-          child: Row(
-            children: [
-              if (icon != null) ...[
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: ShapeDecoration(
-                    color: color.withValues(alpha: 0.14),
-                    shape: tactical.insetBorder(
-                      color.withValues(alpha: 0.34),
-                      width: 1,
-                    ),
-                  ),
-                  child: Icon(icon, size: dense ? 14 : 16, color: color),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-              ],
-              Expanded(
-                child: Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: titleStyle?.copyWith(fontWeight: FontWeight.w700),
+    final row = ConstrainedBox(
+      // Con o sin acción a la derecha el encabezado mide lo mismo: las
+      // tarjetas vecinas quedan alineadas.
+      constraints: BoxConstraints(
+        minHeight: (dense ? 28 : 36) * tactical.density.scale,
+      ),
+      child: Row(
+        children: [
+          if (icon != null) ...[
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: ShapeDecoration(
+                color: color.withValues(alpha: 0.14),
+                shape: tactical.insetBorder(
+                  color.withValues(alpha: 0.34),
+                  width: 1,
                 ),
               ),
-              if (trailing != null) trailing!,
-            ],
+              child: Icon(icon, size: dense ? 14 : 16, color: color),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+          ],
+          Expanded(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: titleStyle?.copyWith(fontWeight: FontWeight.w700),
+            ),
           ),
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        SizedBox(
-          height: 7,
-          child: CustomPaint(
-            painter: _OrnamentPainter(
-              color: color,
-              fade: tactical.metalBorder,
-              glyph: tactical.pipShape,
+          if (trailing != null) trailing!,
+        ],
+      ),
+    );
+
+    switch (tactical.components.header) {
+      case HeaderStyle.ornament:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            row,
+            const SizedBox(height: AppSpacing.xs),
+            SizedBox(
+              height: 7,
+              child: CustomPaint(
+                painter: _OrnamentPainter(
+                  color: color,
+                  fade: tactical.metalBorder,
+                  glyph: tactical.pipShape,
+                  width: tactical.borderWidth,
+                ),
+              ),
+            ),
+          ],
+        );
+      case HeaderStyle.plate:
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+          decoration: ShapeDecoration(
+            gradient: tactical.headerGradient,
+            shape: tactical.insetBorder(
+              color.withValues(alpha: 0.5),
               width: tactical.borderWidth,
             ),
           ),
-        ),
-      ],
-    );
+          child: row,
+        );
+      case HeaderStyle.underline:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            row,
+            const SizedBox(height: AppSpacing.xs),
+            Container(height: tactical.borderWidth + 1.5, color: color),
+          ],
+        );
+      case HeaderStyle.brackets:
+        return CustomPaint(
+          foregroundPainter: _BracketPainter(
+            color: color,
+            width: tactical.borderWidth + 0.5,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            child: row,
+          ),
+        );
+      case HeaderStyle.minimal:
+        return row;
+    }
   }
+}
+
+/// Esquinas en L para la cabecera de estilo "brackets".
+class _BracketPainter extends CustomPainter {
+  const _BracketPainter({required this.color, required this.width});
+
+  final Color color;
+  final double width;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = width
+      ..color = color;
+    const arm = 8.0;
+    for (final (origin, dx, dy) in [
+      (Offset.zero, 1.0, 1.0),
+      (Offset(size.width, 0), -1.0, 1.0),
+      (Offset(0, size.height), 1.0, -1.0),
+      (Offset(size.width, size.height), -1.0, -1.0),
+    ]) {
+      canvas.drawLine(origin, origin + Offset(dx * arm, 0), paint);
+      canvas.drawLine(origin, origin + Offset(0, dy * arm), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_BracketPainter old) =>
+      old.color != color || old.width != width;
 }
 
 class _OrnamentPainter extends CustomPainter {

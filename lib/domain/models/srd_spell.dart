@@ -71,12 +71,13 @@ class SrdSpell {
     // Si el tiempo de lanzamiento contiene "adicional" o "bonus",
     // se recomienda para acción adicional; si contiene "reacción", reacción.
     final lowerTime = castingTime.toLowerCase();
-    final resolvedActionType = preferredActionCategory ??
+    final resolvedActionType =
+        preferredActionCategory ??
         (lowerTime.contains('adicional') || lowerTime.contains('bonus')
             ? 'bonusAction'
             : lowerTime.contains('reacción') || lowerTime.contains('reaction')
-                ? 'reaction'
-                : 'action');
+            ? 'reaction'
+            : 'action');
 
     final ability = Ability(
       id: 'spell_${name.toLowerCase().replaceAll(RegExp(r'\s+'), '_')}_${DateTime.now().millisecondsSinceEpoch}',
@@ -105,8 +106,15 @@ class SrdSpell {
 /// signos y con espacios colapsados ("Tormenta  de HIELO" == "tormenta de hielo").
 String normalizeSpellName(String input) {
   var t = input.toLowerCase();
-  const accents = {'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u', 'ü': 'u', 'ñ': 'n'};
+  const accents = {
+    'á': 'a',
+    'é': 'e',
+    'í': 'i',
+    'ó': 'o',
+    'ú': 'u',
+    'ü': 'u',
+    'ñ': 'n',
+  };
   accents.forEach((k, v) => t = t.replaceAll(k, v));
   return t.replaceAll(RegExp(r'[^a-z0-9]+'), ' ').trim();
 }
-

@@ -9,7 +9,14 @@ import 'package:easydnd/domain/models/character.dart';
 /// Blindaje de importación: las fichas reales de la party deben pasar el
 /// validador sin errores, sobrevivir al roundtrip del modelo sin perder
 /// campos clave y no descartar ni una habilidad/arma.
-const _fichas = ['Jiseol', 'dislexica', 'doloria', 'eggchan', 'fecaliht', 'kael'];
+const _fichas = [
+  'Jiseol',
+  'dislexica',
+  'doloria',
+  'eggchan',
+  'fecaliht',
+  'kael',
+];
 
 int _len(Object? v) => v is List ? v.length : 0;
 
@@ -40,10 +47,13 @@ void main() {
       });
 
       test('no pierde armas ni habilidades por acción', () {
-        final out = jsonDecode(jsonEncode(result.character!.toJson()))
-            as Map<String, dynamic>;
-        expect(_len((out['inventory'] as Map)['weapons']),
-            _len((raw['inventory'] as Map)['weapons']));
+        final out =
+            jsonDecode(jsonEncode(result.character!.toJson()))
+                as Map<String, dynamic>;
+        expect(
+          _len((out['inventory'] as Map)['weapons']),
+          _len((raw['inventory'] as Map)['weapons']),
+        );
         final rawAbs = raw['abilities_by_action'] as Map;
         final outAbs = out['abilities_by_action'] as Map;
         for (final k in ['action', 'bonus_action', 'reaction', 'passive']) {
@@ -54,7 +64,10 @@ void main() {
       test('roundtrip estable (toJson → fromJson → toJson)', () {
         final first = jsonDecode(jsonEncode(result.character!.toJson()));
         final second = jsonDecode(
-            jsonEncode(CharacterModel.fromJson(first as Map<String, dynamic>).toJson()));
+          jsonEncode(
+            CharacterModel.fromJson(first as Map<String, dynamic>).toJson(),
+          ),
+        );
         expect(second, first);
       });
     });

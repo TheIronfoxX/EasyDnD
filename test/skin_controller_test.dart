@@ -5,6 +5,8 @@
 // notificaciones y que el ThemeData resultante use la paleta semántica.
 
 import 'package:flutter/material.dart';
+import 'package:easydnd/core/theme/clean_theme.dart';
+import 'package:easydnd/core/theme/tactical_theme_tokens.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -12,7 +14,6 @@ import 'package:easydnd/core/theme/app_fonts.dart';
 import 'package:easydnd/core/theme/app_palette.dart';
 import 'package:easydnd/core/theme/app_theme.dart';
 import 'package:easydnd/core/theme/app_theme_colors.dart';
-import 'package:easydnd/core/theme/design_tokens.dart';
 import 'package:easydnd/core/theme/font_presets.dart';
 import 'package:easydnd/state/skin_controller.dart';
 
@@ -41,12 +42,11 @@ void main() {
       expect(skin.fontPreset.id, FontPresets.defaultPreset.id);
     });
 
-    test('la tipografía por defecto es "Diario"', () async {
+    test('el tema limpio usa Inter en todo', () async {
       final skin = await boot();
       final textTheme = skin.themeData.textTheme;
 
-      expect(skin.fontPreset.id, FontPresets.journal.id);
-      expect(textTheme.titleLarge?.fontFamily, AppFonts.cinzel);
+      expect(textTheme.titleLarge?.fontFamily, AppFonts.inter);
       expect(textTheme.bodyMedium?.fontFamily, AppFonts.inter);
     });
 
@@ -57,10 +57,10 @@ void main() {
 
       expect(theme.brightness, Brightness.dark);
       expect(theme.colorScheme.primary, AppTheme.defaultAccent);
-      expect(theme.scaffoldBackgroundColor, AppPalette.dark.background);
-      expect(colors.background, AppPalette.dark.background);
-      expect(colors.surface, AppPalette.dark.surface);
-      expect(colors.textPrimary, AppPalette.dark.textPrimary);
+      expect(theme.scaffoldBackgroundColor, CleanTheme.darkPalette.background);
+      expect(colors.background, CleanTheme.darkPalette.background);
+      expect(colors.surface, CleanTheme.darkPalette.surface);
+      expect(colors.textPrimary, CleanTheme.darkPalette.textPrimary);
     });
 
     test('init es idempotente', () async {
@@ -81,52 +81,22 @@ void main() {
     });
   });
 
-  group('estética pergamino (8b)', () {
-    test(
-      'los componentes clave tienen forma con borde hairline de la paleta',
-      () async {
-        final skin = await boot();
-        final theme = skin.themeData;
-        const palette = AppPalette.dark;
+  group('tema limpio', () {
+    test('tarjetas, hojas y diálogos sin borde ni versalitas', () async {
+      final skin = await boot();
+      final theme = skin.themeData;
 
-        // Card
-        final cardShape = theme.cardTheme.shape as RoundedRectangleBorder?;
-        expect(cardShape?.side.color, palette.border);
-        expect(cardShape?.borderRadius, BorderRadius.circular(AppRadii.lg));
-
-        // Dialog
-        final dialogShape = theme.dialogTheme.shape as RoundedRectangleBorder?;
-        expect(dialogShape?.side.color, palette.border);
-
-        // PopupMenu
-        final menuShape = theme.popupMenuTheme.shape as RoundedRectangleBorder?;
-        expect(menuShape?.side.color, palette.border);
-
-        // BottomSheet
-        final sheetShape =
-            theme.bottomSheetTheme.shape as RoundedRectangleBorder?;
-        expect(sheetShape?.side.color, palette.border);
-        expect(
-          sheetShape?.borderRadius,
-          const BorderRadius.vertical(top: Radius.circular(AppRadii.lg)),
-        );
-
-        // Inputs
-        expect(theme.inputDecorationTheme.filled, isTrue);
-        expect(
-          (theme.inputDecorationTheme.border as OutlineInputBorder?)
-              ?.borderSide
-              .color,
-          palette.border,
-        );
-
-        // Tracking en títulos para el look grabado en piedra
-        expect(theme.textTheme.titleLarge?.letterSpacing, 0.3);
-        expect(theme.textTheme.titleMedium?.letterSpacing, 0.3);
-        expect(theme.textTheme.titleSmall?.letterSpacing, 0.3);
-        expect(theme.textTheme.displayLarge?.letterSpacing, 0.4);
-      },
-    );
+      final cardShape = theme.cardTheme.shape as RoundedRectangleBorder?;
+      expect(cardShape?.side, BorderSide.none);
+      final sheetShape =
+          theme.bottomSheetTheme.shape as RoundedRectangleBorder?;
+      expect(sheetShape?.side, BorderSide.none);
+      expect(theme.textTheme.titleLarge?.letterSpacing, 0);
+      expect(
+        theme.extension<TacticalThemeTokens>()!.cards.doubleBorder,
+        isFalse,
+      );
+    });
   });
 
   group('persistencia', () {
@@ -149,34 +119,24 @@ void main() {
       expect(second.themeData.brightness, Brightness.light);
       expect(
         second.themeData.scaffoldBackgroundColor,
-        AppPalette.light.background,
+        CleanTheme.lightPalette.background,
       );
     });
 
-    test('la tipografía sobrevive a reiniciar', () async {
-      final first = await boot();
-      await first.setFontPreset(FontPresets.console);
+    test(
+      'la tipografía elegida se guarda aunque el tema limpio use Inter',
+      () async {
+        final first = await boot();
+        await first.setFontPreset(FontPresets.console);
 
-      expect(
-        first.themeData.textTheme.titleLarge?.fontFamily,
-        AppFonts.jetBrainsMono,
-      );
-      expect(
-        first.themeData.textTheme.bodyMedium?.fontFamily,
-        AppFonts.jetBrainsMono,
-      );
-
-      final second = await boot();
-      expect(second.fontPreset.id, FontPresets.console.id);
-      expect(
-        second.themeData.textTheme.titleLarge?.fontFamily,
-        AppFonts.jetBrainsMono,
-      );
-      expect(
-        second.themeData.textTheme.bodyMedium?.fontFamily,
-        AppFonts.jetBrainsMono,
-      );
-    });
+        final second = await boot();
+        expect(second.fontPreset.id, FontPresets.console.id);
+        expect(
+          second.themeData.textTheme.bodyMedium?.fontFamily,
+          AppFonts.inter,
+        );
+      },
+    );
 
     test('un id de tipografía desconocido cae al preset por defecto', () async {
       SharedPreferences.setMockInitialValues({
@@ -257,10 +217,6 @@ void main() {
 
       await skin.setFontPreset(FontPresets.console);
       expect(notifications, 1);
-      expect(
-        skin.themeData.textTheme.bodyMedium?.fontFamily,
-        AppFonts.jetBrainsMono,
-      );
 
       await skin.setFontPreset(FontPresets.console);
       expect(notifications, 1);
@@ -286,9 +242,9 @@ void main() {
         ),
       );
 
-      expect(colors.background, AppPalette.dark.background);
-      expect(colors.border, AppPalette.dark.border);
-      expect(colors.textSecondary, AppPalette.dark.textSecondary);
+      expect(colors.background, CleanTheme.darkPalette.background);
+      expect(colors.border, CleanTheme.darkPalette.border);
+      expect(colors.textSecondary, CleanTheme.darkPalette.textSecondary);
     });
 
     test('lerp interpola todos los roles', () async {

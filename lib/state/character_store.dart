@@ -24,6 +24,7 @@ import '../data/roster_repository.dart';
 import '../domain/character_validator.dart';
 import '../domain/models/ability.dart';
 import '../domain/models/character.dart';
+import '../domain/models/session_note.dart';
 import '../domain/models/weapon.dart';
 
 part 'character_store_combat.dart';

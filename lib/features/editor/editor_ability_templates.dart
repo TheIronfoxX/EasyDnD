@@ -81,15 +81,18 @@ class AbilityTemplate {
         } on FormatException {
           // Fórmula que el motor no entiende: un uso, editable en el Grimorio.
         }
-        resources.add(ResourcePoint(
-          name: r.name,
-          current: uses,
-          max: uses,
-          recovery: r.recovery,
-        ));
+        resources.add(
+          ResourcePoint(
+            name: r.name,
+            current: uses,
+            max: uses,
+            recovery: r.recovery,
+          ),
+        );
       }
-      ability.resourceName =
-          resources.firstWhere((x) => normalizeSpellName(x.name) == key).name;
+      ability.resourceName = resources
+          .firstWhere((x) => normalizeSpellName(x.name) == key)
+          .name;
     }
     return ability;
   }
@@ -117,9 +120,7 @@ const List<AbilityTemplate> kExtraAbilityTemplates = [
 ];
 
 /// Overrides de datos mecánicos que el catálogo de clases no trae.
-const Map<String, String> _kHealByName = {
-  'tomar aliento': '1d10+level',
-};
+const Map<String, String> _kHealByName = {'tomar aliento': '1d10+level'};
 
 Future<List<AbilityTemplate>> loadAbilityTemplates() async {
   final classes = await ClassCatalog.load();
@@ -127,15 +128,19 @@ Future<List<AbilityTemplate>> loadAbilityTemplates() async {
   for (final cls in classes) {
     for (final f in cls.coreFeatures) {
       if (f.actionType == 'passive') continue;
-      fromCatalog.add(AbilityTemplate(
-        id: 'srd_${cls.id}_${normalizeSpellName(f.name).replaceAll(' ', '_')}',
-        name: f.name,
-        category: f.actionType == 'bonus_action' ? 'bonusAction' : f.actionType,
-        description: f.description,
-        source: '${cls.name} nivel ${f.level}',
-        healDice: _kHealByName[normalizeSpellName(f.name)],
-        resource: f.resource,
-      ));
+      fromCatalog.add(
+        AbilityTemplate(
+          id: 'srd_${cls.id}_${normalizeSpellName(f.name).replaceAll(' ', '_')}',
+          name: f.name,
+          category: f.actionType == 'bonus_action'
+              ? 'bonusAction'
+              : f.actionType,
+          description: f.description,
+          source: '${cls.name} nivel ${f.level}',
+          healDice: _kHealByName[normalizeSpellName(f.name)],
+          resource: f.resource,
+        ),
+      );
     }
   }
   return [...fromCatalog, ...kExtraAbilityTemplates];
@@ -201,7 +206,11 @@ class _AbilityTemplatePickerState extends State<_AbilityTemplatePicker> {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.sm),
+              AppSpacing.lg,
+              0,
+              AppSpacing.lg,
+              AppSpacing.sm,
+            ),
             child: TextField(
               decoration: const InputDecoration(
                 labelText: 'Buscar plantilla SRD',
@@ -223,10 +232,12 @@ class _AbilityTemplatePickerState extends State<_AbilityTemplatePicker> {
                           subtitle: Text(
                             [
                               t.source,
-                              if (t.resource != null) 'Recurso: ${t.resource!.name}',
+                              if (t.resource != null)
+                                'Recurso: ${t.resource!.name}',
                             ].join(' · '),
                           ),
-                          onTap: () => Navigator.of(context).pop(AbilityPick(t)),
+                          onTap: () =>
+                              Navigator.of(context).pop(AbilityPick(t)),
                         ),
                     ],
                   ),

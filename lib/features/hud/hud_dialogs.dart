@@ -13,21 +13,6 @@ import '../../core/dnd_rules.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../domain/models/weapon.dart';
 
-/// Lo que el jugador marcó en el descanso personalizado.
-class CustomRestChoice {
-  const CustomRestChoice({
-    required this.healMax,
-    required this.restoreSpells,
-    required this.restoreCharges,
-  });
-
-  final bool healMax;
-  final bool restoreSpells;
-  final bool restoreCharges;
-
-  bool get isEmpty => !healMax && !restoreSpells && !restoreCharges;
-}
-
 /// Diálogo numérico genérico (daño, curación, dados de golpe). Devuelve
 /// un entero positivo, o null al cancelar.
 Future<int?> showAmountDialog(
@@ -88,47 +73,7 @@ Future<bool> showDeleteCharacterDialog(
   return result ?? false;
 }
 
-/// Confirmación del descanso largo. Devuelve true solo si el jugador
-/// confirma.
-Future<bool> showLongRestDialog(BuildContext context) async {
-  final result = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: const Text('¿Descanso largo?'),
-      content: const Text(
-        'La ficha recupera:\n'
-        '• Vida al máximo.\n'
-        '• Todas las ranuras de conjuro.\n'
-        '• Todas las cargas de armas y habilidades.\n'
-        '• La mitad de los dados de golpe (redondeando para arriba).',
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Cancelar'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.of(context).pop(true),
-          child: const Text('Descansar'),
-        ),
-      ],
-    ),
-  );
-  return result ?? false;
-}
-
-/// Descanso personalizado: el jugador elige qué recuperar. Devuelve
-/// null al cancelar.
-Future<CustomRestChoice?> showCustomRestDialog(BuildContext context) {
-  return showDialog<CustomRestChoice>(
-    context: context,
-    builder: (_) => const _CustomRestDialog(),
-  );
-}
-
-/// Selector de condiciones. Lista las del catálogo que todavía no están
-/// activas y permite escribir una condición casera. Devuelve el nombre
-/// elegido, o null al cancelar.
+/// Selector de condición: catálogo de D&D o una condición casera.
 Future<String?> showConditionPicker(
   BuildContext context, {
   required List<String> activeConditions,
@@ -371,71 +316,6 @@ class _AmountDialogState extends State<_AmountDialog> {
           child: const Text('Cancelar'),
         ),
         FilledButton(onPressed: _submit, child: Text(widget.confirmLabel)),
-      ],
-    );
-  }
-}
-
-class _CustomRestDialog extends StatefulWidget {
-  const _CustomRestDialog();
-
-  @override
-  State<_CustomRestDialog> createState() => _CustomRestDialogState();
-}
-
-class _CustomRestDialogState extends State<_CustomRestDialog> {
-  bool _healMax = false;
-  bool _restoreSpells = false;
-  bool _restoreCharges = false;
-
-  bool get _anythingSelected => _healMax || _restoreSpells || _restoreCharges;
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Descanso personalizado'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          CheckboxListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Vida al máximo'),
-            value: _healMax,
-            onChanged: (value) => setState(() => _healMax = value ?? false),
-          ),
-          CheckboxListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Ranuras de conjuro'),
-            value: _restoreSpells,
-            onChanged: (value) =>
-                setState(() => _restoreSpells = value ?? false),
-          ),
-          CheckboxListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Cargas de armas y habilidades'),
-            value: _restoreCharges,
-            onChanged: (value) =>
-                setState(() => _restoreCharges = value ?? false),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(null),
-          child: const Text('Cancelar'),
-        ),
-        FilledButton(
-          onPressed: _anythingSelected
-              ? () => Navigator.of(context).pop(
-                  CustomRestChoice(
-                    healMax: _healMax,
-                    restoreSpells: _restoreSpells,
-                    restoreCharges: _restoreCharges,
-                  ),
-                )
-              : null,
-          child: const Text('Aplicar'),
-        ),
       ],
     );
   }

@@ -2,8 +2,9 @@
 // catálogo, pintada con sus propios tokens (color principal, forma de
 // tarjeta y de controles, grosor de borde y forma de pip).
 //
-// Se usa embebido en Apariencia y como hoja rápida desde la barra de la
-// bienvenida y el menú del HUD ([showThemePickerSheet]).
+// Ya no está a la vista: es el menú escondido de temas prehechos, que se
+// abre con una pulsación larga sobre el título de Mis temas
+// ([showThemePickerSheet]).
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

@@ -17,11 +17,16 @@
 
 import 'package:flutter/material.dart';
 
+import 'clean_theme.dart';
+
+import 'app_palette.dart';
 import 'app_theme_colors.dart';
+import 'custom_theme.dart';
 import 'app_fonts.dart';
 import 'design_tokens.dart';
 import 'font_presets.dart';
 import 'tactical_theme_tokens.dart';
+import 'theme_style_tokens.dart';
 import 'theme_presets.dart';
 
 class AppTheme {
@@ -31,15 +36,12 @@ class AppTheme {
   /// del skin hasta que el jugador elija otro.
   static const Color defaultAccent = Color(0xFFC9A227);
 
-  /// Modo claro: siempre el tema Pergamino.
+  /// Modo claro: Pergamino salvo que se pida otro tema claro.
   static ThemeData light({
     Color? accent,
     FontPreset fontPreset = FontPresets.defaultPreset,
-  }) => build(
-    brightness: Brightness.light,
-    accent: accent,
-    fontPreset: fontPreset,
-  );
+    AppThemePreset preset = AppThemePreset.defaultLight,
+  }) => build(preset: preset, accent: accent, fontPreset: fontPreset);
 
   /// Modo oscuro: Grimorio salvo que se pida otro tema oscuro.
   static ThemeData dark({
@@ -59,10 +61,85 @@ class AppTheme {
   }) {
     final resolved =
         preset ?? AppThemePreset.forBrightness(brightness ?? Brightness.dark);
-    final themeBrightness = resolved.brightness;
-    final palette = resolved.palette;
-    final tactical = resolved.tactical;
-    final accentColor = accent ?? resolved.accent;
+    return fromParts(
+      brightness: resolved.brightness,
+      palette: resolved.palette,
+      tactical: resolved.tactical,
+      accent: accent,
+      fontPreset: fontPreset,
+    );
+  }
+
+  /// Tema limpio: el único diseño de la app desde el rework para
+  /// novatos. Fondo liso, tarjetas sin borde, Inter en todo y el acento
+  /// del jugador ([defaultAccent] si no eligió).
+  static ThemeData clean({required Brightness brightness, Color? accent}) {
+    final color = accent ?? defaultAccent;
+    final palette = CleanTheme.palette(brightness);
+    final base = fromParts(
+      brightness: brightness,
+      palette: palette,
+      tactical: CleanTheme.tokens(brightness, color),
+      accent: color,
+      fontPreset: FontPresets.table,
+    );
+    const noSide = BorderSide.none;
+    return base.copyWith(
+      appBarTheme: base.appBarTheme.copyWith(shape: const Border()),
+      cardTheme: base.cardTheme.copyWith(
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(16)),
+          side: noSide,
+        ),
+      ),
+      bottomSheetTheme: base.bottomSheetTheme.copyWith(
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+      ),
+      dialogTheme: base.dialogTheme.copyWith(
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(20)),
+        ),
+      ),
+      popupMenuTheme: base.popupMenuTheme.copyWith(
+        color: palette.surfaceElevated,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(14)),
+        ),
+      ),
+      navigationBarTheme: base.navigationBarTheme.copyWith(
+        backgroundColor: palette.surface,
+        indicatorShape: const StadiumBorder(),
+      ),
+    );
+  }
+
+  /// Tema de un tema propio del editor ([CustomTheme]).
+  static ThemeData fromCustom(
+    CustomTheme custom, {
+    Color? accent,
+    FontPreset fontPreset = FontPresets.defaultPreset,
+  }) => fromParts(
+    brightness: custom.brightness,
+    palette: custom.palette,
+    tactical: custom.tactical,
+    accent: accent,
+    fontPreset: fontPreset,
+  );
+
+  /// Tema a partir de sus piezas: brillo, paleta estructural y tokens de
+  /// skin. Es el camino común de los temas del catálogo y de los propios.
+  /// Sin [accent] se usa el color principal de los tokens.
+  static ThemeData fromParts({
+    required Brightness brightness,
+    required AppPalette palette,
+    required TacticalThemeTokens tactical,
+    Color? accent,
+    FontPreset fontPreset = FontPresets.defaultPreset,
+  }) {
+    final themeBrightness = brightness;
+    final accentColor = accent ?? tactical.primary;
 
     // El acento lo puede elegir el jugador: no podemos confiar en el
     // onPrimary que inventa el seed. Lo resolvemos por contraste real.
@@ -105,18 +182,60 @@ class AppTheme {
     // La forma de botones y chips la decide la skin (esquinas, biseles,
     // cristal asimétrico, píldora...).
     final buttonShape = tactical.buttonShape;
-    const buttonPadding = EdgeInsets.symmetric(
-      horizontal: AppSpacing.lg,
-      vertical: AppSpacing.md,
+    final buttonPadding = EdgeInsets.symmetric(
+      horizontal: AppSpacing.lg * tactical.density.scale,
+      vertical: AppSpacing.md * tactical.density.scale,
     );
     const buttonText = TextStyle(
       fontWeight: FontWeight.w700,
       letterSpacing: 0.2,
     );
-    final cardShape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(AppRadii.lg),
+    final shapes = tactical.shapes;
+    RoundedRectangleBorder rounded(double r) => RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(r),
       side: hairline,
     );
+    final cardShape = rounded(AppRadii.lg);
+    final dialogShape = rounded(shapes.dialogRadius);
+
+    // Los botones rellenos cambian de estructura según el tema: sólido,
+    // tonal, solo contorno o planos.
+    final filledStyle = switch (tactical.components.button) {
+      ButtonStyleKind.filled => ButtonStyle(
+        shape: WidgetStatePropertyAll(buttonShape),
+        textStyle: const WidgetStatePropertyAll(buttonText),
+        padding: WidgetStatePropertyAll(buttonPadding),
+      ),
+      ButtonStyleKind.tonal => ButtonStyle(
+        shape: WidgetStatePropertyAll(buttonShape),
+        textStyle: const WidgetStatePropertyAll(buttonText),
+        padding: WidgetStatePropertyAll(buttonPadding),
+        backgroundColor: WidgetStatePropertyAll(
+          accentColor.withValues(alpha: 0.20),
+        ),
+        foregroundColor: WidgetStatePropertyAll(accentColor),
+        elevation: const WidgetStatePropertyAll(0),
+      ),
+      ButtonStyleKind.outlined => ButtonStyle(
+        shape: WidgetStatePropertyAll(buttonShape),
+        textStyle: const WidgetStatePropertyAll(buttonText),
+        padding: WidgetStatePropertyAll(buttonPadding),
+        backgroundColor: const WidgetStatePropertyAll(Colors.transparent),
+        foregroundColor: WidgetStatePropertyAll(accentColor),
+        elevation: const WidgetStatePropertyAll(0),
+        side: WidgetStatePropertyAll(
+          BorderSide(color: accentColor, width: tactical.borderWidth),
+        ),
+      ),
+      ButtonStyleKind.flat => ButtonStyle(
+        shape: WidgetStatePropertyAll(buttonShape),
+        textStyle: const WidgetStatePropertyAll(buttonText),
+        padding: WidgetStatePropertyAll(buttonPadding),
+        backgroundColor: const WidgetStatePropertyAll(Colors.transparent),
+        foregroundColor: WidgetStatePropertyAll(accentColor),
+        elevation: const WidgetStatePropertyAll(0),
+      ),
+    };
 
     return base.copyWith(
       scaffoldBackgroundColor: palette.background,
@@ -137,14 +256,15 @@ class AppTheme {
       dialogTheme: DialogThemeData(
         backgroundColor: palette.surface,
         surfaceTintColor: Colors.transparent,
-        shape: cardShape,
+        elevation: shapes.overlayElevation,
+        shape: dialogShape,
       ),
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: palette.surface,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(AppRadii.lg),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(shapes.sheetRadius),
           ),
           side: hairline,
         ),
@@ -152,21 +272,22 @@ class AppTheme {
       popupMenuTheme: PopupMenuThemeData(
         color: palette.surface,
         surfaceTintColor: Colors.transparent,
-        shape: cardShape,
+        elevation: shapes.overlayElevation,
+        shape: dialogShape,
       ),
       inputDecorationTheme: InputDecorationThemeData(
         filled: true,
         fillColor: palette.surfaceElevated.withValues(alpha: 0.45),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadii.md),
+          borderRadius: BorderRadius.circular(shapes.inputRadius),
           borderSide: hairline,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadii.md),
+          borderRadius: BorderRadius.circular(shapes.inputRadius),
           borderSide: hairline,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadii.md),
+          borderRadius: BorderRadius.circular(shapes.inputRadius),
           borderSide: BorderSide(color: accentColor, width: 1.5),
         ),
       ),
@@ -175,15 +296,14 @@ class AppTheme {
         backgroundColor: palette.surfaceElevated,
         contentTextStyle: TextStyle(color: palette.textPrimary),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadii.md),
-          side: hairline,
-        ),
+        elevation: shapes.overlayElevation,
+        shape: rounded(shapes.inputRadius),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: palette.surface,
         surfaceTintColor: Colors.transparent,
         indicatorColor: accentColor.withValues(alpha: 0.18),
+        indicatorShape: buttonShape,
         iconTheme: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return IconThemeData(
@@ -199,30 +319,29 @@ class AppTheme {
           );
         }),
       ),
-      filledButtonTheme: FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-          shape: buttonShape,
-          textStyle: buttonText,
-          padding: buttonPadding,
-        ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          shape: buttonShape,
-          textStyle: buttonText,
-          padding: buttonPadding,
-        ),
-      ),
+      filledButtonTheme: FilledButtonThemeData(style: filledStyle),
+      elevatedButtonTheme: ElevatedButtonThemeData(style: filledStyle),
       outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          shape: tactical.buttonShape,
-          textStyle: buttonText,
-          side: BorderSide(
-            color: tactical.metalBorder,
-            width: tactical.borderWidth,
-          ),
-          padding: buttonPadding,
-        ),
+        style:
+            OutlinedButton.styleFrom(
+              shape: tactical.buttonShape,
+              textStyle: buttonText,
+              side: BorderSide(
+                color: tactical.metalBorder,
+                width: tactical.borderWidth,
+              ),
+              padding: buttonPadding,
+            ).copyWith(
+              // Secundarios tonales: relleno tenue del acento.
+              backgroundColor:
+                  tactical.components.secondaryButton == ButtonStyleKind.tonal
+                  ? WidgetStatePropertyAll(accentColor.withValues(alpha: 0.16))
+                  : null,
+              foregroundColor:
+                  tactical.components.secondaryButton == ButtonStyleKind.tonal
+                  ? WidgetStatePropertyAll(accentColor)
+                  : null,
+            ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(shape: buttonShape, textStyle: buttonText),
@@ -273,7 +392,7 @@ class AppTheme {
       tooltipTheme: TooltipThemeData(
         decoration: BoxDecoration(
           color: tactical.surfaceRaised,
-          borderRadius: BorderRadius.circular(AppRadii.sm),
+          borderRadius: BorderRadius.circular(shapes.tooltipRadius),
           border: Border.all(color: tactical.metalBorder),
         ),
         textStyle: TextStyle(color: palette.textPrimary, fontSize: 12),
@@ -282,7 +401,7 @@ class AppTheme {
         backgroundColor: accentColor,
         foregroundColor: onAccent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadii.lg),
+          borderRadius: BorderRadius.circular(shapes.fabRadius),
         ),
       ),
       dividerColor: palette.border,

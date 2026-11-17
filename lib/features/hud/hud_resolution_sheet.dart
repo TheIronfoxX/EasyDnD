@@ -24,6 +24,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import '../../core/ui/app_icons.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/dice.dart';
@@ -31,6 +32,7 @@ import '../../core/resolution.dart';
 import '../../core/theme/app_fonts.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../core/theme/tactical_theme_tokens.dart';
+import '../../core/theme/theme_style_tokens.dart';
 import '../../core/theme/telemetry.dart';
 import '../../core/ui/stat_dial.dart';
 import '../../core/ui/tactical_card.dart';
@@ -97,6 +99,14 @@ class RollAction {
   /// Dado de curación, distinto del de daño (ej. "1d10+3").
   final String? healDice;
 
+  /// true si un estado activo impone desventaja (Envenenado,
+  /// Derribado...): el selector arranca en Desventaja y lo explica.
+  final bool startWithDisadvantage;
+
+  /// Suma la curación tirada a la vida del personaje ("Aplicar a mí").
+  /// Null = la hoja solo muestra el resultado.
+  final void Function(int amount)? onApplyHeal;
+
   const RollAction({
     required this.name,
     required this.kindLabel,
@@ -123,6 +133,8 @@ class RollAction {
     this.resourceCost = 1,
     this.onConsumeResource,
     this.healDice,
+    this.startWithDisadvantage = false,
+    this.onApplyHeal,
   });
 
   /// Cualquier conjuro de nivel 1+ gasta ranura; un truco (nivel 0) no.
@@ -178,7 +190,12 @@ class ResolutionSheet extends StatefulWidget {
 class _ResolutionSheetState extends State<ResolutionSheet> {
   _Phase _phase = _Phase.setup;
   _RollMode _mode = _RollMode.digital;
-  AdvantageMode _advantage = AdvantageMode.normal;
+  late AdvantageMode _advantage =
+      widget.action.startWithDisadvantage &&
+          !widget.action.isPlainUse &&
+          !widget.action.isSavingThrow
+      ? AdvantageMode.disadvantage
+      : AdvantageMode.normal;
 
   final _manualDie1 = TextEditingController();
   final _manualDie2 = TextEditingController();
@@ -537,7 +554,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
         if (action.isSavingThrow) ...[
           const SizedBox(height: AppSpacing.lg),
           _Banner(
-            icon: Icons.shield_rounded,
+            icon: AppIcons.of(context).shield,
             text: 'CD de Salvación: ${action.saveDc ?? '—'}',
             highlight: true,
           ),
@@ -662,6 +679,17 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
               value: _advantage,
               onChanged: (mode) => setState(() => _advantage = mode),
             ),
+            if (action.startWithDisadvantage) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Tienes desventaja por un estado activo: tira dos dados y '
+                'quédate con el menor.',
+                key: const ValueKey('disadvantage_hint'),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: context.tactical.damage),
+              ),
+            ],
           ],
           if ((!_action.isPlainUse && _action.hasDamage) ||
               _action.isSavingThrow) ...[
@@ -669,13 +697,13 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
             _sectionLabel('Método de daño'),
             const SizedBox(height: AppSpacing.sm),
             SegmentedButton<_RollMode>(
-              segments: const [
+              segments: [
                 ButtonSegment(
                   value: _RollMode.digital,
-                  label: Text('Digital'),
-                  icon: Icon(Icons.casino_rounded, size: 18),
+                  label: const Text('Digital'),
+                  icon: Icon(AppIcons.of(context).dice, size: 18),
                 ),
-                ButtonSegment(
+                const ButtonSegment(
                   value: _RollMode.manual,
                   label: Text('Manual'),
                   icon: Icon(Icons.pin_rounded, size: 18),
@@ -700,7 +728,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
             FilledButton.icon(
               style: _primaryActionStyle(context),
               onPressed: _rollDigital,
-              icon: const Icon(Icons.casino_rounded),
+              icon: Icon(AppIcons.of(context).dice),
               label: Text(_needsTwoDice ? 'Tirar 2d20' : 'Tirar d20'),
             )
           else
@@ -839,8 +867,8 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
               key: const ValueKey('natural_tag'),
               label: isCrit ? 'Natural 20' : 'Natural 1',
               icon: isCrit
-                  ? Icons.auto_awesome_rounded
-                  : Icons.heart_broken_rounded,
+                  ? AppIcons.of(context).spell
+                  : AppIcons.of(context).brokenHeart,
               tone: highlight,
             ),
           ),
@@ -873,7 +901,9 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
               color: theme.colorScheme.surfaceContainerHighest.withValues(
                 alpha: 0.45,
               ),
-              borderRadius: BorderRadius.circular(AppRadii.pill),
+              borderRadius: BorderRadius.circular(
+                context.tactical.shapes.pillRadius,
+              ),
               border: Border.all(
                 color: tactical.metalBorder.withValues(alpha: 0.7),
               ),
@@ -896,14 +926,14 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
             label: '¡Éxito crítico!',
             description: _action.successDescription,
             color: tactical.heal,
-            icon: Icons.auto_awesome_rounded,
+            icon: AppIcons.of(context).spell,
           )
         else if (isFumble)
           _Verdict(
             label: '¡Pifia!',
             description: _action.failureDescription,
             color: tactical.damage,
-            icon: Icons.heart_broken_rounded,
+            icon: AppIcons.of(context).brokenHeart,
           )
         else
           _Descriptions(action: _action),
@@ -1068,11 +1098,28 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
             ],
           ),
         const SizedBox(height: 20),
-        FilledButton(
-          style: _primaryActionStyle(context),
-          onPressed: _onConfirmHeal,
-          child: Text(showManualInput ? 'Ver curación' : 'Cerrar'),
-        ),
+        if (!showManualInput && _action.onApplyHeal != null) ...[
+          FilledButton.icon(
+            key: const ValueKey('heal_apply'),
+            style: _primaryActionStyle(context),
+            onPressed: () {
+              _action.onApplyHeal!(_healTotal ?? 0);
+              Navigator.of(context).pop();
+            },
+            icon: const Icon(Icons.favorite_rounded),
+            label: Text('Aplicar a mí (+${_healTotal ?? 0} PG)'),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          OutlinedButton(
+            onPressed: _onConfirmHeal,
+            child: const Text('Es para otro: cerrar'),
+          ),
+        ] else
+          FilledButton(
+            style: _primaryActionStyle(context),
+            onPressed: _onConfirmHeal,
+            child: Text(showManualInput ? 'Ver curación' : 'Cerrar'),
+          ),
       ],
     );
   }
@@ -1080,11 +1127,11 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
   Widget _sectionLabel(String text) {
     final theme = Theme.of(context);
     return Text(
-      text.toUpperCase(),
-      style: theme.textTheme.labelSmall?.copyWith(
+      text,
+      style: theme.textTheme.labelLarge?.copyWith(
         color: theme.colorScheme.onSurfaceVariant,
-        fontWeight: FontWeight.w700,
-        letterSpacing: 1,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0,
       ),
     );
   }
@@ -1329,8 +1376,8 @@ class _DieMedallion extends StatelessWidget {
     final tactical = context.tactical;
 
     return TweenAnimationBuilder<double>(
-      duration: const Duration(milliseconds: 460),
-      curve: Curves.easeOutBack,
+      duration: tactical.motion.scale(const Duration(milliseconds: 460)),
+      curve: tactical.motion.resolveCurve,
       tween: Tween(begin: 0.55, end: 1),
       builder: (context, scale, child) =>
           Transform.scale(scale: scale, child: child),
@@ -1342,6 +1389,7 @@ class _DieMedallion extends StatelessWidget {
             fillTop: tactical.surfaceRaised,
             fillBottom: scheme.surface,
             glow: dramatic ? 0.42 : 0.20,
+            shape: tactical.icons.diceShape,
           ),
           child: Center(child: child),
         ),
@@ -1356,8 +1404,10 @@ class _DiePainter extends CustomPainter {
     required this.fillTop,
     required this.fillBottom,
     required this.glow,
+    this.shape = DiceMedallionShape.hexagon,
   });
 
+  final DiceMedallionShape shape;
   final Color color;
   final Color fillTop;
   final Color fillBottom;
@@ -1384,9 +1434,15 @@ class _DiePainter extends CustomPainter {
         ).createShader(Rect.fromCircle(center: center, radius: r)),
     );
 
-    // Contorno del d20: hexágono con un vértice arriba.
+    // Contorno del dado según el tema (hexágono, círculo, rombo, cuadrado).
+    final (sides, start, scale) = switch (shape) {
+      DiceMedallionShape.hexagon => (6, -pi / 2, 0.78),
+      DiceMedallionShape.circle => (36, -pi / 2, 0.74),
+      DiceMedallionShape.diamond => (4, -pi / 2, 0.84),
+      DiceMedallionShape.square => (4, -pi / 4, 0.72),
+    };
     final vertices = [
-      for (var i = 0; i < 6; i++) at(-pi / 2 + i * pi / 3, r * 0.78),
+      for (var i = 0; i < sides; i++) at(start + i * 2 * pi / sides, r * scale),
     ];
     final hex = Path()..addPolygon(vertices, true);
     canvas.drawPath(
@@ -1408,11 +1464,14 @@ class _DiePainter extends CustomPainter {
       ..strokeWidth = 1
       ..color = color.withValues(alpha: 0.22);
     final inner = [
-      for (var i = 0; i < 6; i++) at(-pi / 2 + i * pi / 3, r * 0.52),
+      for (var i = 0; i < sides; i++)
+        at(start + i * 2 * pi / sides, r * scale * 0.67),
     ];
     canvas.drawPath(Path()..addPolygon(inner, true), facet);
-    for (var i = 0; i < 6; i++) {
-      canvas.drawLine(vertices[i], inner[i], facet);
+    if (sides <= 6) {
+      for (var i = 0; i < sides; i++) {
+        canvas.drawLine(vertices[i], inner[i], facet);
+      }
     }
 
     canvas.drawPath(
@@ -1430,7 +1489,8 @@ class _DiePainter extends CustomPainter {
       oldDelegate.color != color ||
       oldDelegate.fillTop != fillTop ||
       oldDelegate.fillBottom != fillBottom ||
-      oldDelegate.glow != glow;
+      oldDelegate.glow != glow ||
+      oldDelegate.shape != shape;
 }
 
 /// Panel de total (daño o curación): franja del color de rol, leyenda a

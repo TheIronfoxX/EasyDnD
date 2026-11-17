@@ -41,8 +41,9 @@ class DamageGroupBreakdown {
   const DamageGroupBreakdown(this.label, this.dice, this.subtotal);
 
   @override
-  String toString() =>
-      dice.isEmpty ? '$label = $subtotal' : '$label [${dice.join(', ')}] = $subtotal';
+  String toString() => dice.isEmpty
+      ? '$label = $subtotal'
+      : '$label [${dice.join(', ')}] = $subtotal';
 }
 
 /// Resuelve el daño base más el escalado por nivel de lanzamiento.
@@ -73,7 +74,10 @@ DamageRoll? resolveDamageRoll({
   final groups = <DamageGroupBreakdown>[
     for (final g in baseRoll.groups)
       DamageGroupBreakdown(
-          '${g.group.negative ? '-' : ''}${g.group.notation}', g.dice, g.subtotal),
+        '${g.group.negative ? '-' : ''}${g.group.notation}',
+        g.dice,
+        g.subtotal,
+      ),
     if (baseRoll.bonus != 0 || baseRoll.groups.isEmpty)
       DamageGroupBreakdown('Bono', const [], baseRoll.bonus),
   ];
@@ -98,11 +102,13 @@ DamageRoll? resolveDamageRoll({
         for (var k = 0; k < scale.groups.length; k++) {
           final g = scale.groups[k];
           final sum = perGroup[k].fold<int>(0, (a, b) => a + b);
-          groups.add(DamageGroupBreakdown(
-            '$extraLevels × ${g.negative ? '-' : ''}${g.notation} (escalado)',
-            perGroup[k],
-            g.negative ? -sum : sum,
-          ));
+          groups.add(
+            DamageGroupBreakdown(
+              '$extraLevels × ${g.negative ? '-' : ''}${g.notation} (escalado)',
+              perGroup[k],
+              g.negative ? -sum : sum,
+            ),
+          );
         }
         if (flat != 0) {
           groups.add(DamageGroupBreakdown('Escalado plano', const [], flat));

@@ -28,19 +28,25 @@ void main() {
           },
         ],
       });
-      final decoded = jsonDecode(Nivel20Extractor.cleanRawJsonString(raw))
-          as Map<String, dynamic>;
+      final decoded =
+          jsonDecode(Nivel20Extractor.cleanRawJsonString(raw))
+              as Map<String, dynamic>;
       final action = (decoded['actions'] as List).single as Map;
       expect(action['name'], 'Bastón');
       expect(action['description'], "Uno\n\nDos &'tres'");
-      expect(((action['elements'] as List).single as Map)['description'],
-          'Ataque\ncon fuerza');
+      expect(
+        ((action['elements'] as List).single as Map)['description'],
+        'Ataque\ncon fuerza',
+      );
     });
 
     test('no doble-decodifica &amp;lt;', () {
-      final raw = jsonEncode({'info': {'name': '&amp;lt;b&amp;gt;'}});
-      final decoded = jsonDecode(Nivel20Extractor.cleanRawJsonString(raw))
-          as Map<String, dynamic>;
+      final raw = jsonEncode({
+        'info': {'name': '&amp;lt;b&amp;gt;'},
+      });
+      final decoded =
+          jsonDecode(Nivel20Extractor.cleanRawJsonString(raw))
+              as Map<String, dynamic>;
       expect((decoded['info'] as Map)['name'], '&lt;b&gt;');
     });
 
@@ -96,10 +102,7 @@ void main() {
   group('extractInfoText', () {
     test('link largo: descarga el .json, lo limpia y lo indenta', () async {
       final body = jsonEncode({
-        'info': {
-          'name': 'Kaelen',
-          'bio': '<p>Uno</p><p>Dos</p>',
-        },
+        'info': {'name': 'Kaelen', 'bio': '<p>Uno</p><p>Dos</p>'},
       });
 
       final client = MockClient((request) async {
@@ -133,7 +136,12 @@ void main() {
           );
         }
         if (url == 'https://nivel20.com/games/g/characters/7-x.json') {
-          return http.Response(jsonEncode({'info': {'name': 'Ok'}}), 200);
+          return http.Response(
+            jsonEncode({
+              'info': {'name': 'Ok'},
+            }),
+            200,
+          );
         }
         fail('URL inesperada: $url');
       });
@@ -162,7 +170,8 @@ void main() {
 
     test('respuesta HTML: error que explica la ficha no pública', () async {
       final client = MockClient(
-        (request) async => http.Response('<html><body>login</body></html>', 200),
+        (request) async =>
+            http.Response('<html><body>login</body></html>', 200),
       );
 
       await expectLater(
@@ -170,29 +179,31 @@ void main() {
           'https://nivel20.com/games/g/characters/7-x',
           client: client,
         ),
-        throwsA(isA<Exception>().having(
-          (e) => e.toString(),
-          'mensaje',
-          allOf(contains('página web'), contains('pública')),
-        )),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'mensaje',
+            allOf(contains('página web'), contains('pública')),
+          ),
+        ),
       );
     });
 
     test('status de error: lo reporta con el código', () async {
-      final client = MockClient(
-        (request) async => http.Response('nope', 403),
-      );
+      final client = MockClient((request) async => http.Response('nope', 403));
 
       await expectLater(
         Nivel20Extractor.extractInfoText(
           'https://nivel20.com/games/g/characters/7-x',
           client: client,
         ),
-        throwsA(isA<Exception>().having(
-          (e) => e.toString(),
-          'mensaje',
-          contains('(403)'),
-        )),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'mensaje',
+            contains('(403)'),
+          ),
+        ),
       );
     });
 
@@ -206,11 +217,13 @@ void main() {
           'https://nivel20.com/games/g/characters/7-x',
           client: client,
         ),
-        throwsA(isA<Exception>().having(
-          (e) => e.toString(),
-          'mensaje',
-          contains('.json'),
-        )),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'mensaje',
+            contains('.json'),
+          ),
+        ),
       );
     });
 
@@ -224,11 +237,13 @@ void main() {
           'https://nivel20.com/s/abc123',
           client: client,
         ),
-        throwsA(isA<Exception>().having(
-          (e) => e.toString(),
-          'mensaje',
-          allOf(contains('enlace corto'), contains('"/characters/"')),
-        )),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'mensaje',
+            allOf(contains('enlace corto'), contains('"/characters/"')),
+          ),
+        ),
       );
     });
 
@@ -239,27 +254,37 @@ void main() {
 
       await expectLater(
         Nivel20Extractor.extractInfoText('', client: client),
-        throwsA(isA<Exception>().having(
-          (e) => e.toString(),
-          'mensaje',
-          contains('Pega primero el enlace'),
-        )),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'mensaje',
+            contains('Pega primero el enlace'),
+          ),
+        ),
       );
     });
 
-    test('link sin esquema: error amigable de copia desde el navegador', () async {
-      final client = MockClient(
-        (request) async => fail('no debería haber pedido nada'),
-      );
+    test(
+      'link sin esquema: error amigable de copia desde el navegador',
+      () async {
+        final client = MockClient(
+          (request) async => fail('no debería haber pedido nada'),
+        );
 
-      await expectLater(
-        Nivel20Extractor.extractInfoText('nivel20.com/s/abc123', client: client),
-        throwsA(isA<Exception>().having(
-          (e) => e.toString(),
-          'mensaje',
-          contains('no parece válido'),
-        )),
-      );
-    });
+        await expectLater(
+          Nivel20Extractor.extractInfoText(
+            'nivel20.com/s/abc123',
+            client: client,
+          ),
+          throwsA(
+            isA<Exception>().having(
+              (e) => e.toString(),
+              'mensaje',
+              contains('no parece válido'),
+            ),
+          ),
+        );
+      },
+    );
   });
 }
