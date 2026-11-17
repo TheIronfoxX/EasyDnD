@@ -41,8 +41,7 @@ domain/    models (incl. srd_* catalog models), validator, AI import prompt, Cha
 data/      repositories, persistence (SharedPreferences), Nivel20 extraction, SRD catalogs (class, equipment, spell)
 state/     CharacterStore (roster/combat/inventory) and SkinController — ChangeNotifier, exposed via Provider
 app/       widget root (MultiProvider + MaterialApp)
-features/  UI per feature: hud, editor (4 tabs: Núcleo, Arsenal, Grimorio, Mochila), import, skin
-           creation/ is LEGACY (CreationDraftController, no UI) — to be removed, don't extend
+features/  UI per feature: hud (3 tabs: Combate, Ficha, Mochila), editor (4 tabs: Núcleo, Arsenal, Grimorio, Mochila), import, skin (legacy, no entry point)
 main.dart  bootstrap: builds and inits the store + skin controller before the first frame
 ```
 
@@ -89,14 +88,35 @@ store to notify/persist afterward.
 
 Widgets must read `Theme.of(context)` or `context.appColors` (an extension in
 `lib/core/theme/app_theme_colors.dart`) — never a literal `Color(...)` or font name.
-`AppPalette` (`lib/core/theme/app_palette.dart`) is the source of truth for semantic
-colors per brightness; the player's chosen accent color and font preset come from
-`SkinController` and get threaded through `AppTheme.light()/dark()`
-(`lib/core/theme/app_theme.dart`), which builds a Material 3 `ColorScheme.fromSeed`
-from the accent and then overrides surfaces/text with the semantic palette so the
-"dark parchment" look survives Material's seeding algorithm. Fonts are bundled
-(`assets/fonts/`, see `pubspec.yaml`) rather than fetched, because the app is offline
-and web's CanvasKit renderer doesn't resolve generic font family fallbacks.
+The app has ONE design, the clean theme: `AppTheme.clean(brightness, accent)`
+(`lib/core/theme/app_theme.dart` + palettes/tokens in `clean_theme.dart`) — flat
+surfaces, no borders or ornaments, Inter everywhere. `SkinController.lightTheme/
+darkTheme` always build it; the player only picks light/dark and the accent color
+(in Ajustes). It still goes through `AppTheme.fromParts` (brightness + `AppPalette` +
+`TacticalThemeTokens`), so `context.tactical` role colors (`weapon`, `spell`, `heal`,
+`damage`...) keep working. Fonts are bundled (`assets/fonts/`) because the app is
+offline and web's CanvasKit renderer doesn't resolve generic font fallbacks.
+
+The old theme system — preset catalog (`theme_presets.dart`), player-made
+`CustomTheme`s, font presets, `SkinScreen`/`MyThemesScreen`/`ThemeEditorScreen` —
+is kept in the code (and its `easydnd.skin.*` keys are preserved) but has no entry
+point and no longer builds the theme. Don't delete it without asking (ADR-0007).
+
+### HUD: three index tabs, one screen per topic
+
+`features/hud/hud_screen.dart` is the shell: app bar (avatar, name → roster sheet,
+HP pill → life sheet, rules search, ⋮ = Recargar todo / Editar ficha / Ajustes) and
+three tabs — `combat/combat_tab.dart` (resources + cards), `sheet/sheet_tab.dart`,
+`backpack/backpack_tab.dart`. Every card pushes its own screen via
+`pushCharacterPage` (`hud_pages.dart`), which watches the store so pushed pages
+repaint. Spells/abilities are listed grouped by category (Daño/Defensa/Apoyo/
+Utilidad) in `combat/powers.dart`; categorization and the plain-language fallback
+live in `domain/power_category.dart`. Rolls are built by `hud_roll_actions.dart` and
+resolved by `hud_resolution_sheet.dart`. Rests and turn tracking are intentionally
+absent from the UI (store methods remain). Shared visual pieces for new screens:
+`core/ui/clean_kit.dart` (`CleanCard`, `NavRowCard`, `CleanSectionTitle`, `CleanPage`).
+Target audience is novice players: plain Spanish, one action per row, no jargon
+without explanation.
 
 ### Rules and resolution logic stay Flutter-free
 
@@ -111,7 +131,7 @@ sparse "patch" that `Nivel20Patch` merges on top. The full-sheet AI import
 (`AiPrompt.forEmptySheet`/`forEmbeddedSource`) is supported but secondary; `forCorrection`
 serves both paths. `CharacterBuilderEngine` is only the SRD rules/calculation engine behind
 the editor (the multi-step creation wizard was dropped). Details and pending work: ADR-0001
-to ADR-0003.
+to ADR-0003; `power_role`/`plain_summary`/`when_to_use`/`spell_notes`: ADR-0007.
 
 ## Domain language and decisions
 
