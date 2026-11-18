@@ -48,6 +48,8 @@ class CombatTab extends StatelessWidget {
         HeroHeader(character: character),
         _HealthCard(character: character),
         _VitalsStrip(character: character),
+        if (character.spellSlots.slots.isNotEmpty)
+          _SlotsSchema(character: character, onTap: () => _openSpells(context)),
         NavTilePair(
           tiles: [
             if (spells.isNotEmpty || character.spellSlots.slots.isNotEmpty)
@@ -92,8 +94,6 @@ class CombatTab extends StatelessWidget {
         ),
         if (allPowers.isNotEmpty)
           _FavoritesSection(favorites: favorites, character: character),
-        if (character.spellSlots.slots.isNotEmpty)
-          _SlotsSchema(character: character, onTap: () => _openSpells(context)),
         if (character.resources.isNotEmpty)
           _ResourcesCard(character: character),
         NavTilePair(
@@ -606,8 +606,9 @@ void _openSpells(BuildContext context) {
   );
 }
 
-/// Esquema pequeño de ranuras: un grupo de puntitos por nivel. Solo se
-/// mira; gastarlas se hace en la pantalla de Conjuros (toca para abrirla).
+/// Tira de ranuras: un grupo de puntitos por nivel. Tocar un nivel gasta
+/// una ranura; si ya no quedan, recupera una. La flecha abre la pantalla
+/// de Conjuros con el detalle.
 class _SlotsSchema extends StatelessWidget {
   const _SlotsSchema({required this.character, required this.onTap});
 
@@ -619,71 +620,89 @@ class _SlotsSchema extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final tone = context.tactical.spell;
+    final store = context.read<CharacterStore>();
     final slots = [...character.spellSlots.slots]
       ..sort((a, b) => a.level.compareTo(b.level));
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Material(
         key: const ValueKey('slots-schema'),
         color: scheme.surface,
         borderRadius: BorderRadius.circular(16),
         clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.auto_awesome_rounded, size: 18, color: tone),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Wrap(
-                    spacing: AppSpacing.md,
-                    runSpacing: 4,
-                    children: [
-                      for (final s in slots)
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              '${s.level}',
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: scheme.onSurfaceVariant,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            for (var i = 0; i < s.max; i++)
-                              Container(
-                                width: 7,
-                                height: 7,
-                                margin: const EdgeInsets.only(right: 2),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: i < s.current ? tone : null,
-                                  border: Border.all(
-                                    color: i < s.current
-                                        ? tone
-                                        : scheme.onSurface.withValues(
-                                            alpha: 0.3,
-                                          ),
-                                  ),
+        child: Padding(
+          padding: const EdgeInsets.only(
+            left: AppSpacing.md,
+            top: AppSpacing.xs,
+            bottom: AppSpacing.xs,
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.auto_awesome_rounded, size: 18, color: tone),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Wrap(
+                  spacing: AppSpacing.xs,
+                  runSpacing: 2,
+                  children: [
+                    for (final s in slots)
+                      InkWell(
+                        key: ValueKey('slot-level-${s.level}'),
+                        borderRadius: BorderRadius.circular(10),
+                        onTap: () => s.current > 0
+                            ? store.consumeSpellSlot(s.level)
+                            : store.restoreSpellSlot(s.level),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.sm,
+                            vertical: AppSpacing.sm,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '${s.level}',
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: scheme.onSurfaceVariant,
                                 ),
                               ),
-                          ],
+                              const SizedBox(width: 4),
+                              for (var i = 0; i < s.max; i++)
+                                AnimatedContainer(
+                                  duration: AppDurations.fast,
+                                  width: 9,
+                                  height: 9,
+                                  margin: const EdgeInsets.only(right: 3),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: i < s.current ? tone : null,
+                                    border: Border.all(
+                                      color: i < s.current
+                                          ? tone
+                                          : scheme.onSurface.withValues(
+                                              alpha: 0.3,
+                                            ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
-                    ],
-                  ),
+                      ),
+                  ],
                 ),
-                Icon(
+              ),
+              IconButton(
+                key: const ValueKey('slots-open'),
+                tooltip: 'Ver conjuros y ranuras con detalle',
+                visualDensity: VisualDensity.compact,
+                onPressed: onTap,
+                icon: Icon(
                   Icons.chevron_right_rounded,
-                  size: 18,
                   color: scheme.onSurfaceVariant,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

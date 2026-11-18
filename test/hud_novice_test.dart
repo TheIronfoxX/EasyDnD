@@ -339,6 +339,28 @@ void main() {
     });
   });
 
+  group('ranuras en Combate', () {
+    testWidgets('tocar un nivel gasta una ranura y, vacío, la recupera', (
+      tester,
+    ) async {
+      tallView(tester);
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await pumpApp(tester, store);
+
+      final slot = store.activeCharacter!.spellSlots.slots.first;
+      final before = slot.current;
+      expect(before, greaterThan(0));
+      await tapKey(tester, 'slot-level-${slot.level}');
+      expect(slot.current, before - 1);
+      for (var i = 0; i < before; i++) {
+        await tapKey(tester, 'slot-level-${slot.level}');
+      }
+      // Al vaciarse, el siguiente toque recupera una.
+      expect(slot.current, 1);
+    });
+  });
+
   group('vida', () {
     testWidgets('la píldora abre la hoja de Vida: daño y curación', (
       tester,
