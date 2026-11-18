@@ -89,8 +89,11 @@ store to notify/persist afterward.
 Widgets must read `Theme.of(context)` or `context.appColors` (an extension in
 `lib/core/theme/app_theme_colors.dart`) — never a literal `Color(...)` or font name.
 The app has ONE design, the clean theme: `AppTheme.clean(brightness, accent)`
-(`lib/core/theme/app_theme.dart` + palettes/tokens in `clean_theme.dart`) — flat
-surfaces, no borders or ornaments, Inter everywhere. `SkinController.lightTheme/
+(`lib/core/theme/app_theme.dart` + palettes/tokens in `clean_theme.dart`) — Nothing
+OS–style: monochrome black/white palette with the accent (default signal red) as the
+only color, very rounded surfaces, dot-grid backdrop, circular medallions with dotted
+rings, dot bars (`DotBar`/`DotRing` in `clean_kit.dart`). Fonts: JetBrains Mono for
+`titleLarge` and up and `labelSmall`/`labelMedium`, Inter for everything else. `SkinController.lightTheme/
 darkTheme` always build it; the player only picks light/dark and the accent color
 (in Ajustes). It still goes through `AppTheme.fromParts` (brightness + `AppPalette` +
 `TacticalThemeTokens`), so `context.tactical` role colors (`weapon`, `spell`, `heal`,
@@ -105,15 +108,21 @@ point and no longer builds the theme. Don't delete it without asking (ADR-0007).
 ### HUD: three index tabs, one screen per topic
 
 `features/hud/hud_screen.dart` is the shell: app bar (avatar, name → roster sheet,
-HP pill → life sheet, rules search, ⋮ = Recargar todo / Editar ficha / Ajustes) and
-three tabs — `combat/combat_tab.dart` (resources + cards), `sheet/sheet_tab.dart`,
-`backpack/backpack_tab.dart`. Every card pushes its own screen via
-`pushCharacterPage` (`hud_pages.dart`), which watches the store so pushed pages
-repaint. Spells/abilities are listed grouped by category (Daño/Defensa/Apoyo/
-Utilidad) in `combat/powers.dart`; categorization and the plain-language fallback
-live in `domain/power_category.dart`. Rolls are built by `hud_roll_actions.dart` and
-resolved by `hud_resolution_sheet.dart`. Rests and turn tracking are intentionally
-absent from the UI (store methods remain). Shared visual pieces for new screens:
+rules search, ⋮ = Recargar todo / Editar ficha / Ajustes) and three tabs —
+`combat/combat_tab.dart`, `sheet/sheet_tab.dart`, `backpack/backpack_tab.dart`.
+Combate, top to bottom: `hero_header.dart` (emblem + motto, saved in the sheet as
+`emblem`/`motto`), the single health card (`actual/máx`, −1/+1, tap the bar → life
+sheet; key `hp-pill` lives there, there is no HP pill in the app bar), the four
+vitals with one-line hints, the tappable spell-slot strip, compact Conjuros /
+Ataques buttons that still push their own pages via `pushCharacterPage`
+(`hud_pages.dart`), Favoritas and the filterable inline action list (both with
+quick-cast). Vista Guiada / Compacta (Ajustes) reuses `SkinController.compactHud`.
+Spells/abilities are grouped by category (Daño/Defensa/Apoyo/Utilidad) in
+`combat/powers.dart`; categorization and the plain-language fallback live in
+`domain/power_category.dart`. Rolls are built by `hud_roll_actions.dart` and
+resolved by `hud_resolution_sheet.dart`, which opens with a plain-Spanish sentence
+(`explainRoll`). Rests and turn tracking are intentionally absent from the UI (store
+methods remain) — do not add a turn tracker. Shared visual pieces for new screens:
 `core/ui/clean_kit.dart` (`CleanCard`, `NavRowCard`, `CleanSectionTitle`, `CleanPage`).
 Target audience is novice players: plain Spanish, one action per row, no jargon
 without explanation.

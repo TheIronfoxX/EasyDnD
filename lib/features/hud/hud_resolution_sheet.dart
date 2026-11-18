@@ -551,6 +551,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _SheetHeader(action: action, tone: _tone),
+        _RollExplanation(action: action),
         if (action.isSavingThrow) ...[
           const SizedBox(height: AppSpacing.lg),
           _Banner(
@@ -836,6 +837,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _SheetHeader(action: _action, tone: _tone),
+        _RollExplanation(action: _action),
         if (_action.usesSpellSlot) ...[
           const SizedBox(height: 2),
           Text(
@@ -976,6 +978,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _SheetHeader(action: _action, tone: _tone),
+        _RollExplanation(action: _action),
         const SizedBox(height: AppSpacing.lg),
         _sectionLabel('Daño / efecto'),
         const SizedBox(height: AppSpacing.sm),
@@ -1057,6 +1060,7 @@ class _ResolutionSheetState extends State<ResolutionSheet> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _SheetHeader(action: _action, tone: _tone),
+        _RollExplanation(action: _action),
         const SizedBox(height: AppSpacing.lg),
         _sectionLabel('Curación'),
         const SizedBox(height: AppSpacing.sm),
@@ -1282,6 +1286,54 @@ class _DiceBreakdown extends StatelessWidget {
       ),
       key: const ValueKey('dice_breakdown'),
       textAlign: TextAlign.center,
+    );
+  }
+}
+
+/// Frase en español llano de lo que va a pasar (o acaba de pasar) con
+/// esta acción: qué se tira, contra qué y qué viene después.
+String explainRoll(RollAction a) {
+  String signed(int v) => v >= 0 ? '+$v' : '$v';
+  final dmg = a.hasDamage ? a.damageDice!.trim() : null;
+  final type = (a.damageType ?? '').trim();
+  final dmgText = dmg == null ? null : (type.isEmpty ? dmg : '$dmg de $type');
+  if (a.isSavingThrow) {
+    final dc = a.saveDc == null ? 'tu CD' : 'tu CD (${a.saveDc})';
+    return 'El objetivo tira una salvación contra $dc; si la falla, '
+        '${dmgText == null ? 'sufre el efecto' : 'tiras $dmgText de daño'}.';
+  }
+  if (a.isPlainUse) {
+    if (a.hasHeal) {
+      return 'Sin tirada de ataque: tiras ${a.healDice!.trim()} para curar.';
+    }
+    if (dmgText != null) return 'Sin tirada de ataque: tiras $dmgText de daño.';
+    return 'Sin tirada: se aplica el efecto directamente.';
+  }
+  final hit =
+      'Tiras 1d20 ${signed(a.modifier)} para golpear; si igualas o '
+      'superas la Armadura del objetivo, ';
+  return dmgText == null
+      ? '${hit}aciertas y aplicas el efecto.'
+      : '${hit}tiras $dmgText de daño.';
+}
+
+class _RollExplanation extends StatelessWidget {
+  const _RollExplanation({required this.action});
+
+  final RollAction action;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.sm),
+      child: Text(
+        explainRoll(action),
+        key: const ValueKey('roll-explanation'),
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
     );
   }
 }
