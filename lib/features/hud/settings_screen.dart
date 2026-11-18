@@ -90,6 +90,27 @@ class SettingsScreen extends StatelessWidget {
                 onSelectionChanged: (s) => skin.setDarkMode(s.first),
               ),
               const SizedBox(height: AppSpacing.lg),
+              Text('Lista de acciones', style: theme.textTheme.titleSmall),
+              const SizedBox(height: AppSpacing.sm),
+              SegmentedButton<bool>(
+                key: const ValueKey('settings-density'),
+                segments: const [
+                  ButtonSegment(value: false, label: Text('Vista Guiada')),
+                  ButtonSegment(value: true, label: Text('Vista Compacta')),
+                ],
+                selected: {skin.compactHud},
+                onSelectionChanged: (s) => skin.setCompactHud(s.first),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                skin.compactHud
+                    ? 'Filas densas: nombre y datos en una línea.'
+                    : 'Con explicación en llano y el tipo de acción.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
               Text('Color', style: theme.textTheme.titleSmall),
               const SizedBox(height: AppSpacing.sm),
               Wrap(
@@ -171,10 +192,25 @@ class SettingsScreen extends StatelessWidget {
             child: Column(
               children: [
                 tile(
-                  key: const ValueKey('settings-backup'),
+                  key: const ValueKey('settings-export'),
                   icon: Icons.save_alt_rounded,
-                  title: 'Exportar y respaldo',
-                  onTap: () => showBackupSheet(context, character),
+                  title: 'Exportar ficha a archivo',
+                  subtitle: character.basicInfo.name,
+                  onTap: () => exportCharacterFile(context, character),
+                ),
+                tile(
+                  key: const ValueKey('settings-copy'),
+                  icon: Icons.copy_rounded,
+                  title: 'Copiar ficha (JSON)',
+                  subtitle: 'Al portapapeles, para pegarla donde quieras',
+                  onTap: () => copyCharacterToClipboard(context, character),
+                ),
+                tile(
+                  key: const ValueKey('settings-backup'),
+                  icon: Icons.backup_rounded,
+                  title: 'Respaldar todas las fichas',
+                  subtitle: 'Archivo con todo tu roster',
+                  onTap: () => exportRosterBackup(context, store.roster),
                 ),
                 tile(
                   key: const ValueKey('settings-delete'),

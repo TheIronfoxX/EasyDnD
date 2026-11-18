@@ -361,6 +361,50 @@ void main() {
     });
   });
 
+  group('mazo de combate', () {
+    testWidgets('los filtros acotan las acciones y Usar abre la tirada', (
+      tester,
+    ) async {
+      tallView(tester);
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await pumpApp(tester, store);
+
+      final c = store.activeCharacter!;
+      final weaponId = c.inventory.weapons.first.id;
+      expect(find.byKey(ValueKey('deck-$weaponId')), findsOneWidget);
+
+      await tapKey(tester, 'filter-spells');
+      expect(find.byKey(ValueKey('deck-$weaponId')), findsNothing);
+      await tapKey(tester, 'filter-weapons');
+      expect(find.byKey(ValueKey('deck-$weaponId')), findsOneWidget);
+
+      await tapKey(tester, 'use-$weaponId');
+      expect(find.byType(BottomSheet), findsWidgets);
+    });
+
+    testWidgets('Vista Guiada / Vista Compacta se elige en Ajustes', (
+      tester,
+    ) async {
+      tallView(tester);
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await pumpApp(tester, store);
+
+      await pickMenu(tester, 'Ajustes');
+      expect(find.text('Vista Guiada'), findsOneWidget);
+      await tester.tap(find.text('Vista Compacta'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Filas densas: nombre y datos en una línea.'),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Vista Guiada'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('explicación en llano'), findsOneWidget);
+    });
+  });
+
   group('vida', () {
     testWidgets('la píldora abre la hoja de Vida: daño y curación', (
       tester,

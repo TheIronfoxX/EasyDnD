@@ -60,6 +60,9 @@ class PowerEntry {
 
   bool get isPassive => castLabel == 'Siempre activo';
 
+  /// Id estable del poder (de la habilidad o del arma).
+  String get powerId => ability?.id ?? weapon!.id;
+
   /// Orden dentro de su categoría: trucos y armas primero, luego por nivel.
   int get sortLevel => ability?.baseLevel ?? 0;
 
@@ -204,10 +207,19 @@ class PowerRow extends StatelessWidget {
     required this.entry,
     required this.character,
     this.flat = false,
+    this.quickCast = false,
+    this.compact = false,
   });
 
   final PowerEntry entry;
   final CharacterModel character;
+
+  /// Botón de lanzamiento directo (abre la hoja de tirada sin pasar por
+  /// el detalle). Solo en listas de uso: favoritas y acciones de Combate.
+  final bool quickCast;
+
+  /// Vista Compacta: una línea densa en vez de la tarjeta explicada.
+  final bool compact;
 
   /// Sin tarjeta propia (dentro de un grupo plegable).
   final bool flat;
@@ -217,55 +229,119 @@ class PowerRow extends StatelessWidget {
     final theme = Theme.of(context);
     final color = categoryColor(context, entry.category);
     final data = entry.dataLine(character);
-    final content = Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          margin: const EdgeInsets.only(top: 6, right: AppSpacing.md),
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        Expanded(
-          child: Column(
+    final castButton = quickCast && !entry.isPassive
+        ? IconButton.filledTonal(
+            key: ValueKey('use-${entry.powerId}'),
+            tooltip: 'Usar ${entry.name}',
+            visualDensity: VisualDensity.compact,
+            onPressed: () {
+              final store = context.read<CharacterStore>();
+              final w = entry.weapon;
+              showResolutionSheet(
+                context,
+                w != null
+                    ? weaponRollAction(context, w, store)
+                    : abilityRollAction(
+                        context,
+                        character,
+                        entry.ability!,
+                        store,
+                      ),
+              );
+            },
+            icon: const Icon(Icons.play_arrow_rounded),
+          )
+        : null;
+    final content = compact
+        ? Row(
+            children: [
+              Container(
+                margin: const EdgeInsets.only(right: AppSpacing.sm),
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              ),
+              Expanded(
+                child: Text.rich(
+                  TextSpan(
+                    text: entry.name,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                    children: [
+                      if (data.isNotEmpty)
+                        TextSpan(
+                          text: '  $data',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                    ],
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              FavoriteStar(entry: entry, character: character),
+              ?castButton,
+            ],
+          )
+        : Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      entry.name,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  Text(
-                    entry.tag,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
+              Container(
+                margin: const EdgeInsets.only(top: 6, right: AppSpacing.md),
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
               ),
-              if (entry.summary.isNotEmpty) ...[
-                const SizedBox(height: 2),
-                Text(entry.summary, style: theme.textTheme.bodyMedium),
-              ],
-              if (data.isNotEmpty) ...[
-                const SizedBox(height: 2),
-                Text(
-                  data,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            entry.name,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          entry.tag,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        FavoriteStar(entry: entry, character: character),
+                        ?castButton,
+                      ],
+                    ),
+                    if (entry.summary.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(entry.summary, style: theme.textTheme.bodyMedium),
+                    ],
+                    if (data.isNotEmpty || quickCast) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        [
+                          if (data.isNotEmpty) data,
+                          // Vista Guiada: qué gasta del turno.
+                          if (quickCast && !entry.isPassive) entry.castLabel,
+                        ].join(' · '),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-              ],
+              ),
             ],
-          ),
-        ),
-      ],
-    );
+          );
 
     void open() => pushPage<void>(
       context,
@@ -286,7 +362,46 @@ class PowerRow extends StatelessWidget {
         ),
       );
     }
-    return CleanCard(onTap: open, child: content);
+    return CleanCard(
+      onTap: open,
+      padding: compact
+          ? const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.xs,
+            )
+          : const EdgeInsets.all(AppSpacing.lg),
+      margin: EdgeInsets.only(bottom: compact ? AppSpacing.xs : AppSpacing.md),
+      child: content,
+    );
+  }
+}
+
+/// Estrella para marcar un poder como favorito. Lee el estado de la ficha
+/// que recibe: las pantallas que la pintan ya escuchan al store.
+class FavoriteStar extends StatelessWidget {
+  const FavoriteStar({super.key, required this.entry, required this.character});
+
+  final PowerEntry entry;
+  final CharacterModel character;
+
+  @override
+  Widget build(BuildContext context) {
+    final on = character.favoritePowers.contains(entry.powerId);
+    return IconButton(
+      key: ValueKey('fav-${entry.powerId}'),
+      visualDensity: VisualDensity.compact,
+      constraints: const BoxConstraints.tightFor(width: 36, height: 36),
+      padding: EdgeInsets.zero,
+      tooltip: on ? 'Quitar de favoritas' : 'Marcar como favorita',
+      icon: Icon(
+        on ? Icons.star_rounded : Icons.star_outline_rounded,
+        color: on
+            ? Theme.of(context).colorScheme.primary
+            : Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
+      onPressed: () =>
+          context.read<CharacterStore>().toggleFavoritePower(entry.powerId),
+    );
   }
 }
 
@@ -389,11 +504,18 @@ class PowerDetailPage extends StatelessWidget {
     }
 
     return [
-      Text(
-        entry.name,
-        style: theme.textTheme.headlineSmall?.copyWith(
-          fontWeight: FontWeight.w700,
-        ),
+      Row(
+        children: [
+          Expanded(
+            child: Text(
+              entry.name,
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          FavoriteStar(entry: entry, character: character),
+        ],
       ),
       const SizedBox(height: AppSpacing.sm),
       Row(

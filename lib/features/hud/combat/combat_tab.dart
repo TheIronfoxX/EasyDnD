@@ -15,6 +15,7 @@ import '../../../core/ui/app_icons.dart';
 import '../../../core/ui/clean_kit.dart';
 import '../../../domain/models/character.dart';
 import '../../../state/character_store.dart';
+import '../../../state/skin_controller.dart';
 import '../hud_companions.dart';
 import '../hud_pages.dart';
 import '../hud_resources.dart';
@@ -50,10 +51,10 @@ class CombatTab extends StatelessWidget {
         _VitalsStrip(character: character),
         if (character.spellSlots.slots.isNotEmpty)
           _SlotsSchema(character: character, onTap: () => _openSpells(context)),
-        NavTilePair(
+        _DeckRow(
           tiles: [
             if (spells.isNotEmpty || character.spellSlots.slots.isNotEmpty)
-              NavTileCard(
+              _DeckButton(
                 key: const ValueKey('nav-spells'),
                 icon: icons.spell,
                 iconColor: tactical.spell,
@@ -63,7 +64,7 @@ class CombatTab extends StatelessWidget {
                     : '${spells.length} · por Daño, Defensa, Apoyo y Utilidad',
                 onTap: () => _openSpells(context),
               ),
-            NavTileCard(
+            _DeckButton(
               key: const ValueKey('nav-attacks'),
               icon: icons.weapon,
               iconColor: tactical.weapon,
@@ -94,6 +95,8 @@ class CombatTab extends StatelessWidget {
         ),
         if (allPowers.isNotEmpty)
           _FavoritesSection(favorites: favorites, character: character),
+        if (allPowers.isNotEmpty)
+          _ActionsDeck(entries: [...others, ...spells], character: character),
         if (character.resources.isNotEmpty)
           _ResourcesCard(character: character),
         NavTilePair(
@@ -511,7 +514,13 @@ class _FavoritesSection extends StatelessWidget {
             ),
           )
         else
-          for (final e in favorites) PowerRow(entry: e, character: character),
+          for (final e in favorites)
+            PowerRow(
+              entry: e,
+              character: character,
+              quickCast: true,
+              compact: context.watch<SkinController>().compactHud,
+            ),
       ],
     );
   }
@@ -818,6 +827,172 @@ class _ResourcesCard extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+/// Dos accesos horizontales y ligeros (Conjuros / Ataques y habilidades).
+class _DeckRow extends StatelessWidget {
+  const _DeckRow({required this.tiles});
+
+  final List<Widget> tiles;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: Row(
+        children: [
+          for (var i = 0; i < tiles.length; i++) ...[
+            if (i > 0) const SizedBox(width: AppSpacing.sm),
+            Expanded(child: tiles[i]),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _DeckButton extends StatelessWidget {
+  const _DeckButton({
+    super.key,
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Material(
+      color: scheme.surface,
+      borderRadius: BorderRadius.circular(16),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Row(
+            children: [
+              Icon(icon, color: iconColor),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleSmall,
+                    ),
+                    Text(
+                      subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+enum _ActionFilter { all, weapons, abilities, spells }
+
+/// Lista de acciones de combate, filtrable, directamente en la pestaña:
+/// atacar o lanzar sin salir de la pantalla.
+class _ActionsDeck extends StatefulWidget {
+  const _ActionsDeck({required this.entries, required this.character});
+
+  final List<PowerEntry> entries;
+  final CharacterModel character;
+
+  @override
+  State<_ActionsDeck> createState() => _ActionsDeckState();
+}
+
+class _ActionsDeckState extends State<_ActionsDeck> {
+  _ActionFilter _filter = _ActionFilter.all;
+
+  static const _labels = {
+    _ActionFilter.all: 'Todo',
+    _ActionFilter.weapons: 'Armas',
+    _ActionFilter.abilities: 'Habilidades',
+    _ActionFilter.spells: 'Conjuros',
+  };
+
+  bool _keep(PowerEntry e) => switch (_filter) {
+    _ActionFilter.all => true,
+    _ActionFilter.weapons => e.weapon != null,
+    _ActionFilter.abilities =>
+      e.weapon == null && !(e.ability?.isSpell ?? false),
+    _ActionFilter.spells => e.ability?.isSpell ?? false,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final compact = context.watch<SkinController>().compactHud;
+    final favs = widget.character.favoritePowers;
+    final shown = widget.entries
+        .where((e) => !e.isPassive && !favs.contains(e.powerId) && _keep(e))
+        .toList();
+    return Column(
+      key: const ValueKey('actions-deck'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const CleanSectionTitle('Acciones'),
+        Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+          child: Wrap(
+            spacing: AppSpacing.sm,
+            children: [
+              for (final f in _ActionFilter.values)
+                ChoiceChip(
+                  key: ValueKey('filter-${f.name}'),
+                  label: Text(_labels[f]!),
+                  selected: _filter == f,
+                  onSelected: (_) => setState(() => _filter = f),
+                ),
+            ],
+          ),
+        ),
+        if (shown.isEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.md),
+            child: Text(
+              'Nada de esto en tu ficha.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          )
+        else
+          for (final e in shown)
+            PowerRow(
+              key: ValueKey('deck-${e.powerId}'),
+              entry: e,
+              character: widget.character,
+              quickCast: true,
+              compact: compact,
+            ),
+      ],
     );
   }
 }
