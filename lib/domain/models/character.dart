@@ -21,6 +21,10 @@ import 'session_note.dart';
 import 'stats.dart';
 import 'weapon.dart';
 
+/// Los nombres de Nivel20 a veces traen el acento grave ` donde va un
+/// apóstrofe (Kael`nar). Para mostrar, se normaliza al apóstrofe tipográfico.
+String tidyName(String name) => name.replaceAll('`', '\u2019');
+
 // currentHp es mutable: sube y baja cada dos por tres en combate.
 // Si esto fuera "final" el HUD se rompería en el primer golpe recibido.
 class BasicInfo {
@@ -614,6 +618,11 @@ class CharacterModel {
   /// Ruta local (galería del dispositivo) de la foto de perfil.
   String? avatarPath;
 
+  /// Emblema elegido para la cabecera (id de [kHeroEmblems]) y lema corto
+  /// opcional bajo la clase. Fichas viejas no los traen: null / vacío.
+  String? emblem;
+  String motto;
+
   /// Foto de la pestaña Lore: ruta independiente de avatarPath. Null
   /// mientras el jugador no la fije a mano; la UI de Lore cae en
   /// avatarPath como default SIN copiarlo, así cambiar la foto de
@@ -633,6 +642,11 @@ class CharacterModel {
   /// Diario por sesiones: entradas fechadas, además del texto libre
   /// de adventureNotes (que se conserva tal cual).
   List<SessionNote> sessionNotes;
+
+  /// Ids de los poderes (habilidades, conjuros o armas) que el jugador
+  /// marcó con la estrella; salen arriba en Combate. Fichas viejas no lo
+  /// traen: arranca vacío.
+  List<String> favoritePowers;
 
   /// Pools genéricos de puntos (Ki, Hechicería, Furia...).
   List<ResourcePoint> resources;
@@ -659,6 +673,8 @@ class CharacterModel {
     required this.loreInfo,
     this.avatarPath,
     this.loreAvatarPath,
+    this.emblem,
+    this.motto = '',
     Purse? purse,
     this.aiTips = '',
     this.userTactics = '',
@@ -668,6 +684,7 @@ class CharacterModel {
     List<String>? activeConditions,
     List<Companion>? companions,
     List<SessionNote>? sessionNotes,
+    List<String>? favoritePowers,
   }) : id = id ?? _generateId(),
        purse = purse ?? Purse(),
        resources = resources ?? [],
@@ -679,7 +696,8 @@ class CharacterModel {
            turnStatus ?? TurnStatus(movementRemaining: basicInfo.speed),
        activeConditions = activeConditions ?? [],
        companions = companions ?? [],
-       sessionNotes = sessionNotes ?? [];
+       sessionNotes = sessionNotes ?? [],
+       favoritePowers = favoritePowers ?? [];
 
   /// Id de fallback para fichas importadas sin uno (las guardadas por
   /// la app vieja antes de que existiera el campo). No es un UUID de
@@ -786,6 +804,8 @@ class CharacterModel {
       ),
       avatarPath: json['avatar_path'] as String?,
       loreAvatarPath: json['lore_avatar_path'] as String?,
+      emblem: json['emblem'] as String?,
+      motto: (json['motto'] as String?) ?? '',
       purse: Purse.fromJson(json['purse'] as Map<String, dynamic>?),
       aiTips: json['ai_tips'] ?? '',
       userTactics: json['user_tactics'] ?? '',
@@ -793,6 +813,9 @@ class CharacterModel {
       sessionNotes: ((json['session_notes'] as List<dynamic>?) ?? const [])
           .whereType<Map>()
           .map((e) => SessionNote.fromJson(e.cast<String, dynamic>()))
+          .toList(),
+      favoritePowers: ((json['favorite_powers'] as List<dynamic>?) ?? const [])
+          .whereType<String>()
           .toList(),
       resources: rawResources
           .map((e) => ResourcePoint.fromJson(e as Map<String, dynamic>))
@@ -824,11 +847,14 @@ class CharacterModel {
       'lore_info': loreInfo.toJson(),
       'avatar_path': avatarPath,
       'lore_avatar_path': loreAvatarPath,
+      'emblem': emblem,
+      'motto': motto,
       'purse': purse.toJson(),
       'ai_tips': aiTips,
       'user_tactics': userTactics,
       'adventure_notes': adventureNotes,
       'session_notes': sessionNotes.map((n) => n.toJson()).toList(),
+      'favorite_powers': favoritePowers,
       'resources': resources.map((r) => r.toJson()).toList(),
       'turn_status': turnStatus.toJson(),
       'active_conditions': activeConditions,

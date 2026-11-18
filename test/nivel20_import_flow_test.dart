@@ -41,7 +41,7 @@ void main() {
       expect(result.errors, isEmpty);
       expect(result.isOk, isTrue);
       final c = result.character!;
-      expect(c.basicInfo.name, 'Kael`nar Ardinys');
+      expect(c.basicInfo.name, 'Kael’nar Ardinys');
       expect(c.basicInfo.level, 15);
       expect(c.basicInfo.hpMax, 125);
       expect(c.basicInfo.speed, 30);
@@ -331,7 +331,7 @@ void main() {
       await tester.tap(find.text('Importar personaje'));
       await tester.pumpAndSettle();
       expect(store.roster, hasLength(1));
-      expect(store.roster.single.basicInfo.name, 'Kael`nar Ardinys');
+      expect(store.roster.single.basicInfo.name, 'Kael’nar Ardinys');
     });
 
     testWidgets('"Atrás" desde la revisión directa conserva el JSON pegado', (

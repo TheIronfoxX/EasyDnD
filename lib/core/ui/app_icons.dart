@@ -25,8 +25,11 @@ class AppIcons {
         IconStyle.outlined => outlined,
       };
 
-  IconData get weapon =>
-      _pick(Icons.gavel_rounded, Icons.gavel_sharp, Icons.gavel_outlined);
+  IconData get weapon => _pick(
+    Icons.sports_martial_arts_rounded,
+    Icons.sports_martial_arts_sharp,
+    Icons.sports_martial_arts_outlined,
+  );
   IconData get spell => _pick(
     Icons.auto_awesome_rounded,
     Icons.auto_awesome_sharp,

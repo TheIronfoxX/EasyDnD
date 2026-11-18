@@ -147,6 +147,15 @@ extension CharacterStoreInventory on CharacterStore {
     _notifyAndPersist();
   }
 
+  /// Emblema y lema de la cabecera del HUD.
+  void setHeroIdentity({String? emblem, String motto = ''}) {
+    final character = activeCharacter;
+    if (character == null) return;
+    character.emblem = emblem;
+    character.motto = motto.trim();
+    _notifyAndPersist();
+  }
+
   /// Foto de la pestaña Lore. Deliberadamente independiente de la de
   /// perfil: cambiar una no congela la otra.
   void setLoreAvatarPath(String? path) {

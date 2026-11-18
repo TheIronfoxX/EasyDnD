@@ -4,11 +4,17 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:easydnd/domain/character_validator.dart';
+import 'package:easydnd/domain/models/character.dart';
 import 'package:easydnd/domain/nivel20_mapper.dart';
 
 /// Mapeador determinista Nivel20 -> EasyDnD, contra la ficha real de Kael
 /// (recortada en test/fixtures/nivel20/).
 void main() {
+  test('tidyName cambia ` por ’ (apóstrofe tipográfico)', () {
+    expect(tidyName('Kael`nar'), 'Kael’nar');
+    expect(tidyName('Rook'), 'Rook');
+  });
+
   late Map<String, dynamic> raw;
   late Map<String, dynamic> json;
 
@@ -33,7 +39,7 @@ void main() {
   group('basic_info', () {
     test('identidad, nivel, PG, CA, velocidad y CD', () {
       final c = Nivel20Mapper.map(raw);
-      expect(c.basicInfo.name, 'Kael`nar Ardinys');
+      expect(c.basicInfo.name, 'Kael’nar Ardinys');
       expect(c.basicInfo.race, 'Kitsune');
       expect(c.basicInfo.characterClass, 'Mago 15 (Escuela de evocación)');
       expect(c.basicInfo.level, 15);
@@ -48,7 +54,7 @@ void main() {
 
     test('acepta la raíz sin envoltorio printable_hash', () {
       final inner = raw['printable_hash'] as Map<String, dynamic>;
-      expect(Nivel20Mapper.map(inner).basicInfo.name, 'Kael`nar Ardinys');
+      expect(Nivel20Mapper.map(inner).basicInfo.name, 'Kael’nar Ardinys');
     });
 
     test('fallbacks: CA de originals, velocidad de info y default 30', () {

@@ -6,12 +6,14 @@
 // que tocaría el jugador y se comprueba el efecto en la ficha.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:easydnd/app/easydnd_app.dart';
 import 'package:easydnd/data/roster_repository.dart';
 import 'package:easydnd/domain/models/ability.dart';
+import 'package:easydnd/domain/models/character.dart';
 import 'package:easydnd/features/editor/character_editor_screen.dart';
 import 'package:easydnd/features/hud/hud_resolution_sheet.dart';
 import 'package:easydnd/features/import/import_wizard_screen.dart';
@@ -31,6 +33,14 @@ void main() {
     final store = CharacterStore(RosterRepository(prefs));
     await store.init();
     return store;
+  }
+
+  /// Pantalla alta: Combate ahora tiene más tarjetas y las listas se
+  /// construyen en diferido.
+  void tallView(WidgetTester tester) {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
   }
 
   Future<void> pumpApp(WidgetTester tester, CharacterStore store) async {
@@ -82,6 +92,61 @@ void main() {
     await tapKey(tester, 'settings-delete');
   }
 
+  group('datos', () {
+    testWidgets('Copiar ficha deja el JSON en el portapapeles', (tester) async {
+      tallView(tester);
+      String? copied;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            copied = (call.arguments as Map)['text'] as String?;
+          }
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await pumpApp(tester, store);
+
+      await pickMenu(tester, 'Ajustes');
+      await tapKey(tester, 'settings-copy');
+
+      expect(copied, isNotNull);
+      expect(copied, contains('Rook'));
+      expect(find.text('Ficha copiada al portapapeles.'), findsOneWidget);
+    });
+
+    testWidgets('Exportar a archivo y Respaldar son filas aparte', (
+      tester,
+    ) async {
+      tallView(tester);
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await pumpApp(tester, store);
+
+      await pickMenu(tester, 'Ajustes');
+      for (final key in [
+        'settings-export',
+        'settings-copy',
+        'settings-backup',
+      ]) {
+        await tester.scrollUntilVisible(
+          find.byKey(ValueKey(key)),
+          200,
+          scrollable: find.byType(Scrollable).last,
+        );
+        expect(find.byKey(ValueKey(key)), findsOneWidget);
+      }
+    });
+  });
+
   group('bienvenida', () {
     testWidgets('las dos vías de alta abren sus pantallas', (tester) async {
       final store = await boot();
@@ -102,8 +167,28 @@ void main() {
   });
 
   group('shell', () {
+    testWidgets('Combate abre con armadura, iniciativa y movimiento', (
+      tester,
+    ) async {
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await pumpApp(tester, store);
+
+      for (final key in ['vital-ac', 'vital-init', 'vital-speed']) {
+        expect(find.byKey(ValueKey(key)), findsOneWidget);
+      }
+      final info = store.activeCharacter!.basicInfo;
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('vital-ac')),
+          matching: find.text('${info.ac}'),
+        ),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('tres pestañas que son índices de tarjetas', (tester) async {
-      tester.view.physicalSize = const Size(412, 915);
+      tester.view.physicalSize = const Size(412, 1800);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       final store = await boot();
@@ -114,6 +199,7 @@ void main() {
       expect(find.byType(NavigationDestination), findsNWidgets(3));
       expect(find.text('Rook'), findsOneWidget);
       // Combate: recursos y tarjetas; la vida solo en la píldora.
+      expect(find.byKey(const ValueKey('slots-schema')), findsOneWidget);
       expect(find.byKey(const ValueKey('resources-card')), findsOneWidget);
       expect(find.byKey(const ValueKey('nav-attacks')), findsOneWidget);
       expect(find.text('20/20'), findsOneWidget);
@@ -212,6 +298,47 @@ void main() {
     });
   });
 
+  group('cabecera hero y vida directa', () {
+    testWidgets('-1 y +1 cambian la vida sin abrir la hoja', (tester) async {
+      tallView(tester);
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await pumpApp(tester, store);
+
+      await tapKey(tester, 'hp-minus');
+      expect(store.activeCharacter!.basicInfo.currentHp, 19);
+      expect(find.text('19/20'), findsOneWidget);
+      await tapKey(tester, 'hp-plus');
+      expect(store.activeCharacter!.basicInfo.currentHp, 20);
+    });
+
+    testWidgets('emblema y lema se eligen y se guardan en la ficha', (
+      tester,
+    ) async {
+      tallView(tester);
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await pumpApp(tester, store);
+
+      await tapKey(tester, 'hero-header');
+      await tapKey(tester, 'emblem-fire');
+      await tester.enterText(
+        find.byKey(const ValueKey('motto-field')),
+        'La llama',
+      );
+      await tapKey(tester, 'hero-save');
+      final c = store.activeCharacter!;
+      expect(c.emblem, 'fire');
+      expect(c.motto, 'La llama');
+      expect(find.text('La llama'), findsOneWidget);
+      // Round-trip JSON: una ficha vieja sin los campos sigue cargando.
+      final json = c.toJson()
+        ..remove('emblem')
+        ..remove('motto');
+      expect(CharacterModel.fromJson(json).motto, '');
+    });
+  });
+
   group('vida', () {
     testWidgets('la píldora abre la hoja de Vida: daño y curación', (
       tester,
@@ -230,7 +357,8 @@ void main() {
       await tester.tap(find.widgetWithText(FilledButton, 'Aplicar daño'));
       await tester.pumpAndSettle();
       expect(store.activeCharacter!.basicInfo.currentHp, 13);
-      expect(find.text('13'), findsOneWidget);
+      // La vida se ve en la tarjeta de Combate (y en la hoja de Vida).
+      expect(find.text('13'), findsWidgets);
 
       await tester.tap(find.text('Curación'));
       await tester.pumpAndSettle();
@@ -281,6 +409,7 @@ void main() {
 
   group('recursos en Combate', () {
     testWidgets('se gastan y recuperan tocando los puntos', (tester) async {
+      tallView(tester);
       final store = await boot();
       store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
       await pumpApp(tester, store);
@@ -292,13 +421,42 @@ void main() {
       await tester.pumpAndSettle();
       expect(store.activeCharacter!.resources.single.current, 2);
 
+      // Las ranuras se gastan en la pantalla de Conjuros.
+      await tapKey(tester, 'nav-spells');
       await tester.tap(find.byTooltip('Gastar ranura de nivel 1'));
       await tester.pumpAndSettle();
       expect(store.activeCharacter!.spellSlots.slots.single.current, 3);
 
-      await tapKey(tester, 'refill-resources');
+      await tapKey(tester, 'refill-slots');
       expect(store.activeCharacter!.spellSlots.slots.single.current, 4);
-      expect(store.activeCharacter!.resources.single.current, 3);
+      expect(store.activeCharacter!.resources.single.current, 2);
+    });
+  });
+
+  group('favoritas', () {
+    testWidgets('la estrella lleva un poder a Favoritas y persiste', (
+      tester,
+    ) async {
+      tallView(tester);
+      final store = await boot();
+      store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
+      await pumpApp(tester, store);
+
+      expect(find.byKey(const ValueKey('favorites-empty')), findsOneWidget);
+
+      final weapon = store.activeCharacter!.inventory.weapons.first;
+      await tapKey(tester, 'nav-attacks');
+      await tapKey(tester, 'fav-${weapon.id}');
+      expect(store.activeCharacter!.favoritePowers, [weapon.id]);
+
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('favorites-empty')), findsNothing);
+      expect(find.text(weapon.name), findsOneWidget);
+
+      // Sobrevive a reiniciar.
+      final again = await boot();
+      expect(again.activeCharacter!.favoritePowers, [weapon.id]);
     });
   });
 
@@ -351,6 +509,7 @@ void main() {
     testWidgets('se añaden desde su pantalla y se ven en la tarjeta', (
       tester,
     ) async {
+      tallView(tester);
       final store = await boot();
       store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
       await pumpApp(tester, store);

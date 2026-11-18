@@ -1,7 +1,6 @@
 // Shell del HUD (rework para novatos).
 //
-// AppBar limpia: avatar, nombre (toca → cambiar de personaje), una
-// píldora pequeña con la vida (toca → hoja de Vida), la lupa del
+// AppBar limpia: avatar, nombre (toca → cambiar de personaje), la lupa del
 // buscador de reglas y un ⋮ con solo tres cosas: Recargar todo, Editar
 // ficha y Ajustes. Debajo, tres pestañas que son índices de tarjetas:
 // Combate, Ficha y Mochila. Cada tarjeta abre su propia pantalla.
@@ -24,7 +23,6 @@ import '../../state/character_store.dart';
 import '../editor/character_editor_screen.dart';
 import 'backpack/backpack_tab.dart';
 import 'combat/combat_tab.dart';
-import 'hud_status_tab.dart';
 import 'rules_search_screen.dart';
 import 'settings_screen.dart';
 import 'sheet/sheet_tab.dart';
@@ -87,30 +85,6 @@ class _HudScreenState extends State<HudScreen> {
     }
   }
 
-  void _openLife() {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      showDragHandle: true,
-      builder: (sheetContext) => Consumer<CharacterStore>(
-        builder: (context, store, _) {
-          final c = store.activeCharacter;
-          if (c == null) return const SizedBox(height: 120);
-          return SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              0,
-              AppSpacing.lg,
-              AppSpacing.xl,
-            ),
-            child: HudHealthSection(character: c),
-          );
-        },
-      ),
-    );
-  }
-
   void _openRoster(CharacterStore store) {
     showModalBottomSheet<void>(
       context: context,
@@ -164,8 +138,6 @@ class _HudScreenState extends State<HudScreen> {
     final icons = AppIcons.of(context);
     final destinations = _destinations(icons);
     final wide = MediaQuery.sizeOf(context).width >= kHudRailBreakpoint;
-    // "Mago 14 (Escuela de Evocación)" → "Mago 14": lo corto se lee mejor.
-    final shortClass = info.characterClass.split('(').first.trim();
 
     final tabs = <Widget>[
       CombatTab(character: character),
@@ -207,22 +179,11 @@ class _HudScreenState extends State<HudScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        info.name,
+                        tidyName(info.name),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: theme.textTheme.titleLarge,
                       ),
-                      if (shortClass.isNotEmpty)
-                        Text(
-                          shortClass,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
                     ],
                   ),
                 ),
@@ -232,7 +193,6 @@ class _HudScreenState extends State<HudScreen> {
           ),
         ),
         actions: [
-          _HpPill(info: info, onTap: _openLife),
           IconButton(
             key: const ValueKey('rules-search'),
             tooltip: 'Buscar reglas',
@@ -303,73 +263,6 @@ class _HudScreenState extends State<HudScreen> {
   }
 }
 
-/// La vida, en chiquitito: número y una barrita. Toca → hoja de Vida.
-class _HpPill extends StatelessWidget {
-  const _HpPill({required this.info, required this.onTap});
-
-  final BasicInfo info;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final tactical = context.tactical;
-    final ratio = info.hpMax <= 0
-        ? 0.0
-        : (info.currentHp / info.hpMax).clamp(0.0, 1.0);
-    final color = ratio <= 0.25 ? tactical.damage : tactical.heal;
-
-    return Tooltip(
-      message: 'Vida',
-      child: InkWell(
-        key: const ValueKey('hp-pill'),
-        borderRadius: BorderRadius.circular(AppRadii.pill),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
-          ),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.14),
-            borderRadius: BorderRadius.circular(AppRadii.pill),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.favorite_rounded, size: 14, color: color),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${info.currentHp}/${info.hpMax}'
-                    '${info.tempHp > 0 ? ' +${info.tempHp}' : ''}',
-                    style: theme.textTheme.labelLarge
-                        ?.copyWith(fontWeight: FontWeight.w700)
-                        .tabular,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 3),
-              SizedBox(
-                width: 56,
-                child: LinearProgressIndicator(
-                  value: ratio,
-                  minHeight: 3,
-                  color: color,
-                  backgroundColor: color.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(AppRadii.pill),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// Fila del roster: nombre, clase/nivel y PG con una barra fina, para
 /// elegir personaje sabiendo en qué estado quedó cada uno.
 class _RosterRow extends StatelessWidget {
@@ -411,7 +304,7 @@ class _RosterRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  info.name,
+                  tidyName(info.name),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.titleSmall?.copyWith(
@@ -431,14 +324,7 @@ class _RosterRow extends StatelessWidget {
                       .tabular,
                 ),
                 const SizedBox(height: AppSpacing.xs),
-                LinearProgressIndicator(
-                  value: ratio,
-                  minHeight: 3,
-                  color: hpColor,
-                  borderRadius: BorderRadius.circular(
-                    context.tactical.shapes.pillRadius,
-                  ),
-                ),
+                DotBar(value: ratio, color: hpColor, count: 20, dotSize: 4),
               ],
             ),
           ),

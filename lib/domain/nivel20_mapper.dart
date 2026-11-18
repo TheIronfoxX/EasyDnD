@@ -71,7 +71,7 @@ class Nivel20Mapper {
     return {
       'schema_version': 2,
       'basic_info': {
-        'name': name.trim(),
+        'name': tidyName(name.trim()),
         'race': info['race'] ?? info['race_name'] ?? '',
         'characterClass': _classText(info, professions),
         'level': level,
