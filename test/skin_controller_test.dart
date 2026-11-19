@@ -5,6 +5,7 @@
 // notificaciones y que el ThemeData resultante use la paleta semántica.
 
 import 'package:flutter/material.dart';
+import 'package:easydnd/core/theme/clean_shape.dart';
 import 'package:easydnd/core/theme/clean_theme.dart';
 import 'package:easydnd/core/theme/tactical_theme_tokens.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -42,11 +43,13 @@ void main() {
       expect(skin.fontPreset.id, FontPresets.defaultPreset.id);
     });
 
-    test('el tema limpio usa Inter en todo', () async {
+    test('el tema limpio lee en Inter y titula en mono', () async {
       final skin = await boot();
       final textTheme = skin.themeData.textTheme;
 
       expect(textTheme.titleLarge?.fontFamily, AppFonts.inter);
+      expect(textTheme.labelSmall?.fontFamily, AppFonts.inter);
+      expect(textTheme.titleMedium?.fontFamily, AppFonts.inter);
       expect(textTheme.bodyMedium?.fontFamily, AppFonts.inter);
     });
 
@@ -264,6 +267,102 @@ void main() {
         mid.copyWith(surface: AppPalette.dark.surface).surface,
         AppPalette.dark.surface,
       );
+    });
+  });
+
+  group('temas de Ajustes', () {
+    test('arranca en Limpio', () async {
+      final skin = await boot();
+      expect(skin.themeStyle, CleanThemeStyle.limpio);
+    });
+
+    test('la forma no toca colores ni fondo, y persiste', () async {
+      final skin = await boot();
+      await skin.setAccentColor(const Color(0xFF00AEEF));
+      await skin.setThemeStyle(CleanThemeStyle.grimorio);
+
+      expect(skin.accentColor, const Color(0xFF00AEEF));
+      expect(
+        skin.darkTheme.scaffoldBackgroundColor,
+        CleanTheme.darkPalette.background,
+      );
+      expect(
+        skin.lightTheme.scaffoldBackgroundColor,
+        CleanTheme.lightPalette.background,
+      );
+
+      final again = await boot();
+      expect(again.themeStyle, CleanThemeStyle.grimorio);
+    });
+
+    test(
+      'secundario: automático sigue al principal, elegido persiste',
+      () async {
+        final skin = await boot();
+        expect(skin.hasCustomSecondary, isFalse);
+        expect(
+          skin.secondaryColor,
+          SecondaryColors.auto(skin.accentColor, Brightness.dark),
+        );
+        expect(skin.themeData.colorScheme.secondary, skin.secondaryColor);
+
+        await skin.setAccentColor(const Color(0xFF00AEEF));
+        expect(
+          skin.secondaryColor,
+          SecondaryColors.auto(const Color(0xFF00AEEF), Brightness.dark),
+        );
+
+        await skin.setSecondaryColor(const Color(0xFF7C4DFF));
+        final again = await boot();
+        expect(again.secondaryColor, const Color(0xFF7C4DFF));
+        expect(
+          again.themeData.extension<TacticalThemeTokens>()!.spell,
+          const Color(0xFF7C4DFF),
+        );
+
+        await again.clearCustomSecondary();
+        expect(again.hasCustomSecondary, isFalse);
+      },
+    );
+
+    test('las recomendaciones son distintas entre sí y del principal', () {
+      const primary = Color(0xFFE5242C);
+      final recs = SecondaryColors.recommend(primary, Brightness.dark);
+      expect(recs, hasLength(5));
+      expect(recs.map((r) => r.color).toSet(), hasLength(5));
+      expect(recs.every((r) => r.color != primary), isTrue);
+    });
+
+    test('el fondo sigue liso en todos los temas', () {
+      for (final style in CleanThemeStyle.values) {
+        for (final b in Brightness.values) {
+          final t = AppTheme.clean(brightness: b, style: style);
+          expect(
+            t.extension<TacticalThemeTokens>()!.background.patternOpacity,
+            0,
+          );
+        }
+      }
+    });
+
+    test('cada tema trae su silueta', () {
+      CleanShape shapeOf(CleanThemeStyle s) => AppTheme.clean(
+        brightness: Brightness.dark,
+        style: s,
+      ).extension<CleanShape>()!;
+
+      final limpio = shapeOf(CleanThemeStyle.limpio);
+      final grimorio = shapeOf(CleanThemeStyle.grimorio);
+      final escarcha = shapeOf(CleanThemeStyle.escarcha);
+      expect(limpio.r(16), 16);
+      expect(limpio.outline, isNull);
+      expect(grimorio.r(16), lessThan(limpio.r(16)));
+      expect(grimorio.outline, isNotNull);
+      expect(escarcha.surface(16), isA<BeveledRectangleBorder>());
+    });
+
+    test('un id desconocido cae a Limpio', () {
+      expect(CleanThemeStyle.byId('nope'), CleanThemeStyle.limpio);
     });
   });
 }

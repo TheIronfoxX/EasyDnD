@@ -32,9 +32,13 @@ import 'theme_presets.dart';
 class AppTheme {
   AppTheme._(); // clase estática: no se instancia.
 
-  /// Acento de fábrica: el oro sepia de la app vieja. Es el valor inicial
-  /// del skin hasta que el jugador elija otro.
-  static const Color defaultAccent = Color(0xFFC9A227);
+  /// Acento de fábrica: rojo señal, el único color del tema limpio
+  /// monocromo. Es el valor inicial del skin hasta que el jugador elija
+  /// otro.
+  static const Color defaultAccent = CleanTheme.defaultAccent;
+
+  /// El oro sepia de la app vieja (preset "Oro" y skin Grimorio).
+  static const Color goldAccent = Color(0xFFC9A227);
 
   /// Modo claro: Pergamino salvo que se pida otro tema claro.
   static ThemeData light({
@@ -71,46 +75,151 @@ class AppTheme {
   }
 
   /// Tema limpio: el único diseño de la app desde el rework para
-  /// novatos. Fondo liso, tarjetas sin borde, Inter en todo y el acento
-  /// del jugador ([defaultAccent] si no eligió).
-  static ThemeData clean({required Brightness brightness, Color? accent}) {
+  /// novatos. Fondo neutro según [brightness], silueta de [style], color
+  /// principal [accent] ([defaultAccent] si no eligió) y [secondary] (la
+  /// recomendación automática si no eligió).
+  static ThemeData clean({
+    required Brightness brightness,
+    Color? accent,
+    Color? secondary,
+    CleanThemeStyle style = CleanThemeStyle.limpio,
+  }) {
     final color = accent ?? defaultAccent;
+    final second = secondary ?? SecondaryColors.auto(color, brightness);
     final palette = CleanTheme.palette(brightness);
-    final base = fromParts(
+    final onSecond =
+        ThemeData.estimateBrightnessForColor(second) == Brightness.dark
+        ? Colors.white
+        : Colors.black;
+    final fromBase = fromParts(
       brightness: brightness,
       palette: palette,
-      tactical: CleanTheme.tokens(brightness, color),
+      tactical: CleanTheme.tokens(brightness, color, second),
       accent: color,
       fontPreset: FontPresets.table,
     );
+    final base = fromBase.copyWith(
+      colorScheme: fromBase.colorScheme.copyWith(
+        secondary: second,
+        onSecondary: onSecond,
+        tertiary: second,
+        onTertiary: onSecond,
+        secondaryContainer: second.withValues(alpha: 0.22),
+        tertiaryContainer: second.withValues(alpha: 0.22),
+      ),
+    );
     const noSide = BorderSide.none;
+    // Inter en todo; los titulares solo suben de peso.
+    TextStyle? headline(TextStyle? s) =>
+        s?.copyWith(fontWeight: FontWeight.w700, letterSpacing: 0);
+    TextStyle? mono(TextStyle? s) => s?.copyWith(letterSpacing: 0.2);
+    final text = base.textTheme;
+    final textTheme = text.copyWith(
+      displayLarge: headline(text.displayLarge),
+      displayMedium: headline(text.displayMedium),
+      displaySmall: headline(text.displaySmall),
+      headlineLarge: headline(text.headlineLarge),
+      headlineMedium: headline(text.headlineMedium),
+      headlineSmall: headline(text.headlineSmall),
+      titleLarge: headline(text.titleLarge),
+      labelMedium: mono(text.labelMedium),
+      labelSmall: mono(text.labelSmall),
+    );
+    final shape = style.shape(brightness);
+    // Botones: píldora en Limpio; en los temas más rectos, la misma
+    // silueta que las tarjetas.
+    final OutlinedBorder pill = style.cornerScale >= 1
+        ? const StadiumBorder()
+        : shape.surface(16).copyWith(side: BorderSide.none);
+    OutlinedBorder surface(double base) => shape.surface(base);
+    final selectedNav = palette.textPrimary;
+    // Los botones heredaban un estilo sin familia (caía a la del sistema).
+    final buttonText = text.labelLarge?.copyWith(fontWeight: FontWeight.w700);
     return base.copyWith(
-      appBarTheme: base.appBarTheme.copyWith(shape: const Border()),
-      cardTheme: base.cardTheme.copyWith(
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(16)),
-          side: noSide,
+      textTheme: textTheme,
+      // Estilos sueltos del tema base sin familia: en web (CanvasKit) no
+      // hay fuente de reserva, así que se les fija Inter.
+      chipTheme: base.chipTheme.copyWith(
+        labelStyle: base.chipTheme.labelStyle?.copyWith(
+          fontFamily: AppFonts.inter,
         ),
       ),
+      listTileTheme: base.listTileTheme.copyWith(
+        subtitleTextStyle: base.listTileTheme.subtitleTextStyle?.copyWith(
+          fontFamily: AppFonts.inter,
+        ),
+      ),
+      scaffoldBackgroundColor: palette.background,
+      appBarTheme: base.appBarTheme.copyWith(
+        shape: const Border(),
+        backgroundColor: palette.background,
+        surfaceTintColor: Colors.transparent,
+        titleTextStyle: textTheme.titleLarge?.copyWith(
+          color: palette.textPrimary,
+          fontSize: 24,
+        ),
+      ),
+      extensions: [...base.extensions.values, shape],
+      cardTheme: base.cardTheme.copyWith(
+        shape: shape.outline == null
+            ? surface(24).copyWith(side: noSide)
+            : surface(24),
+      ),
       bottomSheetTheme: base.bottomSheetTheme.copyWith(
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        backgroundColor: palette.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(shape.r(32)),
+          ),
         ),
       ),
       dialogTheme: base.dialogTheme.copyWith(
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(20)),
-        ),
+        backgroundColor: palette.surface,
+        shape: surface(28),
       ),
       popupMenuTheme: base.popupMenuTheme.copyWith(
         color: palette.surfaceElevated,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(14)),
+        shape: surface(20),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(shape: pill, textStyle: buttonText),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(shape: pill, textStyle: buttonText),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          shape: pill,
+          textStyle: buttonText,
+          side: BorderSide(color: palette.textPrimary.withValues(alpha: 0.4)),
         ),
       ),
+      snackBarTheme: base.snackBarTheme.copyWith(
+        behavior: SnackBarBehavior.floating,
+        shape: pill,
+      ),
       navigationBarTheme: base.navigationBarTheme.copyWith(
-        backgroundColor: palette.surface,
-        indicatorShape: const StadiumBorder(),
+        backgroundColor: palette.background,
+        surfaceTintColor: Colors.transparent,
+        indicatorShape: pill,
+        indicatorColor: palette.textPrimary.withValues(alpha: 0.10),
+        iconTheme: WidgetStateProperty.resolveWith(
+          (states) => IconThemeData(
+            color: states.contains(WidgetState.selected)
+                ? selectedNav
+                : palette.textSecondary,
+          ),
+        ),
+        labelTextStyle: WidgetStateProperty.resolveWith(
+          (states) => textTheme.labelMedium?.copyWith(
+            color: states.contains(WidgetState.selected)
+                ? selectedNav
+                : palette.textSecondary,
+            fontWeight: states.contains(WidgetState.selected)
+                ? FontWeight.w700
+                : FontWeight.w400,
+          ),
+        ),
       ),
     );
   }

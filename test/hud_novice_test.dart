@@ -480,16 +480,32 @@ void main() {
       store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
       await pumpApp(tester, store);
 
-      await tester.tap(find.byTooltip('Gastar un punto de Furia'));
+      // Furia 2/3: dos tramos llenos (gastan) y uno vacío (recupera).
+      await tester.tap(find.byTooltip('Gastar uno de Furia').first);
       await tester.pumpAndSettle();
       expect(store.activeCharacter!.resources.single.current, 1);
-      await tester.tap(find.byTooltip('Recuperar un punto de Furia'));
+      await tester.tap(find.byTooltip('Recuperar uno de Furia').first);
       await tester.pumpAndSettle();
       expect(store.activeCharacter!.resources.single.current, 2);
 
+      // Los espacios de conjuro tienen su propia tarjeta en Combate.
+      await tester.tap(
+        find
+            .descendant(
+              of: find.byKey(const ValueKey('slot-level-1')),
+              matching: find.byTooltip('Gastar espacio de nivel 1'),
+            )
+            .first,
+      );
+      await tester.pumpAndSettle();
+      expect(store.activeCharacter!.spellSlots.slots.single.current, 3);
+      await tester.tap(find.byKey(const ValueKey('refill-slots-inline')));
+      await tester.pumpAndSettle();
+      expect(store.activeCharacter!.spellSlots.slots.single.current, 4);
+
       // Las ranuras se gastan en la pantalla de Conjuros.
       await tapKey(tester, 'nav-spells');
-      await tester.tap(find.byTooltip('Gastar ranura de nivel 1'));
+      await tester.tap(find.byTooltip('Gastar espacio de nivel 1').first);
       await tester.pumpAndSettle();
       expect(store.activeCharacter!.spellSlots.slots.single.current, 3);
 
@@ -535,7 +551,9 @@ void main() {
       await pumpApp(tester, store);
 
       await tapKey(tester, 'nav-attacks');
-      expect(find.text('Daño'), findsWidgets);
+      // Filtro por uso arriba; las armas van en su grupo.
+      expect(find.byKey(const ValueKey('power-filter-damage')), findsOneWidget);
+      expect(find.text('Armas'), findsOneWidget);
       expect(find.text('Espada Larga'), findsOneWidget);
 
       await tester.tap(find.text('Espada Larga'));
@@ -565,7 +583,11 @@ void main() {
       await pumpApp(tester, store);
 
       await tapKey(tester, 'nav-spells');
-      expect(find.text('Defensa'), findsOneWidget);
+      // Agrupado por lo que hace: un conjuro de Defensa va a Estados.
+      expect(
+        find.byKey(const ValueKey('spell-effect-condition')),
+        findsOneWidget,
+      );
       expect(find.text('Te proteges cuando te atacan.'), findsOneWidget);
       expect(find.text('nv 1'), findsOneWidget);
     });

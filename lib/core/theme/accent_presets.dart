@@ -21,7 +21,8 @@ class AccentPreset {
 
 abstract final class AccentPresets {
   static const List<AccentPreset> all = [
-    AccentPreset('Oro', AppTheme.defaultAccent),
+    AccentPreset('Rojo', AppTheme.defaultAccent),
+    AccentPreset('Oro', AppTheme.goldAccent),
     AccentPreset('Acero', Color(0xFF5B8DEF)),
     AccentPreset('Arcana', Color(0xFF9B7BFF)),
     AccentPreset('Bosque', Color(0xFF57B87A)),

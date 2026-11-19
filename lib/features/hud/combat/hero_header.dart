@@ -1,10 +1,10 @@
-// Cabecera "hero" de Combate: degradado del acento, emblema elegido por el
-// jugador, clase y nivel, y un lema corto opcional. Toca para cambiar el
-// emblema o el lema.
+// Cabecera "hero" de Combate: emblema elegido por el jugador, clase y
+// nivel, y un lema corto opcional. Toca para cambiar el emblema o el lema.
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/theme/clean_shape.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../domain/models/character.dart';
 import '../../../state/character_store.dart';
@@ -40,77 +40,59 @@ class HeroHeader extends StatelessWidget {
       if (cls.isEmpty || !RegExp(r'\d').hasMatch(cls)) 'Nv. ${info.level}',
     ].join(' · ');
     final motto = character.motto.trim();
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.md),
-      child: Material(
-        key: const ValueKey('hero-header'),
-        borderRadius: BorderRadius.circular(16),
-        clipBehavior: Clip.antiAlias,
-        child: Ink(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color.alphaBlend(
-                  scheme.primary.withValues(alpha: 0.28),
-                  scheme.surface,
-                ),
-                scheme.surface,
-              ],
+    // Fila plana: vive dentro del panel de estado de Combate, que pone
+    // la superficie. Tocarla abre el editor de emblema y lema.
+    return InkWell(
+      key: const ValueKey('hero-header'),
+      borderRadius: context.cleanShape.radius(12),
+      onTap: () => showHeroEditor(context, character),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: scheme.primary.withValues(alpha: 0.16),
+                borderRadius: context.cleanShape.radius(14),
+              ),
+              child: Icon(
+                heroEmblemIcon(character.emblem),
+                color: scheme.primary,
+              ),
             ),
-          ),
-          child: InkWell(
-            onTap: () => showHeroEditor(context, character),
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Row(
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: scheme.primary.withValues(alpha: 0.16),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: scheme.primary, width: 1.5),
-                    ),
-                    child: Icon(
-                      heroEmblemIcon(character.emblem),
-                      color: scheme.primary,
-                    ),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleMedium,
                   ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          subtitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.titleMedium,
-                        ),
-                        Text(
-                          motto.isEmpty ? 'Toca para añadir un lema' : motto,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                            fontStyle: motto.isEmpty ? null : FontStyle.italic,
-                          ),
-                        ),
-                      ],
+                  // El lema solo sale si lo escribiste: sin texto de relleno.
+                  if (motto.isNotEmpty)
+                    Text(
+                      motto,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
-                  ),
-                  Icon(
-                    Icons.edit_outlined,
-                    size: 18,
-                    color: scheme.onSurfaceVariant,
-                  ),
                 ],
               ),
             ),
-          ),
+            Icon(
+              Icons.edit_outlined,
+              size: 18,
+              color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
+            ),
+          ],
         ),
       ),
     );

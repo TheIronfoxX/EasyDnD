@@ -15,6 +15,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../theme/clean_shape.dart';
 import '../theme/design_tokens.dart';
 
 /// Ancho máximo del contenido en pantallas grandes: las filas no se
@@ -39,8 +40,6 @@ class CleanCard extends StatelessWidget {
   /// `null` = superficie del tema.
   final Color? color;
 
-  static const _radius = BorderRadius.all(Radius.circular(16));
-
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -48,7 +47,7 @@ class CleanCard extends StatelessWidget {
       padding: margin,
       child: Material(
         color: color ?? scheme.surface,
-        borderRadius: _radius,
+        shape: context.cleanShape.surface(16),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
@@ -91,8 +90,6 @@ class NavRowCard extends StatefulWidget {
 class _NavRowCardState extends State<NavRowCard> {
   bool _pressed = false;
 
-  static const _radius = BorderRadius.all(Radius.circular(28));
-
   void _setPressed(bool v) {
     if (_pressed != v) setState(() => _pressed = v);
   }
@@ -111,7 +108,7 @@ class _NavRowCardState extends State<NavRowCard> {
         curve: Curves.easeOut,
         child: Material(
           color: scheme.surface,
-          borderRadius: _radius,
+          shape: context.cleanShape.surface(28),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: widget.onTap,
@@ -212,8 +209,6 @@ class NavTileCard extends StatefulWidget {
 class _NavTileCardState extends State<NavTileCard> {
   bool _pressed = false;
 
-  static const _radius = BorderRadius.all(Radius.circular(28));
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -225,7 +220,7 @@ class _NavTileCardState extends State<NavTileCard> {
       curve: Curves.easeOut,
       child: Material(
         color: scheme.surface,
-        borderRadius: _radius,
+        shape: context.cleanShape.surface(28),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: widget.onTap,
@@ -669,10 +664,7 @@ class StatTile extends StatelessWidget {
         vertical: AppSpacing.md,
         horizontal: AppSpacing.xs,
       ),
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(16),
-      ),
+      decoration: context.cleanShape.decoration(16, color: scheme.surface),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

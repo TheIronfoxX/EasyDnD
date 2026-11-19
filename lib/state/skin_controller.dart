@@ -22,6 +22,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/theme/app_theme.dart';
+import '../core/theme/clean_theme.dart';
 import '../core/theme/custom_theme.dart';
 import '../core/theme/font_presets.dart';
 import '../core/theme/theme_presets.dart';
@@ -35,6 +36,12 @@ class SkinController extends ChangeNotifier {
   static const String fontKey = 'easydnd.skin.font.v1';
   static const String compactKey = 'easydnd.skin.compact.v1';
   static const String tabletKey = 'easydnd.skin.tablet.v1';
+
+  /// Forma elegida en Ajustes (id de [CleanThemeStyle]); ausente = Limpio.
+  static const String styleKey = 'easydnd.skin.style.v1';
+
+  /// Color secundario elegido (ARGB); ausente = recomendación automática.
+  static const String secondaryKey = 'easydnd.skin.secondary.v1';
 
   /// Último tema OSCURO elegido (id de [AppThemePreset]). El modo
   /// claro/oscuro en sí es [darkModeKey].
@@ -65,6 +72,8 @@ class SkinController extends ChangeNotifier {
   AppThemePreset _darkPreset = AppThemePreset.defaultDark;
   AppThemePreset _lightPreset = AppThemePreset.defaultLight;
   bool _isDarkMode = true; // la app siempre arrancó en oscuro
+  CleanThemeStyle _style = CleanThemeStyle.defaultStyle;
+  Color? _customSecondary;
   FontPreset _fontPreset = FontPresets.defaultPreset;
   bool _isReady = false;
 
@@ -105,8 +114,26 @@ class SkinController extends ChangeNotifier {
   bool _simpleThemeEditor = true;
   bool get simpleThemeEditor => _simpleThemeEditor;
 
-  /// Acento efectivo: el propio del jugador o el de fábrica.
+  /// Forma de Ajustes (una de las tres de [CleanThemeStyle]).
+  CleanThemeStyle get themeStyle => _style;
+
+  /// Color principal efectivo: el propio del jugador o el de fábrica.
   Color get accentColor => _customAccent ?? AppTheme.defaultAccent;
+
+  Brightness get _brightness =>
+      _isDarkMode ? Brightness.dark : Brightness.light;
+
+  /// Color secundario efectivo: el elegido o la recomendación automática
+  /// para el principal en el modo actual.
+  Color get secondaryColor =>
+      _customSecondary ?? SecondaryColors.auto(accentColor, _brightness);
+
+  /// true si el jugador eligió un secundario (no el automático).
+  bool get hasCustomSecondary => _customSecondary != null;
+
+  /// Recomendaciones de secundario para el principal y el modo actuales.
+  List<({String label, Color color})> get secondaryRecommendations =>
+      SecondaryColors.recommend(accentColor, _brightness);
 
   /// true si el jugador pisó el acento de firma con un color propio.
   bool get hasCustomAccent => _customAccent != null;
@@ -129,15 +156,23 @@ class SkinController extends ChangeNotifier {
   ThemeData get themeData => _isDarkMode ? darkTheme : lightTheme;
 
   /// Tema del modo claro. Desde el rework para novatos la app tiene un
-  /// único diseño limpio ([AppTheme.clean]): el jugador solo elige el
-  /// acento y claro/oscuro. Presets y temas propios siguen guardados
-  /// pero ya no construyen el tema (ADR-0006).
-  ThemeData get lightTheme =>
-      AppTheme.clean(brightness: Brightness.light, accent: accentColor);
+  /// único diseño limpio ([AppTheme.clean]) vestido con uno de tres
+  /// temas: el jugador elige tema, acento y claro/oscuro. Presets y temas
+  /// propios siguen guardados pero ya no construyen el tema (ADR-0007).
+  ThemeData get lightTheme => AppTheme.clean(
+    brightness: Brightness.light,
+    accent: _customAccent,
+    secondary: _customSecondary,
+    style: _style,
+  );
 
   /// Tema del modo oscuro (mismo diseño limpio).
-  ThemeData get darkTheme =>
-      AppTheme.clean(brightness: Brightness.dark, accent: accentColor);
+  ThemeData get darkTheme => AppTheme.clean(
+    brightness: Brightness.dark,
+    accent: _customAccent,
+    secondary: _customSecondary,
+    style: _style,
+  );
 
   /// Recupera acento, modo y tipografía guardados. Idempotente, como el
   /// init del CharacterStore.
@@ -190,6 +225,10 @@ class SkinController extends ChangeNotifier {
     if (lightCustom != null && !lightCustom.isDark) {
       _lightCustomId = lightCustom.id;
     }
+
+    _style = CleanThemeStyle.byId(_prefs.getString(styleKey));
+    final storedSecondary = _prefs.getInt(secondaryKey);
+    if (storedSecondary != null) _customSecondary = Color(storedSecondary);
 
     _compactHud = _prefs.getBool(compactKey) ?? false;
     _tabletMode = _prefs.getBool(tabletKey) ?? true;
@@ -249,6 +288,31 @@ class SkinController extends ChangeNotifier {
     await _prefs.remove(preset.isDark ? darkCustomKey : lightCustomKey);
     if (hadAccent) await _prefs.remove(accentKey);
     if (fontChanged) await _prefs.setString(fontKey, signatureFont.id);
+  }
+
+  /// Elige una de las tres formas de Ajustes y la persiste. No toca los
+  /// colores.
+  Future<void> setThemeStyle(CleanThemeStyle style) async {
+    if (_style == style) return;
+    _style = style;
+    notifyListeners();
+    await _prefs.setString(styleKey, style.id);
+  }
+
+  /// Fija el color secundario y lo persiste. Mismo color = no-op.
+  Future<void> setSecondaryColor(Color color) async {
+    if (_customSecondary == color) return;
+    _customSecondary = color;
+    notifyListeners();
+    await _prefs.setInt(secondaryKey, color.toARGB32());
+  }
+
+  /// Vuelve al secundario automático (sigue al principal).
+  Future<void> clearCustomSecondary() async {
+    if (_customSecondary == null) return;
+    _customSecondary = null;
+    notifyListeners();
+    await _prefs.remove(secondaryKey);
   }
 
   /// Fija el modo claro/oscuro y lo persiste. Mismo valor = no-op.

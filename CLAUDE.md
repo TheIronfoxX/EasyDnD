@@ -94,8 +94,14 @@ OS–style: monochrome black/white palette with the accent (default signal red) 
 only color, very rounded surfaces, dot-grid backdrop, circular medallions with dotted
 rings, dot bars (`DotBar`/`DotRing` in `clean_kit.dart`). Fonts: JetBrains Mono for
 `titleLarge` and up and `labelSmall`/`labelMedium`, Inter for everything else. `SkinController.lightTheme/
-darkTheme` always build it; the player only picks light/dark and the accent color
-(in Ajustes). It still goes through `AppTheme.fromParts` (brightness + `AppPalette` +
+darkTheme` always build it from four independent knobs the player sets in Ajustes →
+Tema: light/dark (the only thing that decides the background — fixed neutral palettes,
+plain, no pattern), shape (`CleanThemeStyle`: Limpio/Grimorio/Escarcha — silhouette only,
+via the `CleanShape` extension in `clean_shape.dart`: corner scale, bevel, card outline;
+surfaces ask `context.cleanShape.surface(16)`/`radius(16)` with the Limpio radius instead
+of hardcoding one), primary color (accent) and secondary color (`colorScheme.secondary`,
+`tactical.spell`; defaults to/recommends harmonies of the primary via `SecondaryColors`).
+It still goes through `AppTheme.fromParts` (brightness + `AppPalette` +
 `TacticalThemeTokens`), so `context.tactical` role colors (`weapon`, `spell`, `heal`,
 `damage`...) keep working. Fonts are bundled (`assets/fonts/`) because the app is
 offline and web's CanvasKit renderer doesn't resolve generic font fallbacks.
@@ -110,15 +116,23 @@ point and no longer builds the theme. Don't delete it without asking (ADR-0007).
 `features/hud/hud_screen.dart` is the shell: app bar (avatar, name → roster sheet,
 rules search, ⋮ = Recargar todo / Editar ficha / Ajustes) and three tabs —
 `combat/combat_tab.dart`, `sheet/sheet_tab.dart`, `backpack/backpack_tab.dart`.
-Combate, top to bottom: `hero_header.dart` (emblem + motto, saved in the sheet as
-`emblem`/`motto`), the single health card (`actual/máx`, −1/+1, tap the bar → life
-sheet; key `hp-pill` lives there, there is no HP pill in the app bar), the four
-vitals with one-line hints, the tappable spell-slot strip, compact Conjuros /
-Ataques buttons that still push their own pages via `pushCharacterPage`
-(`hud_pages.dart`), Favoritas and the filterable inline action list (both with
-quick-cast). Vista Guiada / Compacta (Ajustes) reuses `SkinController.compactHud`.
-Spells/abilities are grouped by category (Daño/Defensa/Apoyo/Utilidad) in
-`combat/powers.dart`; categorization and the plain-language fallback live in
+Combate, top to bottom: one status panel — `hero_header.dart` row (emblem, class ·
+level, `motto` only if set, ✎ → emblem/motto editor), HP row `actual/máx` with −1/+1
+(tap → life sheet, key `hp-pill`), and Armadura / Iniciativa / Velocidad as plain
+numbers whose plain-Spanish explanation is a tap tooltip (the spell DC lives on the
+Conjuros page, not here). Then "Espacios de conjuro" as `SpellSlotsGrid`
+(`combat/spell_slots_grid.dart`, shared with the Conjuros page: 3 columns of tinted tiles,
+big level, `actual/máx`, segmented bar) and "Recursos", one card each (name,
+`actual/máx`, thin bar, −/+), both with ↻ in the section title. Then one Acciones card
+(Favoritas + the filterable list as flat rows with quick-cast; Conjuros / Ataques links
+in its header push their pages via `pushCharacterPage`), then Estados/Compañeros rows. Vista Guiada / Compacta (Ajustes) reuses `SkinController.compactHud`.
+The Conjuros and Ataques y habilidades pages live in `combat/power_pages.dart`
+(`openSpellsPage`/`openAbilitiesPage`): one card per group of flat `PowerRow`s with
+quick-cast. Spells: the spell save DC card and the slot grid on top, then grouped by what
+they do — Ataque / Curación / Estados / Utilidad, classified by `spellEffectOf` in
+`domain/spell_effect.dart`. Abilities: a category filter (Daño/Defensa/Apoyo/Utilidad),
+then grouped by what they spend (Armas, Acción, Adicional, Reacción), passives folded.
+Rows and `groupedPowerList` live in `combat/powers.dart`; categorization and the plain-language fallback live in
 `domain/power_category.dart`. Rolls are built by `hud_roll_actions.dart` and
 resolved by `hud_resolution_sheet.dart`, which opens with a plain-Spanish sentence
 (`explainRoll`). Rests and turn tracking are intentionally absent from the UI (store

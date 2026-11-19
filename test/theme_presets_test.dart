@@ -83,7 +83,7 @@ void main() {
 
     test('Grimorio y Pergamino son las paletas oscura y clara de fábrica', () {
       expect(AppThemePreset.grimorio.palette, AppPalette.dark);
-      expect(AppThemePreset.grimorio.accent, AppTheme.defaultAccent);
+      expect(AppThemePreset.grimorio.accent, AppTheme.goldAccent);
       expect(AppThemePreset.pergamino.palette, AppPalette.light);
     });
 
@@ -603,7 +603,7 @@ void main() {
       await skin.setAccentColor(const Color(0xFF7C4DFF));
       await skin.clearCustomAccent();
 
-      expect(skin.accentColor, AppThemePreset.grimorio.accent);
+      expect(skin.accentColor, AppTheme.defaultAccent);
       expect((await boot()).hasCustomAccent, isFalse);
     });
 

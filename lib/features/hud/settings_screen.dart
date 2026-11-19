@@ -1,18 +1,20 @@
 // Ajustes: lo que se usa una vez por sesión o menos.
 //
-// Apariencia (claro/oscuro y color), fichas (importar, crear, corregir
+// Tema (claro/oscuro, forma, color principal y secundario), combate, fichas (importar, crear, corregir
 // con IA) y datos (exportar/respaldo, eliminar la ficha activa).
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/theme/accent_presets.dart';
+import '../../core/theme/clean_theme.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../core/ui/clean_kit.dart';
 import '../../state/character_store.dart';
 import '../../state/skin_controller.dart';
 import '../editor/character_editor_screen.dart';
 import '../import/import_wizard_screen.dart';
+import '../skin/hsv_color_picker_dialog.dart';
 import 'hud_backup_actions.dart';
 import 'hud_dialogs.dart';
 
@@ -67,7 +69,7 @@ class SettingsScreen extends StatelessWidget {
     return CleanPage(
       title: 'Ajustes',
       children: [
-        const CleanSectionTitle('Apariencia'),
+        const CleanSectionTitle('Tema'),
         CleanCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -90,6 +92,91 @@ class SettingsScreen extends StatelessWidget {
                 onSelectionChanged: (s) => skin.setDarkMode(s.first),
               ),
               const SizedBox(height: AppSpacing.lg),
+              Text('Forma', style: theme.textTheme.titleSmall),
+              const SizedBox(height: AppSpacing.xs),
+              for (final style in CleanThemeStyle.values)
+                _ThemeStyleTile(
+                  style: style,
+                  brightness: theme.brightness,
+                  selected: skin.themeStyle == style,
+                  onTap: () => skin.setThemeStyle(style),
+                ),
+              const SizedBox(height: AppSpacing.md),
+              Text('Color principal', style: theme.textTheme.titleSmall),
+              const SizedBox(height: AppSpacing.sm),
+              Wrap(
+                spacing: AppSpacing.md,
+                runSpacing: AppSpacing.md,
+                children: [
+                  for (final preset in AccentPresets.all)
+                    _AccentSwatch(
+                      key: ValueKey('accent-${preset.label}'),
+                      label: preset.label,
+                      color: preset.color,
+                      selected: skin.accentColor == preset.color,
+                      onTap: () => skin.setAccentColor(preset.color),
+                    ),
+                  _CustomColorButton(
+                    key: const ValueKey('accent-custom'),
+                    current: skin.accentColor,
+                    selected: AccentPresets.matching(skin.accentColor) == null,
+                    onPicked: skin.setAccentColor,
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Text('Color secundario', style: theme.textTheme.titleSmall),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Conjuros, ranuras y detalles. Te sugerimos colores que '
+                'combinan con el principal.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Wrap(
+                spacing: AppSpacing.md,
+                runSpacing: AppSpacing.md,
+                children: [
+                  _AccentSwatch(
+                    key: const ValueKey('secondary-auto'),
+                    label: 'Automático (sigue al principal)',
+                    color: skin.secondaryRecommendations.first.color,
+                    selected: !skin.hasCustomSecondary,
+                    onTap: skin.clearCustomSecondary,
+                    icon: Icons.auto_awesome_rounded,
+                  ),
+                  for (final rec in skin.secondaryRecommendations.skip(1))
+                    _AccentSwatch(
+                      key: ValueKey('secondary-${rec.label}'),
+                      label: rec.label,
+                      color: rec.color,
+                      selected:
+                          skin.hasCustomSecondary &&
+                          skin.secondaryColor == rec.color,
+                      onTap: () => skin.setSecondaryColor(rec.color),
+                    ),
+                  _CustomColorButton(
+                    key: const ValueKey('secondary-custom'),
+                    current: skin.secondaryColor,
+                    selected:
+                        skin.hasCustomSecondary &&
+                        !skin.secondaryRecommendations.any(
+                          (r) => r.color == skin.secondaryColor,
+                        ),
+                    onPicked: skin.setSecondaryColor,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const CleanSectionTitle('Combate'),
+        CleanCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
               Text('Lista de acciones', style: theme.textTheme.titleSmall),
               const SizedBox(height: AppSpacing.sm),
               SegmentedButton<bool>(
@@ -109,38 +196,6 @@ class SettingsScreen extends StatelessWidget {
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              Text('Color', style: theme.textTheme.titleSmall),
-              const SizedBox(height: AppSpacing.sm),
-              Wrap(
-                spacing: AppSpacing.md,
-                runSpacing: AppSpacing.md,
-                children: [
-                  for (final preset in AccentPresets.all)
-                    Tooltip(
-                      message: preset.label,
-                      child: InkWell(
-                        key: ValueKey('accent-${preset.label}'),
-                        customBorder: const CircleBorder(),
-                        onTap: () => skin.setAccentColor(preset.color),
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: preset.color,
-                            shape: BoxShape.circle,
-                            border: skin.accentColor == preset.color
-                                ? Border.all(
-                                    color: theme.colorScheme.onSurface,
-                                    width: 3,
-                                  )
-                                : null,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
               ),
             ],
           ),
@@ -225,6 +280,170 @@ class SettingsScreen extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+/// Una forma: muestra con la silueta pintada en los colores actuales,
+/// nombre y una línea de qué es.
+class _ThemeStyleTile extends StatelessWidget {
+  const _ThemeStyleTile({
+    required this.style,
+    required this.brightness,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final CleanThemeStyle style;
+  final Brightness brightness;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final shape = style.shape(brightness);
+    return ListTile(
+      key: ValueKey('theme-style-${style.id}'),
+      contentPadding: EdgeInsets.zero,
+      onTap: onTap,
+      leading: Container(
+        width: 52,
+        height: 36,
+        padding: const EdgeInsets.all(6),
+        decoration: ShapeDecoration(
+          color: scheme.surfaceContainerHigh,
+          shape: shape.surface(14),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: DecoratedBox(
+                decoration: ShapeDecoration(
+                  color: scheme.primary,
+                  shape: shape.surface(8).copyWith(side: BorderSide.none),
+                ),
+              ),
+            ),
+            const SizedBox(width: 4),
+            Expanded(
+              child: DecoratedBox(
+                decoration: ShapeDecoration(
+                  color: scheme.secondary,
+                  shape: shape.surface(8).copyWith(side: BorderSide.none),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      title: Text(style.label),
+      subtitle: Text(style.tagline),
+      trailing: Icon(
+        selected ? Icons.check_circle_rounded : Icons.circle_outlined,
+        color: selected ? scheme.primary : scheme.onSurfaceVariant,
+      ),
+    );
+  }
+}
+
+class _AccentSwatch extends StatelessWidget {
+  const _AccentSwatch({
+    super.key,
+    required this.label,
+    required this.color,
+    required this.selected,
+    required this.onTap,
+    this.icon,
+  });
+
+  final String label;
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final onColor =
+        ThemeData.estimateBrightnessForColor(color) == Brightness.dark
+        ? Colors.white
+        : Colors.black;
+    return Tooltip(
+      message: label,
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+            border: selected
+                ? Border.all(color: theme.colorScheme.onSurface, width: 3)
+                : null,
+          ),
+          child: icon == null ? null : Icon(icon, size: 18, color: onColor),
+        ),
+      ),
+    );
+  }
+}
+
+/// Botón "otro color": abre el selector libre (tono, saturación, brillo).
+class _CustomColorButton extends StatelessWidget {
+  const _CustomColorButton({
+    super.key,
+    required this.current,
+    required this.selected,
+    required this.onPicked,
+  });
+
+  final Color current;
+  final bool selected;
+  final ValueChanged<Color> onPicked;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Tooltip(
+      message: 'Otro color',
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: () async {
+          final picked = await showDialog<Color>(
+            context: context,
+            builder: (_) => HsvColorPickerDialog(initialColor: current),
+          );
+          if (picked != null) onPicked(picked);
+        },
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: selected ? current : null,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: selected ? scheme.onSurface : scheme.outline,
+              width: selected ? 3 : 1.5,
+            ),
+          ),
+          child: Icon(
+            Icons.colorize_rounded,
+            size: 18,
+            color: selected
+                ? (ThemeData.estimateBrightnessForColor(current) ==
+                          Brightness.dark
+                      ? Colors.white
+                      : Colors.black)
+                : scheme.onSurfaceVariant,
+          ),
+        ),
+      ),
     );
   }
 }

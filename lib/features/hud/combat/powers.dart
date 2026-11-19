@@ -209,7 +209,11 @@ class PowerRow extends StatelessWidget {
     this.flat = false,
     this.quickCast = false,
     this.compact = false,
+    this.dotColor,
   });
+
+  /// Color del puntito de la fila; por defecto, el de su categoría.
+  final Color? dotColor;
 
   final PowerEntry entry;
   final CharacterModel character;
@@ -227,7 +231,7 @@ class PowerRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = categoryColor(context, entry.category);
+    final color = dotColor ?? categoryColor(context, entry.category);
     final data = entry.dataLine(character);
     final castButton = quickCast && !entry.isPassive
         ? IconButton.filledTonal(
