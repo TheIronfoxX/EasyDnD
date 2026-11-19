@@ -51,6 +51,24 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// Vida que muestra el anillo de Combate: actual y "de máx PG".
+  void expectRingHp(int current, int max) {
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('hp-pill')),
+        matching: find.text('$current'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('hp-pill')),
+        matching: find.text('de $max PG'),
+      ),
+      findsOneWidget,
+    );
+  }
+
   Future<void> tapKey(WidgetTester tester, String key) async {
     final finder = find.byKey(ValueKey(key));
     // Las listas se construyen en diferido: si aún no existe, desplaza
@@ -202,7 +220,7 @@ void main() {
       expect(find.byKey(const ValueKey('slots-schema')), findsOneWidget);
       expect(find.byKey(const ValueKey('resources-card')), findsOneWidget);
       expect(find.byKey(const ValueKey('nav-attacks')), findsOneWidget);
-      expect(find.text('20/20'), findsOneWidget);
+      expectRingHp(20, 20);
       expect(find.text('Daño'), findsNothing);
       // Sin control de turno.
       expect(find.text('Terminar turno'), findsNothing);
@@ -307,7 +325,7 @@ void main() {
 
       await tapKey(tester, 'hp-minus');
       expect(store.activeCharacter!.basicInfo.currentHp, 19);
-      expect(find.text('19/20'), findsOneWidget);
+      expectRingHp(19, 20);
       await tapKey(tester, 'hp-plus');
       expect(store.activeCharacter!.basicInfo.currentHp, 20);
     });
@@ -340,23 +358,36 @@ void main() {
   });
 
   group('ranuras en Combate', () {
-    testWidgets('tocar un nivel gasta una ranura y, vacío, la recupera', (
-      tester,
-    ) async {
+    testWidgets('tocar un nivel abre una hoja con − y +', (tester) async {
       tallView(tester);
       final store = await boot();
       store.addCharacter(buildCharacter(id: 'char_rook', name: 'Rook'));
       await pumpApp(tester, store);
 
       final slot = store.activeCharacter!.spellSlots.slots.first;
-      final before = slot.current;
-      expect(before, greaterThan(0));
+      final max = slot.max;
+      expect(slot.current, max);
       await tapKey(tester, 'slot-level-${slot.level}');
-      expect(slot.current, before - 1);
-      for (var i = 0; i < before; i++) {
-        await tapKey(tester, 'slot-level-${slot.level}');
+      await tester.pumpAndSettle();
+      // Abrir la hoja no gasta nada.
+      expect(find.byKey(ValueKey('slot-sheet-${slot.level}')), findsOneWidget);
+      expect(slot.current, max);
+
+      // Lleno: + desactivado. − baja de a uno hasta 0.
+      IconButton button(String key) =>
+          tester.widget<IconButton>(find.byKey(ValueKey(key)));
+      expect(button('slot-sheet-plus').onPressed, isNull);
+      for (var i = 0; i < max; i++) {
+        await tester.tap(find.byKey(const ValueKey('slot-sheet-minus')));
+        await tester.pumpAndSettle();
       }
-      // Al vaciarse, el siguiente toque recupera una.
+      expect(slot.current, 0);
+      expect(find.text('0/$max'), findsWidgets);
+      expect(button('slot-sheet-minus').onPressed, isNull);
+
+      // + recupera uno.
+      await tester.tap(find.byKey(const ValueKey('slot-sheet-plus')));
+      await tester.pumpAndSettle();
       expect(slot.current, 1);
     });
   });
@@ -435,7 +466,7 @@ void main() {
 
       await tester.tapAt(const Offset(10, 10));
       await tester.pumpAndSettle();
-      expect(find.text('15/20'), findsOneWidget);
+      expectRingHp(15, 20);
     });
 
     testWidgets('vida temporal desde la hoja', (tester) async {

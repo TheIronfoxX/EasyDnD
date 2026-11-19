@@ -3,7 +3,8 @@
 //
 // Cada mosaico: el nivel en grande, `actual/máx` y una barrita partida en
 // tramos (uno por espacio). Tocar un tramo lleno lo gasta; uno vacío lo
-// recupera. Tocar el mosaico gasta uno (o, sin ninguno, recupera uno).
+// recupera. Tocar el resto del mosaico abre una hoja ([showSpellSlotSheet])
+// con − y + para bajar o subir los espacios de ese nivel.
 // Con espacios, el mosaico se tiñe del color de conjuro; agotado, queda
 // apagado.
 
@@ -47,6 +48,7 @@ class SpellSlotsGrid extends StatelessWidget {
                   max: s.max,
                   onSpend: () => store.consumeSpellSlot(s.level),
                   onRecover: () => store.restoreSpellSlot(s.level),
+                  onOpen: () => showSpellSlotSheet(context, s.level),
                 ),
               ),
           ],
@@ -64,6 +66,7 @@ class _SlotTile extends StatelessWidget {
     required this.max,
     required this.onSpend,
     required this.onRecover,
+    required this.onOpen,
   });
 
   final int level;
@@ -71,6 +74,7 @@ class _SlotTile extends StatelessWidget {
   final int max;
   final VoidCallback onSpend;
   final VoidCallback onRecover;
+  final VoidCallback onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -95,7 +99,7 @@ class _SlotTile extends StatelessWidget {
           ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: left ? onSpend : onRecover,
+        onTap: onOpen,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.md,
@@ -170,6 +174,143 @@ class _SlotTile extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Hoja de un nivel de espacios: cuántos quedan y botones grandes para
+/// gastar (−) o recuperar (+) uno. Escucha al store, así que se repinta
+/// en cada toque sin cerrarse.
+Future<void> showSpellSlotSheet(BuildContext context, int level) {
+  return showModalBottomSheet<void>(
+    context: context,
+    useSafeArea: true,
+    showDragHandle: true,
+    builder: (_) => Consumer<CharacterStore>(
+      builder: (context, store, _) {
+        final slot = store.activeCharacter?.spellSlots.forLevel(level);
+        if (slot == null) return const SizedBox(height: 120);
+        return _SlotSheet(
+          level: level,
+          current: slot.current,
+          max: slot.max,
+          onSpend: () => store.consumeSpellSlot(level),
+          onRecover: () => store.restoreSpellSlot(level),
+        );
+      },
+    ),
+  );
+}
+
+class _SlotSheet extends StatelessWidget {
+  const _SlotSheet({
+    required this.level,
+    required this.current,
+    required this.max,
+    required this.onSpend,
+    required this.onRecover,
+  });
+
+  final int level;
+  final int current;
+  final int max;
+  final VoidCallback onSpend;
+  final VoidCallback onRecover;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final tone = context.tactical.spell;
+    final shape = context.cleanShape;
+    return Padding(
+      key: ValueKey('slot-sheet-$level'),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        0,
+        AppSpacing.lg,
+        AppSpacing.xl,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Espacios de nivel $level',
+            style: theme.textTheme.titleLarge,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Lanzar un conjuro de nivel $level gasta uno. Se recuperan al '
+            'descansar.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Row(
+            children: [
+              IconButton.filledTonal(
+                key: const ValueKey('slot-sheet-minus'),
+                iconSize: 32,
+                tooltip: 'Gastar uno',
+                onPressed: current > 0 ? onSpend : null,
+                icon: const Icon(Icons.remove),
+              ),
+              Expanded(
+                child: Column(
+                  children: [
+                    Text(
+                      '$current/$max',
+                      key: const ValueKey('slot-sheet-count'),
+                      style: theme.textTheme.displaySmall?.tabular.copyWith(
+                        color: current > 0 ? tone : scheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      current == 0
+                          ? 'Sin espacios'
+                          : current == 1
+                          ? 'Te queda 1'
+                          : 'Te quedan $current',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton.filledTonal(
+                key: const ValueKey('slot-sheet-plus'),
+                iconSize: 32,
+                tooltip: 'Recuperar uno',
+                onPressed: current < max ? onRecover : null,
+                icon: const Icon(Icons.add),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Row(
+            children: [
+              for (var i = 0; i < max; i++)
+                Expanded(
+                  child: AnimatedContainer(
+                    duration: AppDurations.fast,
+                    height: 10,
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    decoration: BoxDecoration(
+                      borderRadius: shape.radius(6),
+                      color: i < current
+                          ? tone
+                          : scheme.onSurface.withValues(alpha: 0.10),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }

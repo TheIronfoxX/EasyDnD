@@ -129,8 +129,14 @@ class _StatusPanel extends StatelessWidget {
 
 /// La vida: −1 a la izquierda, lectura y barra en el centro (tocarla abre
 /// la hoja de Vida para daño, curación y temporales) y +1 a la derecha.
+/// Vida en anillo: se vacía en sentido horario y cambia de color (verde
+/// por encima del 50 %, dorado hasta el 25 %, rojo por debajo). En el
+/// centro, los PG actuales en grande; tocarlo abre la hoja de Vida.
+/// A los lados, − y + de a 1 PG.
 class _HealthRow extends StatelessWidget {
   const _HealthRow({required this.character});
+
+  static const double _ringSize = 132;
 
   final CharacterModel character;
 
@@ -144,8 +150,13 @@ class _HealthRow extends StatelessWidget {
     final ratio = info.hpMax <= 0
         ? 0.0
         : (info.currentHp / info.hpMax).clamp(0.0, 1.0);
-    final color = ratio <= 0.25 ? tactical.damage : tactical.heal;
+    final color = ratio <= 0.25
+        ? tactical.damage
+        : ratio <= 0.5
+        ? tactical.coinGold
+        : tactical.heal;
     return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         IconButton.outlined(
           key: const ValueKey('hp-minus'),
@@ -153,72 +164,66 @@ class _HealthRow extends StatelessWidget {
           onPressed: info.currentHp > 0 ? () => store.applyDamage(1) : null,
           icon: const Icon(Icons.remove_rounded),
         ),
-        const SizedBox(width: AppSpacing.sm),
-        Expanded(
-          child: Tooltip(
-            message: 'Quitar o curar varios PG',
-            child: InkWell(
-              key: const ValueKey('hp-pill'),
-              borderRadius: context.cleanShape.radius(12),
-              onTap: () => showLifeSheet(context),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        Icon(Icons.favorite_rounded, size: 16, color: color),
-                        const SizedBox(width: AppSpacing.xs),
-                        Text(
-                          '${info.currentHp}/${info.hpMax}',
-                          style: theme.textTheme.headlineSmall?.tabular,
-                        ),
-                        const SizedBox(width: AppSpacing.xs),
-                        Text(
-                          info.tempHp > 0 ? 'PG +${info.tempHp}' : 'PG',
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    TweenAnimationBuilder<double>(
+        const SizedBox(width: AppSpacing.xl),
+        Tooltip(
+          message: 'Quitar o curar varios PG',
+          child: InkWell(
+            key: const ValueKey('hp-pill'),
+            customBorder: const CircleBorder(),
+            onTap: () => showLifeSheet(context),
+            child: SizedBox.square(
+              dimension: _ringSize,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Positioned.fill(
+                    child: TweenAnimationBuilder<double>(
                       tween: Tween(end: ratio),
                       duration: AppDurations.normal,
-                      builder: (context, v, _) => ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
-                        child: SizedBox(
-                          height: 8,
-                          child: Stack(
-                            children: [
-                              Positioned.fill(
-                                child: ColoredBox(
-                                  color: scheme.onSurface.withValues(
-                                    alpha: 0.10,
-                                  ),
-                                ),
-                              ),
-                              FractionallySizedBox(
-                                widthFactor: v,
-                                heightFactor: 1,
-                                child: ColoredBox(color: color),
-                              ),
-                            ],
-                          ),
+                      builder: (context, v, _) => CircularProgressIndicator(
+                        value: v,
+                        strokeWidth: 10,
+                        strokeCap: StrokeCap.round,
+                        color: color,
+                        backgroundColor: scheme.onSurface.withValues(
+                          alpha: 0.10,
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.favorite_rounded, size: 16, color: color),
+                      Text(
+                        '${info.currentHp}',
+                        key: const ValueKey('hp-ring-current'),
+                        style: theme.textTheme.headlineMedium?.tabular
+                            .copyWith(fontWeight: FontWeight.w800),
+                      ),
+                      Text(
+                        'de ${info.hpMax} PG',
+                        key: const ValueKey('hp-ring-max'),
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                      if (info.tempHp > 0)
+                        Text(
+                          '+${info.tempHp} temp',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: tactical.spell,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
         ),
-        const SizedBox(width: AppSpacing.sm),
+        const SizedBox(width: AppSpacing.xl),
         IconButton.outlined(
           key: const ValueKey('hp-plus'),
           tooltip: 'Curar 1 PG',
@@ -610,15 +615,14 @@ class _ActionsDeckState extends State<_ActionsDeck> {
       character: widget.character,
       quickCast: true,
       compact: compact,
-      flat: true,
     );
 
     Widget label(String text) => Padding(
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.md,
-        AppSpacing.md,
-        0,
+        AppSpacing.xs,
+        AppSpacing.sm,
+        AppSpacing.xs,
+        AppSpacing.sm,
       ),
       child: Text(
         text.toUpperCase(),
@@ -627,13 +631,6 @@ class _ActionsDeckState extends State<_ActionsDeck> {
           letterSpacing: 0.8,
         ),
       ),
-    );
-
-    final divider = Divider(
-      height: 1,
-      indent: AppSpacing.md,
-      endIndent: AppSpacing.md,
-      color: scheme.outline.withValues(alpha: 0.6),
     );
 
     return Column(
@@ -678,53 +675,36 @@ class _ActionsDeckState extends State<_ActionsDeck> {
               ],
             ),
           ),
-        CleanCard(
-          padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-          child: Column(
-            key: const ValueKey('favorites-section'),
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              label('Favoritas'),
-              if (widget.favorites.isEmpty)
-                Padding(
-                  key: const ValueKey('favorites-empty'),
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md,
-                    AppSpacing.xs,
-                    AppSpacing.md,
-                    AppSpacing.md,
-                  ),
-                  child: Text(
-                    'Toca la estrella de un conjuro, arma o habilidad para '
-                    'tenerlo aquí.',
-                    style: muted,
-                  ),
+        // Cada poder va en su propia tarjeta ([PowerRow] sin `flat`).
+        Column(
+          key: const ValueKey('favorites-section'),
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            label('Favoritas'),
+            if (widget.favorites.isEmpty)
+              CleanCard(
+                key: const ValueKey('favorites-empty'),
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Text(
+                  'Toca la estrella de un conjuro, arma o habilidad para '
+                  'tenerlo aquí.',
+                  style: muted,
+                ),
+              )
+            else
+              for (final f in widget.favorites) row(f),
+            if (widget.entries.isNotEmpty) ...[
+              label(widget.favorites.isEmpty ? 'Todas' : 'El resto'),
+              if (shown.isEmpty)
+                CleanCard(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Text('Nada de esto en tu ficha.', style: muted),
                 )
               else
-                for (var i = 0; i < widget.favorites.length; i++) ...[
-                  if (i > 0) divider,
-                  row(widget.favorites[i]),
-                ],
-              if (widget.entries.isNotEmpty) ...[
-                label(widget.favorites.isEmpty ? 'Todas' : 'El resto'),
-                if (shown.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.md,
-                      AppSpacing.xs,
-                      AppSpacing.md,
-                      AppSpacing.md,
-                    ),
-                    child: Text('Nada de esto en tu ficha.', style: muted),
-                  )
-                else
-                  for (var i = 0; i < shown.length; i++) ...[
-                    if (i > 0) divider,
-                    row(shown[i], key: ValueKey('deck-${shown[i].powerId}')),
-                  ],
-              ],
+                for (final e in shown)
+                  row(e, key: ValueKey('deck-${e.powerId}')),
             ],
-          ),
+          ],
         ),
       ],
     );

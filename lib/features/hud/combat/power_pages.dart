@@ -335,32 +335,20 @@ class _GroupCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final compact = context.watch<SkinController>().compactHud;
-    final line = Theme.of(context).colorScheme.outline.withValues(alpha: 0.6);
-    return CleanCard(
-      padding: EdgeInsets.zero,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          for (var i = 0; i < entries.length; i++) ...[
-            if (i > 0)
-              Divider(
-                height: 1,
-                indent: AppSpacing.md,
-                endIndent: AppSpacing.md,
-                color: line,
-              ),
-            PowerRow(
-              key: ValueKey('power-${entries[i].powerId}'),
-              entry: entries[i],
-              character: character,
-              flat: true,
-              quickCast: true,
-              compact: compact,
-              dotColor: dotColor,
-            ),
-          ],
-        ],
-      ),
+    // Cada poder en su propia tarjeta ([PowerRow] sin `flat`).
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final e in entries)
+          PowerRow(
+            key: ValueKey('power-${e.powerId}'),
+            entry: e,
+            character: character,
+            quickCast: true,
+            compact: compact,
+            dotColor: dotColor,
+          ),
+      ],
     );
   }
 }
