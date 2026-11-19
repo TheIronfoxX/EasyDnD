@@ -16,12 +16,17 @@ comportamiento y un sistema de diseño propio.
 - **Importación desde Nivel20**: descarga la ficha cruda a partir del enlace.
 - **Editor manual por secciones**: datos básicos, atributos, competencias,
   ranuras, habilidades, recursos, armas, objetos, lore y compañeros.
-- **HUD de combate**: vida, economía de turno, condiciones, recursos,
-  descansos, acciones, dados y una hoja de resolución de tiradas.
-- **Inventario y ficha**: equipo, bolsa, monedas, compañeros y hoja de solo
-  lectura.
-- **Skins**: modo claro/oscuro, acento por presets o color libre (HSV) y
-  tipografía elegible, todo persistido.
+- **HUD con tres pestañas** pensado para quien empieza, en español claro:
+  - **Combate**: vida, armadura, iniciativa y velocidad, espacios de conjuro,
+    recursos, acciones favoritas con lanzamiento rápido, conjuros agrupados
+    por efecto, ataques y habilidades, estados y compañeros. Cada tirada abre
+    una hoja de resolución que la explica en una frase.
+  - **Ficha**: hoja de solo lectura.
+  - **Mochila**: equipo, bolsa y monedas.
+- **Búsqueda de reglas** desde la barra superior.
+- **Respaldo JSON**: exportar e importar el roster (sin avatares).
+- **Tema único** ajustable en Ajustes → Tema: claro/oscuro, forma
+  (Limpio / Grimorio / Escarcha), color principal y color secundario.
 
 ## Requisitos
 
@@ -61,13 +66,13 @@ El código se organiza por capas, de adentro hacia afuera:
 ```
 lib/
 ├── core/        # reglas puras y utilidades (dados, reglas D&D, resolución,
-│   └── theme/   # tokens de diseño, paleta, presets, tipografía, tema)
+│   └── theme/   # tokens de diseño, paleta, tipografía, tema)
 ├── domain/      # modelos, validador, prompts de IA, motor de reglas SRD,
 │                # mapper y parche de Nivel20
 ├── data/        # repositorios, persistencia, extracción de Nivel20, catálogos SRD
 ├── state/       # CharacterStore (roster/combate/inventario) y SkinController
 ├── app/         # raíz de widgets (providers + MaterialApp)
-├── features/    # UI por feature: hud, editor, import, skin (creation/ es legado)
+├── features/    # UI por feature: hud, editor, import, skin (legado, sin entrada)
 └── main.dart    # bootstrap: inicializa store y skin antes de pintar
 ```
 

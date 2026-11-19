@@ -117,17 +117,17 @@ point and no longer builds the theme. Don't delete it without asking (ADR-0007).
 rules search, ⋮ = Recargar todo / Editar ficha / Ajustes) and three tabs —
 `combat/combat_tab.dart`, `sheet/sheet_tab.dart`, `backpack/backpack_tab.dart`.
 Combate, top to bottom: one status panel — `hero_header.dart` row (emblem, class ·
-level, `motto` only if set, ✎ → emblem/motto editor), HP row `actual/máx` with −1/+1
-(tap → life sheet, key `hp-pill`), and Armadura / Iniciativa / Velocidad as plain
+level, `motto` only if set, ✎ → emblem/motto editor), HP as a ring (green >50 %, gold ≤50 %, red ≤25 %; current HP
+in the center, max below, −1/+1 at the sides; tap → life sheet, key `hp-pill`), and Armadura / Iniciativa / Velocidad as plain
 numbers whose plain-Spanish explanation is a tap tooltip (the spell DC lives on the
 Conjuros page, not here). Then "Espacios de conjuro" as `SpellSlotsGrid`
 (`combat/spell_slots_grid.dart`, shared with the Conjuros page: 3 columns of tinted tiles,
-big level, `actual/máx`, segmented bar) and "Recursos", one card each (name,
-`actual/máx`, thin bar, −/+), both with ↻ in the section title. Then one Acciones card
-(Favoritas + the filterable list as flat rows with quick-cast; Conjuros / Ataques links
+big level, `actual/máx`, segmented bar; tapping a tile opens a sheet with −/+ for that level) and "Recursos", one card each (name,
+`actual/máx`, thin bar, −/+), both with ↻ in the section title. Then one Acciones section
+(Favoritas + the filterable list, one card per power with quick-cast; Conjuros / Ataques links
 in its header push their pages via `pushCharacterPage`), then Estados/Compañeros rows. Vista Guiada / Compacta (Ajustes) reuses `SkinController.compactHud`.
 The Conjuros and Ataques y habilidades pages live in `combat/power_pages.dart`
-(`openSpellsPage`/`openAbilitiesPage`): one card per group of flat `PowerRow`s with
+(`openSpellsPage`/`openAbilitiesPage`): one `PowerRow` card per power, grouped, with
 quick-cast. Spells: the spell save DC card and the slot grid on top, then grouped by what
 they do — Ataque / Curación / Estados / Utilidad, classified by `spellEffectOf` in
 `domain/spell_effect.dart`. Abilities: a category filter (Daño/Defensa/Apoyo/Utilidad),
@@ -153,7 +153,7 @@ Nivel20 import builds the base sheet with `Nivel20Mapper` (no AI); the AI only r
 sparse "patch" that `Nivel20Patch` merges on top. The full-sheet AI import
 (`AiPrompt.forEmptySheet`/`forEmbeddedSource`) is supported but secondary; `forCorrection`
 serves both paths. `CharacterBuilderEngine` is only the SRD rules/calculation engine behind
-the editor (the multi-step creation wizard was dropped). Details and pending work: ADR-0001
+the editor (the multi-step creation wizard was dropped). Details: ADR-0001
 to ADR-0003; `power_role`/`plain_summary`/`when_to_use`/`spell_notes`: ADR-0007.
 
 ## Domain language and decisions
