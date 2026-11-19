@@ -1,4 +1,4 @@
-// Exportar / importar fichas y respaldo del roster desde el menú del HUD.
+// Exportar / copiar / importar fichas y respaldo del roster (Ajustes).
 //
 // La pantalla resuelve los plugins (file_picker, portapapeles) y le pasa
 // al store valores ya resueltos: el store nunca toca plugins.
@@ -13,7 +13,7 @@ import 'package:flutter/services.dart';
 import '../../domain/models/character.dart';
 import '../../domain/roster_backup.dart';
 import '../../state/character_store.dart';
-import 'package:provider/provider.dart';
+import 'file_save_stub.dart' if (dart.library.js_interop) 'file_save_web.dart';
 
 /// Nombre de archivo seguro a partir del nombre del personaje.
 String backupFileName(String base) {
@@ -70,6 +70,12 @@ Future<void> _saveText(
 }) async {
   final messenger = ScaffoldMessenger.of(context);
   try {
+    if (kIsWeb) {
+      // Chrome: descarga directa (ver file_save_web.dart).
+      await saveTextFile(text, fileName);
+      messenger.showSnackBar(SnackBar(content: Text(done)));
+      return;
+    }
     final saved = await FilePicker.saveFile(
       dialogTitle: 'Guardar',
       fileName: fileName,
@@ -77,16 +83,18 @@ Future<void> _saveText(
       allowedExtensions: const ['json'],
       bytes: Uint8List.fromList(utf8.encode(text)),
     );
-    // null = el jugador cerró el selector: sin aviso. En web no hay ruta
-    // pero el archivo igual se descarga; solo se cancela con excepción.
-    if (saved == null && !kIsWeb) return;
+    // null = el jugador cerró el selector: sin aviso.
+    if (saved == null) return;
     messenger.showSnackBar(SnackBar(content: Text(done)));
-  } catch (_) {
+  } catch (e) {
+    // El JSON no se pierde: queda en el portapapeles, y el error real se
+    // muestra para poder saber por qué falló el archivo.
     await Clipboard.setData(ClipboardData(text: text));
     messenger.showSnackBar(
-      const SnackBar(
+      SnackBar(
+        duration: const Duration(seconds: 8),
         content: Text(
-          'No se pudo guardar el archivo. El JSON quedó copiado al '
+          'No se pudo guardar el archivo ($e). El JSON quedó copiado al '
           'portapapeles.',
         ),
       ),
@@ -195,54 +203,5 @@ Future<bool?> _askBackupMode(BuildContext context, BackupParseResult parsed) {
         ),
       ],
     ),
-  );
-}
-
-/// Hoja con las cuatro acciones de exportación y respaldo.
-Future<void> showBackupSheet(BuildContext context, CharacterModel character) {
-  final store = context.read<CharacterStore>();
-  return showModalBottomSheet<void>(
-    context: context,
-    showDragHandle: true,
-    builder: (sheetContext) {
-      Widget tile(IconData icon, String label, Future<void> Function() run) {
-        return ListTile(
-          leading: Icon(icon),
-          title: Text(label),
-          onTap: () async {
-            Navigator.pop(sheetContext);
-            await run();
-          },
-        );
-      }
-
-      return SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            tile(
-              Icons.file_upload_outlined,
-              'Exportar ficha',
-              () => exportCharacterFile(context, character),
-            ),
-            tile(
-              Icons.copy_rounded,
-              'Copiar ficha (JSON)',
-              () => copyCharacterToClipboard(context, character),
-            ),
-            tile(
-              Icons.backup_rounded,
-              'Respaldar todo el roster',
-              () => exportRosterBackup(context, store.roster),
-            ),
-            tile(
-              Icons.file_download_outlined,
-              'Importar archivo / respaldo',
-              () => importFromFile(context, store),
-            ),
-          ],
-        ),
-      );
-    },
   );
 }

@@ -91,15 +91,22 @@ class Nivel20Import {
   }
 
   /// Avisos no bloqueantes con lo que el parche creó e ignoró.
+  ///
+  /// Los poderes creados van en UN solo aviso: una ficha de mago puede
+  /// traer decenas de rasgos de clase que Nivel20 no lista, y un aviso
+  /// por cada uno ahogaba la lista (y lo importante quedaba enterrado).
   static List<ValidationIssue> patchWarnings(PatchResult r) => [
-    for (final a in r.created)
+    if (r.created.isNotEmpty)
       ValidationIssue(
         severity: ValidationSeverity.warning,
-        field: 'parche.${a.id}',
+        field: 'parche.creados',
         message:
-            'El parche creó el poder "${a.name}" porque no coincide '
-            'con ningún rasgo importado. Si la IA renombró un rasgo, '
-            'quedará duplicado: revisá que no repita uno existente.',
+            'La IA añadió ${r.created.length} '
+            '${r.created.length == 1 ? 'poder' : 'poderes'} que no '
+            'coinciden con ningún rasgo importado (normal con los rasgos '
+            'de clase): ${_nameList(r.created.map((a) => a.name))}. '
+            'Si alguno repite un rasgo con otro nombre, bórralo en el '
+            'editor.',
       ),
     for (final i in r.ignored)
       ValidationIssue(
@@ -108,6 +115,13 @@ class Nivel20Import {
         message: i.reason,
       ),
   ];
+
+  static String _nameList(Iterable<String> names) {
+    final list = names.toList();
+    const max = 5;
+    final shown = list.take(max).join(', ');
+    return list.length > max ? '$shown y ${list.length - max} más' : shown;
+  }
 
   static CharacterValidationResult _error(String message) =>
       CharacterValidationResult(

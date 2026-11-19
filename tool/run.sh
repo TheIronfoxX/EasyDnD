@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # Ejecuta la app. Por defecto en Chrome (no hay carpeta linux/ en el
 # proyecto); pasa otro dispositivo como argumento: ./tool/run.sh <device-id>
-# (ver `flutter devices`; con un móvil Android conectado: ./tool/run.sh android).
+# (ver `flutter devices`; para el móvil Android usa mejor ./tool/movil.sh).
 set -e
 cd "$(dirname "$0")/.."
 

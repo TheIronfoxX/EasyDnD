@@ -474,7 +474,11 @@ Aquí tienes:
       );
       expect(result.isOk, isTrue);
       final fields = result.warnings.map((w) => w.field).toList();
-      expect(fields, contains('parche.patch-rasgo-renombrado'));
+      expect(fields, contains('parche.creados'));
+      expect(
+        result.warnings.firstWhere((w) => w.field == 'parche.creados').message,
+        contains('Rasgo renombrado'),
+      );
       expect(fields, contains('parche.classified_features[Mala].category'));
     });
 

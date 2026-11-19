@@ -33,6 +33,9 @@ dependencies:
   # Importar/exportar fichas como archivo JSON.
   file_picker: ^11.0.2
 
+  # Descarga directa del JSON en la web (Blob + ancla).
+  web: ^1.1.1
+
   # Foto del personaje (tab Lore).
   image_picker: ^1.2.3
 

@@ -10,7 +10,9 @@ import 'package:provider/provider.dart';
 
 import '../../core/ui/clean_kit.dart';
 import '../../domain/models/character.dart';
+import '../../core/theme/design_tokens.dart';
 import '../../state/character_store.dart';
+import 'hud_status_tab.dart';
 
 class ActiveCharacterPage extends StatelessWidget {
   const ActiveCharacterPage({
@@ -68,3 +70,29 @@ Future<void> pushCharacterPage(
   context,
   ActiveCharacterPage(title: title, builder: builder, scrollable: scrollable),
 );
+
+/// Hoja de Vida (daño, curación, PG temporales). Se abre desde la píldora
+/// de la barra superior y desde la tarjeta de vida de Combate.
+void showLifeSheet(BuildContext context) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    showDragHandle: true,
+    builder: (sheetContext) => Consumer<CharacterStore>(
+      builder: (context, store, _) {
+        final c = store.activeCharacter;
+        if (c == null) return const SizedBox(height: 120);
+        return SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            0,
+            AppSpacing.lg,
+            AppSpacing.xl,
+          ),
+          child: HudHealthSection(character: c),
+        );
+      },
+    ),
+  );
+}

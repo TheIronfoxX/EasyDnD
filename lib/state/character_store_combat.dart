@@ -319,6 +319,15 @@ extension CharacterStoreCombat on CharacterStore {
     _notifyAndPersist();
   }
 
+  /// Marca o desmarca con la estrella un poder (por id) del personaje
+  /// activo.
+  void toggleFavoritePower(String powerId) {
+    final favorites = activeCharacter?.favoritePowers;
+    if (favorites == null || powerId.isEmpty) return;
+    if (!favorites.remove(powerId)) favorites.add(powerId);
+    _notifyAndPersist();
+  }
+
   /// true si alguna condición activa impone desventaja (Envenenado,
   /// Derribado, Asustado, Cegado...). Condiciones desconocidas se
   /// ignoran en vez de romper el cálculo.
