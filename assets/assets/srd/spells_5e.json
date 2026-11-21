@@ -1,0 +1,618 @@
+[
+  {
+    "name": "Rayo de escarcha",
+    "english_name": "Ray of Frost",
+    "level": 0,
+    "school": "Evocación",
+    "casting_time": "1 acción",
+    "range": "18 m / 60 pies",
+    "attack_type": "attack",
+    "damage_dice": "1d8",
+    "damage_type": "frío",
+    "is_scalable": true,
+    "scaling_formula": "1d8",
+    "description": "Un haz gélido de luz azulada que impacta en el objetivo y reduce su velocidad en 3 metros hasta el inicio de tu siguiente turno.",
+    "classes": [
+      "hechicero",
+      "mago"
+    ]
+  },
+  {
+    "name": "Descarga sobrenatural",
+    "english_name": "Eldritch Blast",
+    "level": 0,
+    "school": "Evocación",
+    "casting_time": "1 acción",
+    "range": "36 m / 120 pies",
+    "attack_type": "attack",
+    "damage_dice": "1d10",
+    "damage_type": "fuerza",
+    "is_scalable": true,
+    "scaling_formula": "1d10",
+    "description": "Un rayo de energía crepitante se proyecta hacia una criatura a tu alcance.",
+    "classes": [
+      "brujo"
+    ]
+  },
+  {
+    "name": "Saeta de fuego",
+    "english_name": "Fire Bolt",
+    "level": 0,
+    "school": "Evocación",
+    "casting_time": "1 acción",
+    "range": "36 m / 120 pies",
+    "attack_type": "attack",
+    "damage_dice": "1d10",
+    "damage_type": "fuego",
+    "is_scalable": true,
+    "scaling_formula": "1d10",
+    "description": "Lanzas una mota de fuego a una criatura u objeto dentro del alcance.",
+    "classes": [
+      "hechicero",
+      "mago"
+    ]
+  },
+  {
+    "name": "Llama sagrada",
+    "english_name": "Sacred Flame",
+    "level": 0,
+    "school": "Evocación",
+    "casting_time": "1 acción",
+    "range": "18 m / 60 pies",
+    "attack_type": "save",
+    "damage_dice": "1d8",
+    "damage_type": "radiante",
+    "is_scalable": true,
+    "scaling_formula": "1d8",
+    "description": "Un resplandor similar a una llama desciende sobre una criatura que puedas ver. El objetivo debe superar una tirada de salvación de Destreza o sufrir daño radiante.",
+    "classes": [
+      "clerigo"
+    ]
+  },
+  {
+    "name": "Salpicadura ácida",
+    "english_name": "Acid Splash",
+    "level": 0,
+    "school": "Conjuración",
+    "casting_time": "1 acción",
+    "range": "18 m / 60 pies",
+    "attack_type": "save",
+    "damage_dice": "1d6",
+    "damage_type": "ácido",
+    "is_scalable": true,
+    "scaling_formula": "1d6",
+    "description": "Lanzas una burbuja ácida a una o dos criaturas a menos de 1.5 metros entre sí. Salvación de Destreza.",
+    "classes": [
+      "hechicero",
+      "mago"
+    ]
+  },
+  {
+    "name": "Agarre electrizante",
+    "english_name": "Shocking Grasp",
+    "level": 0,
+    "school": "Evocación",
+    "casting_time": "1 acción",
+    "range": "Toque",
+    "attack_type": "attack",
+    "damage_dice": "1d8",
+    "damage_type": "relámpago",
+    "is_scalable": true,
+    "scaling_formula": "1d8",
+    "description": "Un rayo brota de tu mano para propinar una descarga a una criatura que intentas tocar. Tienes ventaja si lleva armadura de metal y no puede usar reacciones.",
+    "classes": [
+      "hechicero",
+      "mago"
+    ]
+  },
+  {
+    "name": "Luz",
+    "english_name": "Light",
+    "level": 0,
+    "school": "Evocación",
+    "casting_time": "1 acción",
+    "range": "Toque",
+    "attack_type": "none",
+    "description": "Tocas un objeto que no mida más de 3 metros en cualquier dimensión. El objeto emite luz brillante en un radio de 6 metros y luz tenue en 6 metros adicionales durante 1 hora.",
+    "classes": [
+      "bardo",
+      "clerigo",
+      "hechicero",
+      "mago"
+    ]
+  },
+  {
+    "name": "Orientación",
+    "english_name": "Guidance",
+    "level": 0,
+    "school": "Adivinación",
+    "casting_time": "1 acción",
+    "range": "Toque",
+    "attack_type": "none",
+    "description": "Tocas a una criatura voluntaria. Una vez antes de que termine el conjuro, el objetivo puede tirar un 1d4 y sumar el resultado a una prueba de característica.",
+    "classes": [
+      "clerigo",
+      "druida"
+    ]
+  },
+  {
+    "name": "Mano de mago",
+    "english_name": "Mage Hand",
+    "level": 0,
+    "school": "Conjuración",
+    "casting_time": "1 acción",
+    "range": "9 m / 30 pies",
+    "attack_type": "none",
+    "description": "Una mano espectral y flotante aparece en un punto que elijas dentro del alcance durante 1 minuto. Puedes manipular objetos de hasta 4.5 kg.",
+    "classes": [
+      "bardo",
+      "brujo",
+      "hechicero",
+      "mago"
+    ]
+  },
+  {
+    "name": "Ilusión menor",
+    "english_name": "Minor Illusion",
+    "level": 0,
+    "school": "Ilusión",
+    "casting_time": "1 acción",
+    "range": "9 m / 30 pies",
+    "attack_type": "none",
+    "description": "Creas un sonido o una imagen de un objeto dentro del alcance durante 1 minuto.",
+    "classes": [
+      "bardo",
+      "brujo",
+      "hechicero",
+      "mago"
+    ]
+  },
+  {
+    "name": "Proyectil mágico",
+    "english_name": "Magic Missile",
+    "level": 1,
+    "school": "Evocación",
+    "casting_time": "1 acción",
+    "range": "36 m / 120 pies",
+    "attack_type": "none",
+    "damage_dice": "3d4+3",
+    "damage_type": "fuerza",
+    "is_scalable": true,
+    "scaling_formula": "1d4+1",
+    "description": "Creas tres dardos brillantes de fuerza mágica que impactan automáticamente sin tirada en los objetivos que elijas.",
+    "classes": [
+      "hechicero",
+      "mago"
+    ]
+  },
+  {
+    "name": "Curar heridas",
+    "english_name": "Cure Wounds",
+    "level": 1,
+    "school": "Evocación",
+    "casting_time": "1 acción",
+    "range": "Toque",
+    "attack_type": "none",
+    "damage_dice": "1d8",
+    "damage_type": "curación",
+    "is_scalable": true,
+    "scaling_formula": "1d8",
+    "description": "Una criatura que tocas recupera una cantidad de puntos de golpe igual a 1d8 + tu modificador por característica de lanzamiento de conjuros.",
+    "classes": [
+      "bardo",
+      "clerigo",
+      "druida",
+      "explorador",
+      "paladin"
+    ]
+  },
+  {
+    "name": "Palabra de curación",
+    "english_name": "Healing Word",
+    "level": 1,
+    "school": "Evocación",
+    "casting_time": "1 acción adicional",
+    "range": "18 m / 60 pies",
+    "attack_type": "none",
+    "damage_dice": "1d4",
+    "damage_type": "curación",
+    "is_scalable": true,
+    "scaling_formula": "1d4",
+    "description": "Una criatura de tu elección que puedas ver dentro del alcance recupera puntos de golpe iguales a 1d4 + tu modificador de característica de conjuros.",
+    "classes": [
+      "bardo",
+      "clerigo",
+      "druida"
+    ]
+  },
+  {
+    "name": "Manos ardientes",
+    "english_name": "Burning Hands",
+    "level": 1,
+    "school": "Evocación",
+    "casting_time": "1 acción",
+    "range": "Cono de 4.5 m / 15 pies",
+    "attack_type": "save",
+    "damage_dice": "3d6",
+    "damage_type": "fuego",
+    "is_scalable": true,
+    "scaling_formula": "1d6",
+    "description": "Una fina lámina de llamas brota de las puntas de tus dedos extendidos. Salvación de Destreza para mitad de daño.",
+    "classes": [
+      "hechicero",
+      "mago"
+    ]
+  },
+  {
+    "name": "Escudo",
+    "english_name": "Shield",
+    "level": 1,
+    "school": "Abjuración",
+    "casting_time": "1 reacción",
+    "range": "Personal",
+    "attack_type": "none",
+    "description": "Una barrera invisible de fuerza mágica aparece y te protege. Hasta el inicio de tu siguiente turno, tienes un bonificador de +5 a la CA y no sufres daño de Proyectil mágico.",
+    "classes": [
+      "hechicero",
+      "mago"
+    ]
+  },
+  {
+    "name": "Onda atronadora",
+    "english_name": "Thunderwave",
+    "level": 1,
+    "school": "Evocación",
+    "casting_time": "1 acción",
+    "range": "Cubo de 4.5 m / 15 pies",
+    "attack_type": "save",
+    "damage_dice": "2d8",
+    "damage_type": "trueno",
+    "is_scalable": true,
+    "scaling_formula": "1d8",
+    "description": "Una ola de fuerza atronadora barre a tu alrededor. Salvación de Constitución para mitad de daño y evitar ser empujado 3 metros.",
+    "classes": [
+      "bardo",
+      "druida",
+      "hechicero",
+      "mago"
+    ]
+  },
+  {
+    "name": "Saeta guiada",
+    "english_name": "Guiding Bolt",
+    "level": 1,
+    "school": "Evocación",
+    "casting_time": "1 acción",
+    "range": "36 m / 120 pies",
+    "attack_type": "attack",
+    "damage_dice": "4d6",
+    "damage_type": "radiante",
+    "is_scalable": true,
+    "scaling_formula": "1d6",
+    "description": "Un destello de luz se proyecta hacia una criatura. Si impacta, la siguiente tirada de ataque contra el objetivo antes del final de tu siguiente turno tiene ventaja.",
+    "classes": [
+      "clerigo"
+    ]
+  },
+  {
+    "name": "Infligir heridas",
+    "english_name": "Inflict Wounds",
+    "level": 1,
+    "school": "Nigromancia",
+    "casting_time": "1 acción",
+    "range": "Toque",
+    "attack_type": "attack",
+    "damage_dice": "3d10",
+    "damage_type": "necrótico",
+    "is_scalable": true,
+    "scaling_formula": "1d10",
+    "description": "Haces un ataque de conjuro cuerpo a cuerpo contra una criatura a tu alcance. En caso de impacto, el objetivo sufre 3d10 de daño necrótico.",
+    "classes": [
+      "clerigo"
+    ]
+  },
+  {
+    "name": "Bendición",
+    "english_name": "Bless",
+    "level": 1,
+    "school": "Encantamiento",
+    "casting_time": "1 acción",
+    "range": "9 m / 30 pies",
+    "attack_type": "none",
+    "description": "Bendices hasta a tres criaturas dentro del alcance. Siempre que el objetivo haga una tirada de ataque o salvación antes de que termine el conjuro, puede sumar un 1d4.",
+    "classes": [
+      "clerigo",
+      "paladin"
+    ]
+  },
+  {
+    "name": "Rayo abrasador",
+    "english_name": "Scorching Ray",
+    "level": 2,
+    "school": "Evocación",
+    "casting_time": "1 acción",
+    "range": "36 m / 120 pies",
+    "attack_type": "attack",
+    "damage_dice": "2d6",
+    "damage_type": "fuego",
+    "is_scalable": true,
+    "scaling_formula": "2d6",
+    "description": "Creas tres rayos de fuego y los lanzas a objetivos dentro del alcance. Haces una tirada de ataque por cada rayo, infligiendo 2d6 de daño por cada impacto.",
+    "classes": [
+      "hechicero",
+      "mago"
+    ]
+  },
+  {
+    "name": "Destrozar",
+    "english_name": "Shatter",
+    "level": 2,
+    "school": "Evocación",
+    "casting_time": "1 acción",
+    "range": "18 m / 60 pies",
+    "attack_type": "save",
+    "damage_dice": "3d8",
+    "damage_type": "trueno",
+    "is_scalable": true,
+    "scaling_formula": "1d8",
+    "description": "Un sonido dolorosamente fuerte resuena en una esfera de 3 metros de radio. Salvación de Constitución para mitad de daño.",
+    "classes": [
+      "bardo",
+      "brujo",
+      "hechicero",
+      "mago"
+    ]
+  },
+  {
+    "name": "Paso brumoso",
+    "english_name": "Misty Step",
+    "level": 2,
+    "school": "Conjuración",
+    "casting_time": "1 acción adicional",
+    "range": "Personal",
+    "attack_type": "none",
+    "description": "Rodeado brevemente por una niebla plateada, te teletransportas hasta 9 metros a un espacio desocupado que puedas ver.",
+    "classes": [
+      "brujo",
+      "hechicero",
+      "mago"
+    ]
+  },
+  {
+    "name": "Invisibilidad",
+    "english_name": "Invisibility",
+    "level": 2,
+    "school": "Ilusión",
+    "casting_time": "1 acción",
+    "range": "Toque",
+    "attack_type": "none",
+    "description": "Una criatura que tocas se vuelve invisible hasta que termine el conjuro (hasta 1 hora de concentración). El conjuro termina si el objetivo ataca o lanza un conjuro.",
+    "classes": [
+      "bardo",
+      "brujo",
+      "hechicero",
+      "mago"
+    ]
+  },
+  {
+    "name": "Restablecimiento menor",
+    "english_name": "Lesser Restoration",
+    "level": 2,
+    "school": "Abjuración",
+    "casting_time": "1 acción",
+    "range": "Toque",
+    "attack_type": "none",
+    "description": "Tocas a una criatura y puedes poner fin a una enfermedad o a una condición que la aflija: cegado, ensordecido, paralizado o envenenado.",
+    "classes": [
+      "bardo",
+      "clerigo",
+      "druida",
+      "explorador",
+      "paladin"
+    ]
+  },
+  {
+    "name": "Bola de fuego",
+    "english_name": "Fireball",
+    "level": 3,
+    "school": "Evocación",
+    "casting_time": "1 acción",
+    "range": "45 m / 150 pies",
+    "attack_type": "save",
+    "damage_dice": "8d6",
+    "damage_type": "fuego",
+    "is_scalable": true,
+    "scaling_formula": "1d6",
+    "description": "Un haz brillante brota de tu dedo hacia un punto dentro del alcance y estalla en un rugido de llamas en una esfera de 6 metros de radio. Salvación de Destreza para mitad de daño.",
+    "classes": [
+      "hechicero",
+      "mago"
+    ]
+  },
+  {
+    "name": "Relámpago",
+    "english_name": "Lightning Bolt",
+    "level": 3,
+    "school": "Evocación",
+    "casting_time": "1 acción",
+    "range": "Línea de 30 m / 100 pies",
+    "attack_type": "save",
+    "damage_dice": "8d6",
+    "damage_type": "relámpago",
+    "is_scalable": true,
+    "scaling_formula": "1d6",
+    "description": "Un rayo en línea recta de 30 metros de largo y 1.5 metros de ancho brota de ti en una dirección que elijas. Salvación de Destreza para mitad de daño.",
+    "classes": [
+      "hechicero",
+      "mago"
+    ]
+  },
+  {
+    "name": "Contraconjuro",
+    "english_name": "Counterspell",
+    "level": 3,
+    "school": "Abjuración",
+    "casting_time": "1 reacción",
+    "range": "18 m / 60 pies",
+    "attack_type": "none",
+    "is_scalable": true,
+    "description": "Intentas interrumpir a una criatura en el proceso de lanzar un conjuro. Si el conjuro es de nivel 3 o inferior, falla de inmediato.",
+    "classes": [
+      "brujo",
+      "hechicero",
+      "mago"
+    ]
+  },
+  {
+    "name": "Disipar magia",
+    "english_name": "Dispel Magic",
+    "level": 3,
+    "school": "Abjuración",
+    "casting_time": "1 acción",
+    "range": "36 m / 120 pies",
+    "attack_type": "none",
+    "is_scalable": true,
+    "description": "Elige una criatura, objeto o efecto mágico dentro del alcance. Cualquier conjuro de nivel 3 o menor sobre el objetivo termina.",
+    "classes": [
+      "bardo",
+      "brujo",
+      "clerigo",
+      "druida",
+      "hechicero",
+      "mago",
+      "paladin"
+    ]
+  },
+  {
+    "name": "Revivir",
+    "english_name": "Revivify",
+    "level": 3,
+    "school": "Nigromancia",
+    "casting_time": "1 acción",
+    "range": "Toque",
+    "attack_type": "none",
+    "description": "Tocas a una criatura que haya muerto en el último minuto. La criatura vuelve a la vida con 1 punto de golpe. Consume diamantes por valor de 300 po.",
+    "classes": [
+      "clerigo",
+      "paladin"
+    ]
+  },
+  {
+    "name": "Velocidad",
+    "english_name": "Haste",
+    "level": 3,
+    "school": "Transmutación",
+    "casting_time": "1 acción",
+    "range": "9 m / 30 pies",
+    "attack_type": "none",
+    "description": "Elige una criatura voluntaria. Su velocidad se duplica, gana +2 a la CA, ventaja en tiradas de salvación de Destreza y una acción adicional cada turno.",
+    "classes": [
+      "hechicero",
+      "mago"
+    ]
+  },
+  {
+    "name": "Polimorfar",
+    "english_name": "Polymorph",
+    "level": 4,
+    "school": "Transmutación",
+    "casting_time": "1 acción",
+    "range": "18 m / 60 pies",
+    "attack_type": "save",
+    "description": "Transformas a una criatura dentro del alcance en una bestia cuyo valor de desafío sea igual o menor que el nivel del objetivo. Salvación de Sabiduría.",
+    "classes": [
+      "bardo",
+      "druida",
+      "hechicero",
+      "mago"
+    ]
+  },
+  {
+    "name": "Muro de fuego",
+    "english_name": "Wall of Fire",
+    "level": 4,
+    "school": "Evocación",
+    "casting_time": "1 acción",
+    "range": "36 m / 120 pies",
+    "attack_type": "save",
+    "damage_dice": "5d8",
+    "damage_type": "fuego",
+    "is_scalable": true,
+    "scaling_formula": "1d8",
+    "description": "Creas un muro de fuego en una superficie sólida. Las criaturas dentro del área o que terminen su turno cerca sufren daño de fuego. Salvación de Destreza.",
+    "classes": [
+      "druida",
+      "hechicero",
+      "mago"
+    ]
+  },
+  {
+    "name": "Cono de frío",
+    "english_name": "Cone of Cold",
+    "level": 5,
+    "school": "Evocación",
+    "casting_time": "1 acción",
+    "range": "Cono de 18 m / 60 pies",
+    "attack_type": "save",
+    "damage_dice": "8d8",
+    "damage_type": "frío",
+    "is_scalable": true,
+    "scaling_formula": "1d8",
+    "description": "Una ráfaga de aire gélido brota de tus manos. Las criaturas en el cono deben superar una tirada de salvación de Constitución o sufrir 8d8 de daño por frío.",
+    "classes": [
+      "hechicero",
+      "mago"
+    ]
+  },
+  {
+    "name": "Desintegrar",
+    "english_name": "Disintegrate",
+    "level": 6,
+    "school": "Transmutación",
+    "casting_time": "1 acción",
+    "range": "18 m / 60 pies",
+    "attack_type": "save",
+    "damage_dice": "10d6+40",
+    "damage_type": "fuerza",
+    "is_scalable": true,
+    "scaling_formula": "3d6",
+    "description": "Un rayo verde surge de tus dedos. El objetivo debe superar una salvación de Destreza o sufrir 10d6 + 40 de daño de fuerza. Si esto reduce sus PG a 0, queda desintegrado en polvo.",
+    "classes": [
+      "hechicero",
+      "mago"
+    ]
+  },
+  {
+    "name": "Deseo",
+    "english_name": "Wish",
+    "level": 9,
+    "school": "Conjuración",
+    "casting_time": "1 acción",
+    "range": "Personal",
+    "attack_type": "none",
+    "description": "El conjuro mortal más poderoso. Su uso básico es duplicar cualquier otro conjuro de nivel 8 o menor sin necesidad de cumplir sus requisitos.",
+    "classes": [
+      "hechicero",
+      "mago"
+    ]
+  },
+  {
+    "name": "Tormenta de hielo",
+    "english_name": "Ice Storm",
+    "level": 4,
+    "school": "Evocación",
+    "casting_time": "1 acción",
+    "range": "90 m / 300 pies",
+    "attack_type": "save",
+    "damage_dice": "2d8+4d6",
+    "damage_type": "contundente y frío",
+    "is_scalable": true,
+    "scaling_formula": "1d8",
+    "description": "Una lluvia de granizo helado cae sobre un cilindro de 6 metros de radio. Salvación de Destreza para mitad de daño: 2d8 contundente más 4d6 frío. El terreno del área queda como terreno difícil hasta el final de tu siguiente turno. Cada nivel de ranura por encima del 4 suma 1d8 de daño contundente.",
+    "classes": [
+      "druida",
+      "hechicero",
+      "mago"
+    ]
+  }
+]

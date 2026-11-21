@@ -1,11 +1,11 @@
 {
-    "name": "easydnd_nuevo",
-    "short_name": "easydnd_nuevo",
+    "name": "EasyDnD",
+    "short_name": "EasyDnD",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#131009",
+    "theme_color": "#C9A227",
+    "description": "HUD de combate offline para D&D 5e: roster de fichas, economía de acciones, dados, recursos e inventario.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

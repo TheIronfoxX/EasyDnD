@@ -1,0 +1,625 @@
+{
+  "weapons": [
+    {
+      "id": "garrote",
+      "name": "Garrote",
+      "category": "sencilla",
+      "range_type": "melee",
+      "damage_dice": "1d4",
+      "damage_type": "contundente",
+      "properties": [
+        "Ligera"
+      ],
+      "versatile_dice": null,
+      "range_text": "1,5 m"
+    },
+    {
+      "id": "daga",
+      "name": "Daga",
+      "category": "sencilla",
+      "range_type": "melee",
+      "damage_dice": "1d4",
+      "damage_type": "perforante",
+      "properties": [
+        "Sutil",
+        "Ligera",
+        "Arrojadiza"
+      ],
+      "versatile_dice": null,
+      "range_text": "1,5 m / arrojadiza 6/18 m"
+    },
+    {
+      "id": "baston",
+      "name": "Bastón",
+      "category": "sencilla",
+      "range_type": "melee",
+      "damage_dice": "1d6",
+      "damage_type": "contundente",
+      "properties": [
+        "Versátil"
+      ],
+      "versatile_dice": "1d8",
+      "range_text": "1,5 m"
+    },
+    {
+      "id": "hacha_de_mano",
+      "name": "Hacha de mano",
+      "category": "sencilla",
+      "range_type": "melee",
+      "damage_dice": "1d6",
+      "damage_type": "cortante",
+      "properties": [
+        "Ligera",
+        "Arrojadiza"
+      ],
+      "versatile_dice": null,
+      "range_text": "1,5 m / arrojadiza 6/18 m"
+    },
+    {
+      "id": "jabalina",
+      "name": "Jabalina",
+      "category": "sencilla",
+      "range_type": "melee",
+      "damage_dice": "1d6",
+      "damage_type": "perforante",
+      "properties": [
+        "Arrojadiza"
+      ],
+      "versatile_dice": null,
+      "range_text": "1,5 m / arrojadiza 9/36 m"
+    },
+    {
+      "id": "lanza",
+      "name": "Lanza",
+      "category": "sencilla",
+      "range_type": "melee",
+      "damage_dice": "1d6",
+      "damage_type": "perforante",
+      "properties": [
+        "Arrojadiza",
+        "Versátil"
+      ],
+      "versatile_dice": "1d8",
+      "range_text": "1,5 m / arrojadiza 6/18 m"
+    },
+    {
+      "id": "maza",
+      "name": "Maza",
+      "category": "sencilla",
+      "range_type": "melee",
+      "damage_dice": "1d6",
+      "damage_type": "contundente",
+      "properties": [],
+      "versatile_dice": null,
+      "range_text": "1,5 m"
+    },
+    {
+      "id": "martillo_ligero",
+      "name": "Martillo ligero",
+      "category": "sencilla",
+      "range_type": "melee",
+      "damage_dice": "1d4",
+      "damage_type": "contundente",
+      "properties": [
+        "Ligera",
+        "Arrojadiza"
+      ],
+      "versatile_dice": null,
+      "range_text": "1,5 m / arrojadiza 6/18 m"
+    },
+    {
+      "id": "clava_grande",
+      "name": "Clava grande",
+      "category": "sencilla",
+      "range_type": "melee",
+      "damage_dice": "1d8",
+      "damage_type": "contundente",
+      "properties": [
+        "A dos manos"
+      ],
+      "versatile_dice": null,
+      "range_text": "1,5 m"
+    },
+    {
+      "id": "hoz",
+      "name": "Hoz",
+      "category": "sencilla",
+      "range_type": "melee",
+      "damage_dice": "1d4",
+      "damage_type": "cortante",
+      "properties": [
+        "Ligera"
+      ],
+      "versatile_dice": null,
+      "range_text": "1,5 m"
+    },
+    {
+      "id": "arco_corto",
+      "name": "Arco corto",
+      "category": "sencilla",
+      "range_type": "ranged",
+      "damage_dice": "1d6",
+      "damage_type": "perforante",
+      "properties": [
+        "Munición",
+        "A dos manos"
+      ],
+      "versatile_dice": null,
+      "range_text": "24/96 m"
+    },
+    {
+      "id": "ballesta_ligera",
+      "name": "Ballesta ligera",
+      "category": "sencilla",
+      "range_type": "ranged",
+      "damage_dice": "1d8",
+      "damage_type": "perforante",
+      "properties": [
+        "Munición",
+        "Recarga",
+        "A dos manos"
+      ],
+      "versatile_dice": null,
+      "range_text": "24/96 m"
+    },
+    {
+      "id": "honda",
+      "name": "Honda",
+      "category": "sencilla",
+      "range_type": "ranged",
+      "damage_dice": "1d4",
+      "damage_type": "contundente",
+      "properties": [
+        "Munición"
+      ],
+      "versatile_dice": null,
+      "range_text": "9/36 m"
+    },
+    {
+      "id": "dardo",
+      "name": "Dardo",
+      "category": "sencilla",
+      "range_type": "ranged",
+      "damage_dice": "1d4",
+      "damage_type": "perforante",
+      "properties": [
+        "Sutil",
+        "Arrojadiza"
+      ],
+      "versatile_dice": null,
+      "range_text": "6/18 m"
+    },
+    {
+      "id": "cimitarra",
+      "name": "Cimitarra",
+      "category": "marcial",
+      "range_type": "melee",
+      "damage_dice": "1d6",
+      "damage_type": "cortante",
+      "properties": [
+        "Sutil",
+        "Ligera"
+      ],
+      "versatile_dice": null,
+      "range_text": "1,5 m"
+    },
+    {
+      "id": "espada_corta",
+      "name": "Espada corta",
+      "category": "marcial",
+      "range_type": "melee",
+      "damage_dice": "1d6",
+      "damage_type": "perforante",
+      "properties": [
+        "Sutil",
+        "Ligera"
+      ],
+      "versatile_dice": null,
+      "range_text": "1,5 m"
+    },
+    {
+      "id": "espada_larga",
+      "name": "Espada larga",
+      "category": "marcial",
+      "range_type": "melee",
+      "damage_dice": "1d8",
+      "damage_type": "cortante",
+      "properties": [
+        "Versátil"
+      ],
+      "versatile_dice": "1d10",
+      "range_text": "1,5 m"
+    },
+    {
+      "id": "espadon",
+      "name": "Espadón",
+      "category": "marcial",
+      "range_type": "melee",
+      "damage_dice": "2d6",
+      "damage_type": "cortante",
+      "properties": [
+        "Pesada",
+        "A dos manos"
+      ],
+      "versatile_dice": null,
+      "range_text": "1,5 m"
+    },
+    {
+      "id": "estoque",
+      "name": "Estoque",
+      "category": "marcial",
+      "range_type": "melee",
+      "damage_dice": "1d8",
+      "damage_type": "perforante",
+      "properties": [
+        "Sutil"
+      ],
+      "versatile_dice": null,
+      "range_text": "1,5 m"
+    },
+    {
+      "id": "hacha_a_dos_manos",
+      "name": "Hacha a dos manos",
+      "category": "marcial",
+      "range_type": "melee",
+      "damage_dice": "1d12",
+      "damage_type": "cortante",
+      "properties": [
+        "Pesada",
+        "A dos manos"
+      ],
+      "versatile_dice": null,
+      "range_text": "1,5 m"
+    },
+    {
+      "id": "hacha_de_batalla",
+      "name": "Hacha de batalla",
+      "category": "marcial",
+      "range_type": "melee",
+      "damage_dice": "1d8",
+      "damage_type": "cortante",
+      "properties": [
+        "Versátil"
+      ],
+      "versatile_dice": "1d10",
+      "range_text": "1,5 m"
+    },
+    {
+      "id": "martillo_de_guerra",
+      "name": "Martillo de guerra",
+      "category": "marcial",
+      "range_type": "melee",
+      "damage_dice": "1d8",
+      "damage_type": "contundente",
+      "properties": [
+        "Versátil"
+      ],
+      "versatile_dice": "1d10",
+      "range_text": "1,5 m"
+    },
+    {
+      "id": "mangual",
+      "name": "Mangual",
+      "category": "marcial",
+      "range_type": "melee",
+      "damage_dice": "1d8",
+      "damage_type": "contundente",
+      "properties": [],
+      "versatile_dice": null,
+      "range_text": "1,5 m"
+    },
+    {
+      "id": "alabarda",
+      "name": "Alabarda",
+      "category": "marcial",
+      "range_type": "melee",
+      "damage_dice": "1d10",
+      "damage_type": "cortante",
+      "properties": [
+        "Pesada",
+        "Alcance",
+        "A dos manos"
+      ],
+      "versatile_dice": null,
+      "range_text": "3 m"
+    },
+    {
+      "id": "guja",
+      "name": "Guja",
+      "category": "marcial",
+      "range_type": "melee",
+      "damage_dice": "1d10",
+      "damage_type": "cortante",
+      "properties": [
+        "Pesada",
+        "Alcance",
+        "A dos manos"
+      ],
+      "versatile_dice": null,
+      "range_text": "3 m"
+    },
+    {
+      "id": "lanza_caballeria",
+      "name": "Lanza de caballería",
+      "category": "marcial",
+      "range_type": "melee",
+      "damage_dice": "1d12",
+      "damage_type": "perforante",
+      "properties": [
+        "Alcance"
+      ],
+      "versatile_dice": null,
+      "range_text": "3 m"
+    },
+    {
+      "id": "pica",
+      "name": "Pica",
+      "category": "marcial",
+      "range_type": "melee",
+      "damage_dice": "1d10",
+      "damage_type": "perforante",
+      "properties": [
+        "Pesada",
+        "Alcance",
+        "A dos manos"
+      ],
+      "versatile_dice": null,
+      "range_text": "3 m"
+    },
+    {
+      "id": "tridente",
+      "name": "Tridente",
+      "category": "marcial",
+      "range_type": "melee",
+      "damage_dice": "1d6",
+      "damage_type": "perforante",
+      "properties": [
+        "Arrojadiza",
+        "Versátil"
+      ],
+      "versatile_dice": "1d8",
+      "range_text": "1,5 m / arrojadiza 6/18 m"
+    },
+    {
+      "id": "pico_de_guerra",
+      "name": "Pico de guerra",
+      "category": "marcial",
+      "range_type": "melee",
+      "damage_dice": "1d8",
+      "damage_type": "perforante",
+      "properties": [],
+      "versatile_dice": null,
+      "range_text": "1,5 m"
+    },
+    {
+      "id": "latigo",
+      "name": "Látigo",
+      "category": "marcial",
+      "range_type": "melee",
+      "damage_dice": "1d4",
+      "damage_type": "cortante",
+      "properties": [
+        "Sutil",
+        "Alcance"
+      ],
+      "versatile_dice": null,
+      "range_text": "3 m"
+    },
+    {
+      "id": "maza_estrellada",
+      "name": "Maza estrellada",
+      "category": "marcial",
+      "range_type": "melee",
+      "damage_dice": "1d8",
+      "damage_type": "contundente",
+      "properties": [],
+      "versatile_dice": null,
+      "range_text": "1,5 m"
+    },
+    {
+      "id": "arco_largo",
+      "name": "Arco largo",
+      "category": "marcial",
+      "range_type": "ranged",
+      "damage_dice": "1d8",
+      "damage_type": "perforante",
+      "properties": [
+        "Munición",
+        "Pesada",
+        "A dos manos"
+      ],
+      "versatile_dice": null,
+      "range_text": "45/180 m"
+    },
+    {
+      "id": "ballesta_de_mano",
+      "name": "Ballesta de mano",
+      "category": "marcial",
+      "range_type": "ranged",
+      "damage_dice": "1d6",
+      "damage_type": "perforante",
+      "properties": [
+        "Munición",
+        "Ligera",
+        "Recarga"
+      ],
+      "versatile_dice": null,
+      "range_text": "9/36 m"
+    },
+    {
+      "id": "ballesta_pesada",
+      "name": "Ballesta pesada",
+      "category": "marcial",
+      "range_type": "ranged",
+      "damage_dice": "1d10",
+      "damage_type": "perforante",
+      "properties": [
+        "Munición",
+        "Pesada",
+        "Recarga",
+        "A dos manos"
+      ],
+      "versatile_dice": null,
+      "range_text": "30/120 m"
+    },
+    {
+      "id": "cerbatana",
+      "name": "Cerbatana",
+      "category": "marcial",
+      "range_type": "ranged",
+      "damage_dice": "1",
+      "damage_type": "perforante",
+      "properties": [
+        "Munición",
+        "Recarga"
+      ],
+      "versatile_dice": null,
+      "range_text": "7,5/30 m"
+    },
+    {
+      "id": "red",
+      "name": "Red",
+      "category": "marcial",
+      "range_type": "ranged",
+      "damage_dice": null,
+      "damage_type": null,
+      "properties": [
+        "Arrojadiza"
+      ],
+      "versatile_dice": null,
+      "range_text": "1,5/4,5 m"
+    }
+  ],
+  "armors": [
+    {
+      "id": "acolchada",
+      "name": "Acolchada",
+      "category": "ligera",
+      "base_ac": 11,
+      "add_dex": true,
+      "max_dex_bonus": null,
+      "min_strength": null,
+      "stealth_disadvantage": true
+    },
+    {
+      "id": "cuero",
+      "name": "Cuero",
+      "category": "ligera",
+      "base_ac": 11,
+      "add_dex": true,
+      "max_dex_bonus": null,
+      "min_strength": null,
+      "stealth_disadvantage": false
+    },
+    {
+      "id": "cuero_tachonado",
+      "name": "Cuero tachonado",
+      "category": "ligera",
+      "base_ac": 12,
+      "add_dex": true,
+      "max_dex_bonus": null,
+      "min_strength": null,
+      "stealth_disadvantage": false
+    },
+    {
+      "id": "pieles",
+      "name": "Pieles",
+      "category": "media",
+      "base_ac": 12,
+      "add_dex": true,
+      "max_dex_bonus": 2,
+      "min_strength": null,
+      "stealth_disadvantage": false
+    },
+    {
+      "id": "camisote_de_mallas",
+      "name": "Camisote de mallas",
+      "category": "media",
+      "base_ac": 13,
+      "add_dex": true,
+      "max_dex_bonus": 2,
+      "min_strength": null,
+      "stealth_disadvantage": false
+    },
+    {
+      "id": "cota_de_escamas",
+      "name": "Cota de escamas",
+      "category": "media",
+      "base_ac": 14,
+      "add_dex": true,
+      "max_dex_bonus": 2,
+      "min_strength": null,
+      "stealth_disadvantage": true
+    },
+    {
+      "id": "coraza",
+      "name": "Coraza",
+      "category": "media",
+      "base_ac": 14,
+      "add_dex": true,
+      "max_dex_bonus": 2,
+      "min_strength": null,
+      "stealth_disadvantage": false
+    },
+    {
+      "id": "semiplacas",
+      "name": "Semiplacas",
+      "category": "media",
+      "base_ac": 15,
+      "add_dex": true,
+      "max_dex_bonus": 2,
+      "min_strength": null,
+      "stealth_disadvantage": true
+    },
+    {
+      "id": "cota_de_anillas",
+      "name": "Cota de anillas",
+      "category": "pesada",
+      "base_ac": 14,
+      "add_dex": false,
+      "max_dex_bonus": null,
+      "min_strength": null,
+      "stealth_disadvantage": true
+    },
+    {
+      "id": "cota_de_mallas",
+      "name": "Cota de mallas",
+      "category": "pesada",
+      "base_ac": 16,
+      "add_dex": false,
+      "max_dex_bonus": null,
+      "min_strength": 13,
+      "stealth_disadvantage": true
+    },
+    {
+      "id": "bandas",
+      "name": "Bandas",
+      "category": "pesada",
+      "base_ac": 17,
+      "add_dex": false,
+      "max_dex_bonus": null,
+      "min_strength": 15,
+      "stealth_disadvantage": true
+    },
+    {
+      "id": "placas",
+      "name": "Placas",
+      "category": "pesada",
+      "base_ac": 18,
+      "add_dex": false,
+      "max_dex_bonus": null,
+      "min_strength": 15,
+      "stealth_disadvantage": true
+    },
+    {
+      "id": "escudo",
+      "name": "Escudo",
+      "category": "escudo",
+      "base_ac": 2,
+      "add_dex": false,
+      "max_dex_bonus": null,
+      "min_strength": null,
+      "stealth_disadvantage": false
+    }
+  ]
+}
